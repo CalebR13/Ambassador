@@ -48,7 +48,7 @@
   /* ── Column header ── */
   .list-header {
     display: grid;
-    grid-template-columns: 44px 1fr 1fr 1fr 1fr 180px;
+    grid-template-columns: 44px 1fr 1fr 1fr 1fr 110px;
     gap: 0;
     padding: 0 16px;
     height: 36px;
@@ -62,7 +62,7 @@
   /* ── Contact row ── */
   .contact-row {
     display: grid;
-    grid-template-columns: 44px 1fr 1fr 1fr 1fr 180px;
+    grid-template-columns: 44px 1fr 1fr 1fr 1fr 110px;
     gap: 0;
     padding: 0 16px;
     min-height: 56px;
@@ -91,12 +91,11 @@
   /* ── Action buttons ── */
   .row-actions { display: flex; align-items: center; gap: 6px; padding: 0 8px; justify-content: flex-end; }
   .action-btn {
-    display: flex; align-items: center; gap: 4px;
-    padding: 5px 10px; border-radius: var(--radius-sm);
-    font-family: var(--sans); font-size: 11px; font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    font-family: var(--sans); font-size: 15px;
     cursor: pointer; border: 1px solid var(--border);
     background: none; color: var(--text); transition: all .12s;
-    white-space: nowrap;
   }
   .action-btn:hover { background: var(--surface2); }
   .action-btn.call { border-color: #4a9e6b33; color: #4a9e6b; }
@@ -104,7 +103,7 @@
   .action-btn.log { border-color: #6b7fd433; color: #8899ee; }
   .action-btn.log:hover { background: #1e2244; border-color: #6b7fd4; }
   .action-btn.details { border-color: var(--border); color: var(--muted); }
-  .action-btn.details:hover { color: var(--text); background: var(--surface2); }
+  .action-btn { text-decoration: none; }
 
   /* ── Empty state ── */
   .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--muted); gap: 10px; }
@@ -386,10 +385,10 @@ function renderList(){
       <div class="row-cell col-last-call">${lcBadge}</div>
       <div class="row-actions">
         ${telHref
-          ?`<a href="${telHref}" class="action-btn call" title="Call ${esc(c.pastor||c.church)}">📞 Call</a>`
-          :`<button class="action-btn call" disabled style="opacity:.35;cursor:default">📞 Call</button>`}
-        <button class="action-btn log" onclick="openCallModal('${c.id}')">📋 Log</button>
-        <button class="action-btn details" onclick="openDetailCard('${c.id}')">👁 Details</button>
+          ?`<a href="${telHref}" class="action-btn call" title="Call ${esc(c.pastor||c.church)}">📞</a>`
+          :`<button class="action-btn call" disabled style="opacity:.35;cursor:default">📞</button>`}
+        <button class="action-btn log" onclick="openCallModal('${c.id}')" title="Log a call">📋</button>
+        <button class="action-btn details" onclick="openDetailCard('${c.id}')" title="View details">👁</button>
       </div>
     </div>`;
   }).join('');
