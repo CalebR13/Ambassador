@@ -246,25 +246,12 @@
 </head>
 <body>
 
-<!-- Lock screen -->
-<div id="lock-screen">
-  <div class="lock-card">
-    <div class="lock-icon">🔒</div>
-    <h1>My Contacts</h1>
-    <p>Enter your password to continue</p>
-    <input type="password" id="pw-input" placeholder="Password" autocomplete="current-password" />
-    <button onclick="unlock()">Unlock</button>
-    <div class="lock-error" id="lock-error"></div>
-  </div>
-</div>
-
 <!-- App -->
-<div id="app">
+<div id="app" class="visible">
   <div class="top-bar">
     <span class="top-bar-title">My Contacts</span>
     <div class="top-bar-actions">
       <span id="count-label" class="count-badge">0 contacts</span>
-      <button class="icon-btn danger" onclick="lockApp()">🔒 Lock</button>
     </div>
   </div>
   <div class="body-wrap">
@@ -294,7 +281,6 @@
 <div id="modal" style="display:none"></div>
 
 <script>
-  const PASSWORD = 'CalebisAwesome13';
   const STORAGE_KEY = 'caleb_contacts_v1';
   let contacts = [];
   let activeId = null;
@@ -326,29 +312,6 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
     document.getElementById('count-label').textContent =
       contacts.length + ' contact' + (contacts.length !== 1 ? 's' : '');
-  }
-
-  function unlock() {
-    const val = document.getElementById('pw-input').value;
-    if (val === PASSWORD) {
-      document.getElementById('lock-screen').style.display = 'none';
-      document.getElementById('app').classList.add('visible');
-      load(); renderAll();
-    } else {
-      document.getElementById('lock-error').textContent = 'Incorrect password — try again.';
-      document.getElementById('pw-input').value = '';
-      document.getElementById('pw-input').focus();
-    }
-  }
-
-  document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key==='Enter') unlock(); });
-
-  function lockApp() {
-    document.getElementById('app').classList.remove('visible');
-    document.getElementById('lock-screen').style.display = 'flex';
-    document.getElementById('pw-input').value = '';
-    document.getElementById('lock-error').textContent = '';
-    activeId = null;
   }
 
   function renderAll() { renderFilters(); renderList(); save(); }
@@ -560,6 +523,8 @@
   function formatDate(d) {
     return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   }
+
+  load(); renderAll();
 </script>
 </body>
 </html>
