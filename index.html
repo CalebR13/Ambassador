@@ -864,13 +864,13 @@ function renderCallingCard(){
           const emailSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>`;
           let out='';
           if(phones.length){
-            phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${ICONS.cellPhone} ${p}</a>`;});
-            phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${msgSvg} Text ${p}</a>`;});
+            phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${ICONS.cellPhone} ${phones.length>1?p:'Call'}</a>`;});
+            phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${msgSvg} ${phones.length>1?'Text '+p:'Text'}</a>`;});
           } else {
             out+=`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${ICONS.phone} No phone</span>`;
           }
           if(emails.length){
-            emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${emailSvg} ${e}</a>`;});
+            emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${emailSvg} ${emails.length>1?e:'Email'}</a>`;});
           } else {
             out+=`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${emailSvg} No email</span>`;
           }
