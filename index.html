@@ -712,11 +712,14 @@ function renderFilters(){
   const states=['All','Starred',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
   const remCount=getReminders().length;
   const overdueCount=getReminders().filter(r=>r.overdue).length;
-  const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;"></span>`:''}🔔 Reminders${remCount?' ('+remCount+')':''}</button>`;
-  const nearbyPill=`<button class="filter-pill${proxResults?' active':''}" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg> ${proxResults?'📍 '+proxLabel+' ('+proxResults.length+')':'Nearby'}</button>`;
+  const bellSvg=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+  const nearbyPill=`<button class="filter-pill${proxResults?' active':''}" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;" title="Nearby"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ec9d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>${proxResults?' ('+proxResults.length+')':''}</button>`;
   const clearPill=proxResults?`<button class="filter-pill" onclick="clearProximity()" style="color:var(--danger);border-color:var(--danger)44;">✕ Clear</button>`:'';
-  const statePills=(proxResults||showingReminders)?'':states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s==='Starred'?'<span style="color:#f0b429">★</span> Starred':s}</button>`).join('');
-  document.getElementById('state-filter-row').innerHTML=remPill+nearbyPill+clearPill+statePills;
+  const starredPill=`<button class="filter-pill${fState==='Starred'?' active':''}" onclick="setSF('Starred')" style="display:flex;align-items:center;" title="Starred"><span style="color:#f0b429;font-size:14px;">★</span></button>`;
+  const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
+  const statePills=(proxResults||showingReminders)?'':states.filter(s=>s!=='All'&&s!=='Starred').map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s}</button>`).join('');
+  const allStatesPill=`<button class="filter-pill${fState==='All'?' active':''}" onclick="setSF('All')">All States</button>`;
+  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+allStatesPill+statePills;
 }
 function setSF(s){fState=s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
 function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
@@ -767,7 +770,7 @@ function renderList(){
     const rcList=getRegionColor(c);
     const proxItem=proxResults?proxResults.find(r=>r.id===c.id):null;
     const remItem=showingReminders?getReminders().find(r=>r.contact.id===c.id):null;
-    const remBadge=remItem?`<span style="font-size:9px;font-weight:500;color:${remItem.overdue?'#e05555':'#f0b429'};margin-left:4px;">${remItem.overdue?'⚠':'🔔'} ${remItem.reminder.remDate?new Date(remItem.reminder.remDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'Reminder'}</span>`:'';
+    const remBadge=remItem?`<span style="font-size:9px;font-weight:500;color:${remItem.overdue?'#e05555':'#f0b429'};margin-left:4px;">${remItem.overdue?'⚠':ICONS.bellSm} ${remItem.reminder.remDate?new Date(remItem.reminder.remDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'Reminder'}</span>`:'';
     const distBadge=proxItem?`<span style="font-size:10px;font-weight:600;color:var(--accent);margin-left:4px;">${proxItem.dist<10?proxItem.dist.toFixed(1):Math.round(proxItem.dist)} mi</span>`:'';
     if(isDesktop){
       return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
