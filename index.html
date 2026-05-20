@@ -267,7 +267,7 @@ function suggestedNext(c){
 }
 const REGS=['Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'];
 let contacts=[],fState='All',fReg='All',logOut=null,logMtg=false;
-let filteredList=[],callingIdx=0,contactMenuOpen=false;
+let filteredList=[],callingIdx=0,contactMenuOpen=false,infoExpanded=false;
 
 const SAMPLE=[
   {id:'c1',pastor:'Brandon Dillard',church:'Lamarsh Baptist Church',city:'Mapleton',state:'IL',region:'Central',email:'lamarshbaptist@gmail.com',phone:'(309) 697-4451',address:'9507 W Maple Ridge Rd',notes:[],photo:'',calls:[{id:'l1',date:'Imported',outcome:'imported',meetingBooked:false,meetingDate:'',details:'asked to send packet again'}]},
@@ -283,15 +283,31 @@ function ac(n){let h=0;for(let c of(n||'X'))h=(h*31+c.charCodeAt(0))&0xffffffff;
 function ini(n){return(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');}
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}
 function primaryPhone(p){return(p||'').split(/[,;\/]/)[0].trim();}
 function load(){contacts=JSON.parse(localStorage.getItem('relay_v7')||'null')||SAMPLE.map(c=>({...c}));}
 function save(){localStorage.setItem('relay_v7',JSON.stringify(contacts));}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
+function lastContactedStr(c){
+  const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');
+  if(!r.length) return null;
+  const last=r[r.length-1];
+  const label=OM[last.outcome]?.label||last.outcome;
+  return `${last.date} · ${label}`;
+}
+function toggleInfo(){
+  infoExpanded=!infoExpanded;
+  renderCallingCard();
+}
+function toggleStar(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  c.starred=!c.starred;
+  save();renderList();renderCallingCard();
+}
 
 function renderFilters(){
-  const states=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
-  document.getElementById('state-filter-row').innerHTML=states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s}</button>`).join('');
+  const states=['All','Starred',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
+  document.getElementById('state-filter-row').innerHTML=states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s==='Starred'?'⭐ Starred':s}</button>`).join('');
   const vis=fState==='All'?contacts:contacts.filter(c=>(c.state||'').toUpperCase()===fState);
   const regs=['All',...Array.from(new Set(vis.map(c=>c.region||'').filter(Boolean))).sort()];
   document.getElementById('region-filter-row').innerHTML=regs.map(r=>`<button class="filter-pill${fReg===r?' active':''}" onclick="setRF('${r}')">${r==='All'?'All Regions':r}</button>`).join('');
@@ -302,7 +318,7 @@ function setRF(r){fReg=r;renderFilters();renderList();}
 function buildFilteredList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
   let f=contacts.filter(c=>{
-    const ms=fState==='All'||(c.state||'').toUpperCase()===fState;
+    const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);
     const mr=fReg==='All'||(c.region||'')===fReg;
     const mq=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);
     return ms&&mr&&mq;
@@ -360,7 +376,7 @@ function renderList(){
 /* ── CALLING CARD ── */
 function openCallingCard(idx){
   filteredList=buildFilteredList();
-  callingIdx=idx;contactMenuOpen=false;
+  callingIdx=idx;contactMenuOpen=false;infoExpanded=false;
   renderCallingCard();
 }
 function renderCallingCard(){
@@ -386,21 +402,26 @@ function renderCallingCard(){
         <div class="card-progress-label">${callingIdx+1} of ${total}</div>
         <div class="card-progress-bar-wrap"><div class="card-progress-bar-fill" style="width:${pct}%"></div></div>
       </div>
-      <button class="card-edit-btn" onclick="openContactModal('${c.id}')">✏️ Edit</button>
+      <button class="card-edit-btn" onclick="openContactModal('${c.id}')" style="font-size:16px;padding:6px 10px;">✏️</button>
     </div>
     <div class="card-body">
       <div class="card-hero">
         <div class="card-hero-avatar" style="background:${rc.bg};color:${rc.text};border:2px solid ${rc.border}">${ini(c.pastor||c.church||'?')}</div>
         <div style="flex:1;min-width:0">
-          <div class="card-hero-name">${esc(c.pastor||'Unknown Pastor')}</div>
-          <div class="card-hero-church" style="color:${rc.text}">${esc(c.church||'—')}</div>
-          <div class="card-hero-location">📍 ${esc([c.city,c.state].filter(Boolean).join(', ')||'—')}${c.region?` <span class="card-hero-region">${esc(c.region)}</span>`:''}</div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+            <div style="min-width:0;flex:1">
+              <div class="card-hero-name" style="display:flex;align-items:center;gap:8px">
+                ${esc(c.pastor||'Unknown Pastor')}
+                <button onclick="toggleStar('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:18px;padding:0;line-height:1;flex-shrink:0;color:${c.starred?'#f0b429':'#6b5a2a'}">${c.starred?'★':'★'}</button>
+              </div>
+              <div class="card-hero-church" style="color:${rc.text}">${esc(c.church||'—')}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:18px;font-weight:600;color:var(--text);line-height:1.1">${esc(c.city||'—')}</div>
+              <div style="font-size:14px;color:var(--muted);margin-top:2px">${esc(c.state||'')}</div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="card-info-strip">
-        <div class="info-item"><div class="info-label">Phone</div><div class="info-value${!c.phone?' empty':''}">${c.phone?esc(c.phone):'—'}</div></div>
-        <div class="info-item"><div class="info-label">Email</div><div class="info-value${!c.email?' empty':''}">${c.email?esc(c.email):'—'}</div></div>
-        <div class="info-item"><div class="info-label">Address</div><div class="info-value${!c.address?' empty':''}">${c.address?esc(c.address):'—'}</div></div>
       </div>
       <div class="card-actions">
         <button class="card-action-btn green${menuOpen?' active':''}" onclick="toggleContactMenu()"><span class="btn-icon">👤</span><span class="btn-label">Contact</span></button>
@@ -414,13 +435,28 @@ function renderCallingCard(){
         ${mailto?`<a href="${mailto}" class="contact-sub-btn email-sub">✉️ Email</a>`:`<span class="contact-sub-btn" style="opacity:.3">✉️ Email</span>`}
       </div>
       <div class="card-history">
-        <div class="history-title">Call history (${realCalls.length})</div>
+        <div class="history-title">Timeline (${realCalls.length})</div>
         ${calls.length?calls.map(x=>{
           const m=OM[x.outcome]||OM.imported;
           const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
           return `<div class="call-entry"><div class="call-top"><span class="outcome-badge ${m.cls}">${m.icon} ${m.label}</span>${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button></div>`;
         }).join(''):`<div class="no-calls">No calls logged yet.</div>`}
       </div>
+    </div>
+    <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
+      <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span>
+          <span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'· '+lastContactedStr(c):''}</span>
+        </div>
+        <span style="color:var(--muted);font-size:14px;">${infoExpanded?'▲':'▼'}</span>
+      </button>
+      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--text)">${c.phone?esc(c.phone):'—'}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.email?esc(c.email):'—'}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?esc(c.address):'—'}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'—'}</div></div>
+      </div>`:''}
     </div>
     <div class="card-nav">
       <button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>← Prev</button>
@@ -437,7 +473,7 @@ function closeCard(){
 function navCard(dir){
   const next=callingIdx+dir;
   if(next<0||next>=filteredList.length)return;
-  callingIdx=next;contactMenuOpen=false;renderCallingCard();
+  callingIdx=next;contactMenuOpen=false;infoExpanded=false;renderCallingCard();
 }
 
 /* ── LOG MODAL ── */
