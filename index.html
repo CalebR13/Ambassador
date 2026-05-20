@@ -417,8 +417,8 @@ function renderCallingCard(){
               <div class="card-hero-church" style="color:${rc.text}">${esc(c.church||'—')}</div>
             </div>
             <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:18px;font-weight:600;color:var(--text);line-height:1.1">${esc(c.city||'—')}</div>
-              <div style="font-size:14px;color:var(--muted);margin-top:2px">${esc(c.state||'')}</div>
+              <div style="font-size:15px;font-weight:600;color:var(--text);line-height:1.1">📍 ${esc(c.city||'—')}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(c.state||'')}</div>
             </div>
           </div>
         </div>
@@ -602,7 +602,10 @@ function openContactModal(id){
   const ro=REGS.map(o=>`<option${v('region')===o?' selected':''}>${o}</option>`).join('');
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
-      <h2>${c?'Edit contact':'New contact'}</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h2 style="margin-bottom:0">${c?'Edit contact':'New contact'}</h2>
+        ${id?`<button onclick="deleteContact('${id}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px;color:#e05555;line-height:1;">🗑</button>`:''}
+      </div>
       <div class="form-row">
         <div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div>
         <div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div>
@@ -635,6 +638,11 @@ function saveCM(id){
   if(id)renderCallingCard();
 }
 
+function deleteContact(id){
+  if(!confirm('Delete this contact? This cannot be undone.'))return;
+  contacts=contacts.filter(c=>c.id!==id);
+  save();closeMKeepCard();closeCard();renderFilters();renderList();
+}
 function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
 function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
 
