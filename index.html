@@ -329,12 +329,19 @@ function api(params) {
     const script = document.createElement('script');
     window[cbName] = function(data) {
       delete window[cbName];
-      document.body.removeChild(script);
+      if(document.body.contains(script)) document.body.removeChild(script);
       resolve(data);
     };
-    script.onerror = () => { delete window[cbName]; document.body.removeChild(script); reject(new Error('Script load error')); };
     script.src = url;
     document.body.appendChild(script);
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      if(window[cbName]) {
+        delete window[cbName];
+        if(document.body.contains(script)) document.body.removeChild(script);
+        reject(new Error('Timeout'));
+      }
+    }, 30000);
   });
 }
 
@@ -343,16 +350,15 @@ let callsCache = {};
 
 async function load() {
   // Fall back to sample data if no script URL set
-  if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbx4GJpN5ZDqoTTFoG_B97W0GIDtmMAgb0jF8KeaWZXkOuYUR3mzpVDKOYFISjRK01gjxQ/exec') {
+  if (SCRIPT_URL === 'PASTE_YOUR_DEPLOYMENT_URL_HERE') {
     contacts = SAMPLE.map(c=>({...c}));
     return;
   }
   try {
     showLoadingOverlay('Loading contacts…');
-    const [rawContacts, rawCalls] = await Promise.all([
-      api({action:'getContacts'}),
-      api({action:'getCalls'})
-    ]);
+    const rawContacts = await api({action:'getContacts'});
+    let rawCalls = [];
+    try { rawCalls = await api({action:'getCalls'}); } catch(e) { rawCalls = []; }
     // Build calls cache keyed by contactId
     callsCache = {};
     rawCalls.forEach(call => {
