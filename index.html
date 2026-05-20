@@ -3,249 +3,270 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>IL Cold Calls</title>
+<title>Relay</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424; --border: #2e2e2e;
     --text: #e8e6e1; --muted: #6b6860; --accent: #4a9e6b; --accent-light: #1a2e22;
-    --danger: #e05555; --warn: #c47d3a;
+    --danger: #e05555;
     --serif: 'DM Serif Display', Georgia, serif;
     --sans: 'DM Sans', system-ui, sans-serif;
     --radius: 10px; --radius-sm: 6px;
   }
-  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; }
+  html, body { height: 100%; margin: 0; padding: 0; background: #0f0f0f; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); overflow: hidden; }
 
-  /* ── App shell ── */
-  #app { display: flex; height: 100vh; flex-direction: column; }
+  /* APP SHELL */
+  #app { display: flex; flex-direction: column; height: 100vh; position: relative; overflow: hidden; }
 
-  /* ── Top bar ── */
-  .top-bar {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 0 24px; min-height: 54px; display: flex; align-items: center;
-    gap: 12px; flex-shrink: 0; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px;
-  }
-  .top-bar-title { font-family: var(--serif); font-size: 20px; font-weight: 400; margin-right: 8px; }
-  .search-wrap { position: relative; flex: 1; max-width: 320px; }
-  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 14px; height: 14px; }
-  #search { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--surface2); color: var(--text); }
+  /* TOP BAR */
+  .top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+  .top-bar-title { font-family: var(--serif); font-size: 18px; color: var(--accent); margin-right: 4px; }
+  .search-wrap { position: relative; flex: 1; max-width: 280px; }
+  .search-wrap svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 13px; height: 13px; }
+  #search { width: 100%; padding: 6px 8px 6px 26px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; background: var(--surface2); color: var(--text); font-family: var(--sans); }
   #search:focus { outline: none; border-color: var(--accent); }
-  .filter-row { display: flex; gap: 5px; flex-wrap: nowrap; overflow-x: auto; }
+  .filter-row { display: flex; gap: 4px; overflow-x: auto; }
   .filter-row::-webkit-scrollbar { display: none; }
-  .filter-pill { font-size: 11px; padding: 4px 11px; border-radius: 20px; border: 1px solid var(--border); background: none; cursor: pointer; font-family: var(--sans); color: var(--muted); transition: all .12s; white-space: nowrap; flex-shrink: 0; }
+  .filter-pill { font-size: 10px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); background: none; cursor: pointer; font-family: var(--sans); color: var(--muted); white-space: nowrap; }
   .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .top-bar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-shrink: 0; }
-  .count-badge { font-size: 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 10px; color: var(--muted); white-space: nowrap; }
-  .add-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s; white-space: nowrap; }
-  .add-btn:hover { opacity: .88; }
+  .top-bar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .count-badge { font-size: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 8px; color: var(--muted); }
+  .add-btn { padding: 5px 12px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 12px; font-weight: 500; cursor: pointer; }
 
-  /* ── Main list ── */
-  .main-list { flex: 1; overflow-y: auto; padding: 0; }
-  .main-list::-webkit-scrollbar { width: 4px; }
-  .main-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  /* ── Column header ── */
-  .list-header {
-    display: grid;
-    grid-template-columns: 44px 1fr 1fr 1fr 1fr 110px;
-    gap: 0;
-    padding: 0 16px;
-    height: 36px;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky; top: 0; z-index: 10;
-  }
-  .list-header-cell { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; padding: 0 8px; }
-
-  /* ── Contact row ── */
-  .contact-row {
-    display: grid;
-    grid-template-columns: 44px 1fr 1fr 1fr 1fr 110px;
-    gap: 0;
-    padding: 0 16px;
-    min-height: 56px;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-    transition: background .1s;
-  }
+  /* LIST */
+  .list-header { display: grid; grid-template-columns: 38px 1.4fr 1fr 1fr 80px; padding: 0 12px; height: 32px; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10; }
+  .list-header-cell { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; padding: 0 6px; }
+  .main-list { flex: 1; overflow-y: auto; }
+  .main-list::-webkit-scrollbar { width: 3px; }
+  .main-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .contact-row { display: grid; grid-template-columns: 38px 1.4fr 1fr 1fr 80px; padding: 0 12px; min-height: 50px; align-items: center; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; border-left: 3px solid transparent; }
+  .contact-row.status-pastor    { border-left-color: #4cd68a; }
+  .contact-row.status-voicemail { border-left-color: #8899ee; }
+  .contact-row.status-secretary { border-left-color: #d4934a; }
+  .contact-row.status-reminder  { border-left-color: #f0b429; }
+  .contact-row.status-none      { border-left-color: transparent; }
   .contact-row:hover { background: var(--surface); }
-  .contact-row:nth-child(even) { background: rgba(255,255,255,.015); }
-  .contact-row:nth-child(even):hover { background: var(--surface); }
-
-  .row-avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; overflow: hidden; }
-  .row-cell { padding: 8px; min-width: 0; }
-  .row-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row-sub  { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-  .row-plain { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-  .row-muted { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; }
-
-  /* last call badge */
-  .last-call-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; }
-  .lcb-pastor    { background: #1a3a28; color: #4cd68a; }
+  .row-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+  .row-cell { padding: 6px; min-width: 0; }
+  .row-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-plain { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .last-call-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+  .lcb-pastor { background: #1a3a28; color: #4cd68a; }
   .lcb-voicemail { background: #1e2244; color: #8899ee; }
   .lcb-secretary { background: #2e2010; color: #d4934a; }
-  .lcb-none      { background: var(--surface2); color: var(--muted); }
-
-  /* ── Action buttons ── */
-  .row-actions { display: flex; align-items: center; gap: 6px; padding: 0 8px; justify-content: flex-end; }
-  .action-btn {
-    display: flex; align-items: center; justify-content: center;
-    width: 32px; height: 32px; border-radius: var(--radius-sm);
-    font-family: var(--sans); font-size: 15px;
-    cursor: pointer; border: 1px solid var(--border);
-    background: none; color: var(--text); transition: all .12s;
-  }
+  .lcb-none { background: var(--surface2); color: var(--muted); }
+  .lcb-reminder { background: #2e1f00; color: #f0b429; }
+  .row-actions { display: flex; align-items: center; gap: 5px; padding: 0 6px; justify-content: flex-end; }
+  .action-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text); text-decoration: none; transition: all .12s; }
   .action-btn:hover { background: var(--surface2); }
-  .action-btn.call { border-color: #4a9e6b33; color: #4a9e6b; }
-  .action-btn.call:hover { background: var(--accent-light); border-color: var(--accent); }
   .action-btn.log { border-color: #6b7fd433; color: #8899ee; }
-  .action-btn.log:hover { background: #1e2244; border-color: #6b7fd4; }
-  .action-btn.details { border-color: var(--border); color: var(--muted); }
-  .action-btn { text-decoration: none; }
+  .action-btn.log:hover { background: #1e2244; }
+  .empty-state { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--muted); font-size: 13px; }
+  .status-pill { display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; }
+  .pill-pastor    { background: #1a3a28; color: #4cd68a; }
+  .pill-voicemail { background: #1e2244; color: #8899ee; }
+  .pill-secretary { background: #2e2010; color: #d4934a; }
+  .pill-reminder  { background: #2e1f00; color: #f0b429; }
+  .pill-none      { background: var(--surface2); color: var(--muted); }
+  .reminder-dot { width: 7px; height: 7px; border-radius: 50%; background: #f0b429; display: inline-block; margin-left: 4px; vertical-align: middle; } border-radius: 50%; background: #f0b429; display: inline-block; margin-left: 4px; vertical-align: middle; }
 
-  /* ── Empty state ── */
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--muted); gap: 10px; }
-  .empty-state p { font-size: 13px; }
+  /* FULL SCREEN CALLING CARD */
+  .fullscreen-card {
+    position: absolute; inset: 0; z-index: 100;
+    background: var(--bg);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .fullscreen-card.visible { display: flex; }
 
-  /* ── Modal backdrop ── */
-  .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  /* Card top bar */
+  .card-topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .card-back-btn {
+    background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 5px 12px; font-family: var(--sans); font-size: 12px;
+    color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 5px;
+  }
+  .card-back-btn:hover { background: var(--surface2); }
+  .card-topbar-center { flex: 1; text-align: center; }
+  .card-progress-label { font-size: 11px; color: var(--muted); }
+  .card-progress-bar-wrap { width: 120px; height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 4px auto 0; }
+  .card-progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+  .card-edit-btn {
+    background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 4px 10px; font-family: var(--sans); font-size: 11px;
+    color: var(--muted); cursor: pointer;
+  }
+  .card-edit-btn:hover { background: var(--surface2); color: var(--text); }
+
+  /* Card scroll body */
+  .card-body { flex: 1; overflow-y: auto; }
+  .card-body::-webkit-scrollbar { width: 3px; }
+  .card-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Hero section */
+  .card-hero {
+    padding: 28px 32px 20px;
+    display: flex; align-items: center; gap: 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  }
+  .card-hero-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    z-index: 50; padding: 20px;
+    font-size: 24px; font-weight: 500; flex-shrink: 0;
   }
+  .card-hero-info { flex: 1; min-width: 0; }
+  .card-hero-name { font-family: var(--serif); font-size: 32px; line-height: 1.1; margin-bottom: 4px; }
+  .card-hero-church { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  .card-hero-location { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .card-hero-region { font-size: 11px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 8px; }
 
-  /* ── Contact detail card ── */
-  .detail-card {
-    background: var(--surface); border-radius: 16px;
-    width: 560px; max-width: 100%; max-height: 88vh;
-    overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,.6);
-    border: 1px solid var(--border);
+  /* Info strip */
+  .card-info-strip {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
   }
-  .detail-card::-webkit-scrollbar { width: 3px; }
-  .detail-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  .card-header {
-    padding: 24px 24px 0;
-    display: flex; align-items: flex-start; gap: 16px;
+  .info-item {
+    flex: 1; padding: 12px 16px;
+    border-right: 1px solid var(--border);
   }
-  .card-avatar { width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 500; overflow: hidden; }
-  .card-header-info { flex: 1; min-width: 0; }
-  .card-name { font-family: var(--serif); font-size: 24px; font-weight: 400; line-height: 1.1; margin-bottom: 3px; }
-  .card-church { font-size: 13px; color: var(--muted); }
-  .card-header-actions { display: flex; gap: 6px; flex-shrink: 0; margin-top: 4px; }
-  .card-close { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 13px; cursor: pointer; color: var(--muted); transition: all .12s; }
-  .card-close:hover { color: var(--text); background: var(--surface2); }
-  .card-edit { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text); transition: background .12s; }
-  .card-edit:hover { background: var(--surface2); }
-  .card-delete { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--danger); border-color: var(--danger); transition: background .12s; }
-  .card-delete:hover { background: rgba(224,85,85,.1); }
+  .info-item:last-child { border-right: none; }
+  .info-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; }
+  .info-value { font-size: 12px; color: var(--text); line-height: 1.4; word-break: break-word; }
+  .info-value.empty { color: var(--muted); font-style: italic; }
 
-  .card-body { padding: 20px 24px 24px; }
-  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .field-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
-  .field-card.full { grid-column: 1 / -1; }
-  .field-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; }
-  .field-value { font-size: 13px; word-break: break-word; line-height: 1.5; }
-  .field-value a { color: var(--accent); text-decoration: none; }
-  .field-value a:hover { text-decoration: underline; }
-  .field-value.empty { color: var(--muted); font-style: italic; font-size: 12px; }
+  /* Action buttons */
+  .card-actions {
+    display: flex; gap: 10px; padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .card-action-btn {
+    flex: 1; min-width: 90px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 12px 8px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: none;
+    font-family: var(--sans); cursor: pointer; transition: all .15s;
+    color: var(--text); position: relative;
+  }
+  .card-action-btn .btn-icon { font-size: 22px; }
+  .card-action-btn .btn-label { font-size: 10px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+  .card-action-btn.green { border-color: #4a9e6b44; }
+  .card-action-btn.green:hover, .card-action-btn.green.active { background: var(--accent-light); border-color: var(--accent); }
+  .card-action-btn.blue { border-color: #6b7fd444; }
+  .card-action-btn.blue:hover { background: #1e2244; border-color: #8899ee; }
+  .card-action-btn.yellow { border-color: #f0b42944; }
+  .card-action-btn.yellow:hover { background: #2e1f00; border-color: #f0b429; }
+  .card-action-btn.teal { border-color: #2a7a8a44; }
+  .card-action-btn.teal:hover { background: #0e2226; border-color: #4ac4d4; }
 
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 500; }
-  .log-call-btn { display: flex; align-items: center; gap: 5px; padding: 5px 12px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 11px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
-  .log-call-btn:hover { opacity: .88; }
+  /* Contact sub-menu */
+  .contact-submenu {
+    display: none; flex-direction: column; gap: 6px;
+    padding: 12px 32px; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .contact-submenu.open { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .contact-sub-btn {
+    flex: 1; min-width: 80px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg);
+    font-family: var(--sans); font-size: 12px; font-weight: 500;
+    cursor: pointer; color: var(--text); text-decoration: none;
+    transition: all .12s;
+  }
+  .contact-sub-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .contact-sub-btn.call-sub { border-color: #4a9e6b44; color: #4a9e6b; }
+  .contact-sub-btn.call-sub:hover { background: var(--accent-light); }
+  .contact-sub-btn.text-sub { border-color: #6b7fd444; color: #8899ee; }
+  .contact-sub-btn.text-sub:hover { background: #1e2244; }
+  .contact-sub-btn.email-sub { border-color: #d4b06b44; color: #d4b06b; }
+  .contact-sub-btn.email-sub:hover { background: #2e2a1a; }
 
-  .call-log-list { display: flex; flex-direction: column; gap: 8px; }
-  .call-entry { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; position: relative; }
-  .call-entry-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
-  .outcome-badge { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; }
-  .outcome-pastor    { background: #1a3a28; color: #4cd68a; }
+  /* History */
+  .card-history { padding: 20px 32px 24px; }
+  .history-title { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 12px; font-weight: 500; }
+  .call-entry { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; position: relative; }
+  .call-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
+  .outcome-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+  .outcome-pastor { background: #1a3a28; color: #4cd68a; }
   .outcome-voicemail { background: #1e2244; color: #8899ee; }
   .outcome-secretary { background: #2e2010; color: #d4934a; }
-  .outcome-imported  { background: var(--surface2); color: var(--muted); }
-  .call-date { font-size: 11px; color: var(--muted); margin-left: auto; }
-  .meeting-badge { font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; background: #1a2e22; color: #4a9e6b; }
-  .call-details { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
-  .call-delete { position: absolute; top: 9px; right: 9px; background: none; border: none; cursor: pointer; color: var(--border); font-size: 14px; padding: 2px 5px; border-radius: 4px; transition: color .12s; }
-  .call-delete:hover { color: var(--danger); }
+  .outcome-imported { background: var(--surface2); color: var(--muted); }
+  .outcome-reminder { background: #2e1f00; color: #f0b429; }
+  .call-date { font-size: 10px; color: var(--muted); margin-left: auto; }
+  .call-details-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; margin-top: 5px; }
+  .call-del { position: absolute; top: 9px; right: 9px; background: none; border: none; cursor: pointer; color: var(--border); font-size: 14px; padding: 2px 5px; border-radius: 3px; }
+  .call-del:hover { color: var(--danger); }
   .no-calls { font-size: 12px; color: var(--muted); font-style: italic; }
 
-  /* ── Log call modal (stacked above detail card) ── */
-  .log-modal {
-    background: var(--surface); border-radius: 14px;
-    width: 440px; max-width: 100%; max-height: 88vh;
-    overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,.7);
-    border: 1px solid var(--border); padding: 24px;
+  /* Card nav footer */
+  .card-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-top: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
   }
-  .log-modal h2 { font-family: var(--serif); font-size: 20px; font-weight: 400; margin-bottom: 18px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-  .form-group label { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; }
-  .form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); width: 100%; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); }
-  .form-group textarea { resize: vertical; height: 80px; }
-  .outcome-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .outcome-opt { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 6px; text-align: center; cursor: pointer; transition: all .12s; font-size: 11px; font-weight: 500; color: var(--muted); background: none; font-family: var(--sans); line-height: 1.4; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 20px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: none;
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text); transition: all .12s;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: .3; cursor: default; }
+  .nav-btn.next { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav-btn.next:hover:not(:disabled) { opacity: .88; }
+
+  /* MODALS (for log/reminder/calendar/edit) */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+  .modal-box { background: var(--surface); border-radius: 14px; width: 440px; max-width: 100%; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border); padding: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.8); }
+  .modal-box h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 6px; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .fg label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; }
+  .fg input, .fg textarea, .fg select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); width: 100%; }
+  .fg input:focus, .fg textarea:focus, .fg select:focus { outline: none; border-color: var(--accent); }
+  .fg textarea { resize: vertical; height: 75px; }
+  .outcome-opts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+  .outcome-opt { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 4px; text-align: center; cursor: pointer; font-size: 10px; font-weight: 500; color: var(--muted); background: none; font-family: var(--sans); line-height: 1.4; transition: all .12s; }
   .outcome-opt:hover { border-color: var(--accent); color: var(--text); }
   .outcome-opt.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
-  .outcome-opt .opt-icon { font-size: 18px; display: block; margin-bottom: 4px; }
-  .meeting-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 14px; }
+  .opt-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+  .meeting-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 12px; }
   .meeting-row label { font-size: 13px; flex: 1; }
-  .toggle-wrap { display: flex; gap: 6px; }
+  .toggle-wrap { display: flex; gap: 5px; }
   .toggle-btn { padding: 4px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; font-family: var(--sans); cursor: pointer; background: none; color: var(--muted); transition: all .12s; }
   .toggle-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
-  .btn-cancel { padding: 7px 16px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; cursor: pointer; color: var(--text); transition: background .12s; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .btn-cancel { padding: 7px 16px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; cursor: pointer; color: var(--text); }
   .btn-cancel:hover { background: var(--surface2); }
-  .btn-save { padding: 7px 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
-  .btn-save:hover { opacity: .88; }
-
-  /* ── Contact edit modal ── */
-  .edit-modal {
-    background: var(--surface); border-radius: 14px;
-    width: 500px; max-width: 100%; max-height: 90vh;
-    overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,.7);
-    border: 1px solid var(--border); padding: 26px;
-  }
-  .edit-modal h2 { font-family: var(--serif); font-size: 20px; font-weight: 400; margin-bottom: 18px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 11px; }
-  .form-group-inline { display: flex; flex-direction: column; gap: 5px; }
-  .form-group-inline.full { grid-column: 1 / -1; }
-  .form-group-inline label { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; }
-  .form-group-inline input, .form-group-inline select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); }
-  .form-group-inline input:focus, .form-group-inline select:focus { outline: none; border-color: var(--accent); }
-  .form-group-inline select option { background: var(--surface); }
-
-  /* ── Photo upload ── */
-  .photo-upload-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
-  .photo-preview { width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 500; overflow: hidden; position: relative; cursor: pointer; border: 2px dashed var(--border); transition: border-color .15s; }
-  .photo-preview:hover { border-color: var(--accent); }
-  .photo-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  .photo-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s; font-size: 14px; }
-  .photo-preview:hover .photo-overlay { opacity: 1; }
-  .photo-upload-info p { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .photo-btns { display: flex; gap: 6px; }
-  .photo-btn { font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; color: var(--text); cursor: pointer; font-family: var(--sans); transition: background .12s; }
-  .photo-btn:hover { background: var(--surface2); }
-  .photo-btn.remove { color: var(--danger); border-color: var(--danger); }
-  .photo-btn.remove:hover { background: rgba(224,85,85,.1); }
-  #f-photo-input { display: none; }
-
-  @media (max-width: 900px) {
-    .list-header, .contact-row { grid-template-columns: 44px 1fr 1fr 160px; }
-    .col-region, .col-last-call { display: none; }
-  }
-  @media (max-width: 600px) {
-    .list-header, .contact-row { grid-template-columns: 44px 1fr 140px; }
-    .col-location { display: none; }
-    .outcome-options { grid-template-columns: 1fr; }
-    .form-row { grid-template-columns: 1fr; }
-  }
+  .btn-save { padding: 7px 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .cal-open-btn { width: 100%; padding: 11px; background: #1a73e8; color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+  .cal-open-btn:hover { opacity: .9; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .fgi { display: flex; flex-direction: column; gap: 4px; }
+  .fgi.full { grid-column: 1/-1; }
+  .fgi label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; }
+  .fgi input, .fgi select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); }
+  .fgi input:focus, .fgi select:focus { outline: none; border-color: var(--accent); }
+  .fgi select option { background: var(--surface); }
 </style>
 </head>
 <body>
 <div id="app">
   <div class="top-bar">
+    <span class="top-bar-title">Relay</span>
     <div class="search-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" id="search" placeholder="Search contacts…" oninput="renderList()" />
@@ -253,389 +274,409 @@
     <div class="filter-row" id="state-filter-row"></div>
     <div class="filter-row" id="region-filter-row"></div>
     <div class="top-bar-right">
-      <span id="count-label" class="count-badge">0 contacts</span>
-      <button class="add-btn" onclick="openContactModal()">＋ Add contact</button>
+      <span id="count-label" class="count-badge">0</span>
+      <button class="add-btn" onclick="openContactModal(null)">＋ Add</button>
     </div>
   </div>
-
   <div class="list-header">
     <div></div>
     <div class="list-header-cell">Pastor / Church</div>
-    <div class="list-header-cell col-location">City, State · Region</div>
-    <div class="list-header-cell col-region">Phone</div>
-    <div class="list-header-cell col-last-call">Last call</div>
+    <div class="list-header-cell">City, State</div>
+    <div class="list-header-cell">Last call</div>
     <div class="list-header-cell" style="text-align:right">Actions</div>
   </div>
-
   <div class="main-list" id="main-list"></div>
+  <!-- Full screen card -->
+  <div id="fullscreen-card" class="fullscreen-card"></div>
+  <!-- Modal layer -->
+  <div id="modal-layer" style="position:fixed;inset:0;z-index:200;pointer-events:none;"></div>
 </div>
 
-<!-- Modal layer -->
-<div id="modal-layer" style="display:none"></div>
-
 <script>
-const STORAGE_KEY = 'il_coldcalls_v3';
-const SEED_KEY    = 'il_coldcalls_seeded_v3';
-const REGIONS = ['All','Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'];
-const AVATAR_COLORS = [
-  ['#1a2e22','#4a9e6b'],['#1a1f35','#6b7fd4'],['#2e1a1a','#d46b6b'],
-  ['#2e2a1a','#d4b06b'],['#251a2e','#a06bd4'],['#1a2a2e','#6bc4d4'],
-  ['#222222','#999999'],['#1e2a1a','#7ab06b'],
-];
-const OUTCOME_META = {
-  pastor:    { label:'Spoke to Pastor',         cls:'outcome-pastor',    lcb:'lcb-pastor',    icon:'🙋' },
-  voicemail: { label:'No Response / Voicemail', cls:'outcome-voicemail', lcb:'lcb-voicemail', icon:'📵' },
-  secretary: { label:'Spoke to Secretary',      cls:'outcome-secretary', lcb:'lcb-secretary', icon:'📋' },
-  imported:  { label:'Imported note',           cls:'outcome-imported',  lcb:'lcb-none',      icon:'📝' },
+const AC=[['#1a2e22','#4a9e6b'],['#1a1f35','#6b7fd4'],['#2e1a1a','#d46b6b'],['#2e2a1a','#d4b06b'],['#251a2e','#a06bd4'],['#1a2a2e','#6bc4d4'],['#222','#999'],['#1e2a1a','#7ab06b']];
+const OM={
+  pastor:{label:'Spoke to Pastor',cls:'outcome-pastor',lcb:'lcb-pastor',icon:'🙋'},
+  voicemail:{label:'No Response / Voicemail',cls:'outcome-voicemail',lcb:'lcb-voicemail',icon:'📵'},
+  secretary:{label:'Spoke to Secretary',cls:'outcome-secretary',lcb:'lcb-secretary',icon:'📋'},
+  imported:{label:'Imported note',cls:'outcome-imported',lcb:'lcb-none',icon:'📝'},
+  reminder:{label:'Reminder',cls:'outcome-reminder',lcb:'lcb-reminder',icon:'🔔'}
 };
+const REGS=['Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'];
+let contacts=[], fState='All', fReg='All', logOut=null, logMtg=false;
+let filteredList=[], callingIdx=0, contactMenuOpen=false;
 
-let contacts = [];
-let filterState = 'All';
-let filterReg = 'All';
-let pendingPhoto = null;
-let logCallOutcome = null;
-let logCallMeeting = false;
+const SAMPLE=[
+  {id:'c1',pastor:'Brandon Dillard',church:'Lamarsh Baptist Church',city:'Mapleton',state:'IL',region:'Central',email:'lamarshbaptist@gmail.com',phone:'(309) 697-4451',address:'9507 W Maple Ridge Rd',notes:[],photo:'',calls:[{id:'l1',date:'Imported',outcome:'imported',meetingBooked:false,meetingDate:'',details:'asked to send packet again'}]},
+  {id:'c2',pastor:'David Coyle',church:'Averyville Baptist Church',city:'East Peoria',state:'IL',region:'Central',email:'coyles55@yahoo.com',phone:'(309) 694-6476, (309) 453-9827',address:'1070 Spring Bay Rd',notes:[],photo:'',calls:[{id:'l2',date:'May 12, 2026',outcome:'pastor',meetingBooked:true,meetingDate:'June 3, 2026',details:'Great conversation — very interested in supporting'}]},
+  {id:'c3',pastor:'Curtis Cochran',church:'Calvary Baptist Church',city:'Chillicothe',state:'IL',region:'Central',email:'calvarychilli@yahoo.com',phone:'(309) 274-4343',address:'1028 Cloverdale Rd',notes:[],photo:'',calls:[]},
+  {id:'c4',pastor:'Allen Thompson',church:'Maplewood Bible Baptist Church',city:'Chicago',state:'IL',region:'Northeast',email:'maplewoodbiblebaptistchurch@gmail.com',phone:'(773) 545-6207',address:'4956 W George St',notes:[],photo:'',calls:[{id:'l3',date:'May 15, 2026',outcome:'secretary',meetingBooked:false,meetingDate:'',details:'Secretary took message, call back Thursday'}]},
+  {id:'c5',pastor:'Ralph Warren',church:'Lake County Baptist Temple',city:'Waukegan',state:'IL',region:'Northeast',email:'PastorRLW@aol.com',phone:'(847) 623-7600',address:'1550 W Yorkhouse Rd',notes:[],photo:'',calls:[{id:'l4',date:'May 10, 2026',outcome:'voicemail',meetingBooked:false,meetingDate:'',details:'Left detailed voicemail'}]},
+  {id:'c6',pastor:'Tommy McMurtry',church:'Liberty Baptist Church',city:'Rock Falls',state:'IL',region:'Northwest',email:'',phone:'(815) 625-4101',address:'2002 9th Ave',notes:[],photo:'',calls:[]},
+  {id:'c7',pastor:'Sean Hicks',church:'Cornerstone Baptist Church',city:'Salem',state:'IL',region:'South',email:'pastor@cornerstonesalem.com',phone:'(618) 548-1547',address:'3561 Boone St Rd',notes:[],photo:'',calls:[{id:'l5',date:'May 14, 2026',outcome:'reminder',meetingBooked:false,meetingDate:'',details:'Call back May 22'}]}
+];
 
-const SEED_DATA = [{"id": "c93ba13279f6", "pastor": "", "church": "Crossroads Baptist Church", "city": "Peoria", "address": "9600 N Broadway St, Peoria IL 61615", "region": "Central", "email": "pastor@crossroadspeoria.com", "phone": "(309) 328-3030", "notes": [], "photo": "", "calls": [{"id": "legacy_c93ba13279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.sermonaudio.com/crossroadspeoria; https://www.facebook.com/crossroadspeoria"}]}, {"id": "d879ba3279f6", "pastor": "Brandon Dillard", "church": "Lamarsh Baptist Church", "city": "Mapleton", "address": "9507 W Maple Ridge Rd, Mapleton IL 61547", "region": "Central", "email": "lamarshbaptist@gmail.com", "phone": "(309) 697-4451", "notes": [], "photo": "", "calls": [{"id": "legacy_d879ba3279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "asked to send paket again"}]}, {"id": "5121c33279f6", "pastor": "Chuck Sabaka", "church": "Calvary Baptist Church", "city": "Canton", "address": "20 N Avenue I, Canton IL 61520", "region": "Central", "email": "baptisteagle@sbcglobal.net", "phone": "(309) 647-3444", "notes": [], "photo": "", "calls": []}, {"id": "ba54313279f6", "pastor": "Curtis Cochran", "church": "Calvary Baptist Church", "city": "Chillicothe", "address": "1028 Cloverdale Rd, Chillicothe IL 61523", "region": "Central", "email": "calvarychilli@yahoo.com", "phone": "(309) 274-4343", "notes": [], "photo": "", "calls": [{"id": "legacy_ba54313279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to pastor"}]}, {"id": "3569db3279f6", "pastor": "David Coyle", "church": "Averyville Baptist Church", "city": "East Peoria", "address": "1070 Spring Bay Rd, East Peoria IL 61611", "region": "Central", "email": "coyles55@yahoo.com", "phone": "(309) 694-6476, (309) 453-9827", "notes": [], "photo": "", "calls": [{"id": "legacy_3569db3279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to pastor"}]}, {"id": "0ee9283279f6", "pastor": "David Lynn", "church": "First Baptist Church", "city": "Creve Coeur", "address": "425 Rusche Ave, Creve Coeur IL 61610", "region": "Central", "email": "ddlynn8@insightbb.com", "phone": "(309) 699-8691", "notes": [], "photo": "", "calls": []}, {"id": "bc08d63279f6", "pastor": "David Ratley", "church": "Faith Baptist Church", "city": "Bloomington", "address": "804 N Center St, Bloomington IL 61701", "region": "Central", "email": "john1033@hotmail.com", "phone": "(309) 827-4965", "notes": [], "photo": "", "calls": []}, {"id": "a5dedf3279f6", "pastor": "Duncan Smith", "church": "Park Meadows Baptist Church", "city": "Lincoln", "address": "800 N Memorial Park Rd, Lincoln IL 62656", "region": "Central", "email": "pastorsmithpmbc@ggmail.com, parkmeadowsbaptistchurch@gmail.com", "phone": "217.828.7137, 2177326900", "notes": [], "photo": "", "calls": [{"id": "legacy_a5dedf3279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "pastor - sent info and will get back with dates; http://parkmeadows.church; https://www.facebook.com/ParkMeadowsBaptist"}]}, {"id": "8f11163279f6", "pastor": "Glenn Foster", "church": "Good Shepherd Baptist Church", "city": "Henry", "address": "1376 CR 1350 N, Henry IL 61537", "region": "Central", "email": "gsbchenry@gmail.com", "phone": "(815) 228-3775", "notes": [], "photo": "", "calls": []}, {"id": "f5ff283279f6", "pastor": "Jay Arnold", "church": "The Cross Baptist Church", "city": "Pekin", "address": "4201 Edgewater Dr, Pekin IL 61604", "region": "Central", "email": "", "phone": "(309) 387-2767", "notes": [], "photo": "", "calls": []}, {"id": "a456b03279f6", "pastor": "Joey Watt", "church": "El Vista Baptist Church", "city": "Peoria", "address": "6301 N Syler St, Peoria IL 61615", "region": "Central", "email": "JWatt3@juno.com", "phone": "(309) 692-8675", "notes": [], "photo": "", "calls": [{"id": "legacy_a456b03279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "call back september"}]}, {"id": "a4ebea3279f6", "pastor": "John Horner", "church": "Liberty Baptist Church", "city": "Minier", "address": "PO Box 887; 212 E Central St, Minier IL 61759", "region": "Central", "email": "jlhorner@mtco.com", "phone": "(309) 392-3195", "notes": [], "photo": "", "calls": []}, {"id": "b6a3613279f6", "pastor": "John Worsham", "church": "Good Shepherd Baptist Church", "city": "Manito", "address": "32530 E Co Rd 2180 N, Manito IL 61546", "region": "Central", "email": "pastorjw1@hotmail.com", "phone": "309) 968-7103", "notes": [], "photo": "", "calls": []}, {"id": "9d24a53279f6", "pastor": "Keith Thibo", "church": "Bay View Baptist Church", "city": "East Peoria", "address": "105 Woodland Hills Dr, East Peoria IL 61611", "region": "Central", "email": "bvbcevents@gmail.com", "phone": "(309) 698-2000", "notes": [], "photo": "", "calls": []}, {"id": "bbd8f63279f6", "pastor": "Lee Taylor", "church": "Princeville Baptist Church", "city": "Princeville", "address": "235 W Douglas St, Princeville IL 61559", "region": "Central", "email": "princevillebapt@gmail.com", "phone": "(309) 385-2592", "notes": [], "photo": "", "calls": []}, {"id": "d94f5f3279f6", "pastor": "Marty Montgomery", "church": "Capital Baptist Church", "city": "Springfield", "address": "2721 Fillmore St", "region": "Central", "email": "montgomerys.springfield2015@gmail.com", "phone": "2172102479", "notes": [], "photo": "", "calls": []}, {"id": "1b51853279f6", "pastor": "Nathan Noyes", "church": "Gethsemane Church", "city": "Pekin", "address": "1601 Frederick Dr, Pekin IL 61554", "region": "Central", "email": "thegethsemanechurch@gmail.com, nathannoyes@mikemurphyford.com", "phone": "(773) 595-4668, 3093467791", "notes": [], "photo": "", "calls": [{"id": "legacy_1b51853279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.thegethsemanechurch.com; https://www.facebook.com/gethsemane.church.3"}]}, {"id": "20d01b3279f6", "pastor": "Randy Justus", "church": "Grace Baptist Church", "city": "Pekin", "address": "1301 S 14th St, Pekin IL 61554", "region": "Central", "email": "", "phone": "(309) 346-3507", "notes": [], "photo": "", "calls": []}, {"id": "d201673279f6", "pastor": "Rod Mattoon", "church": "Lincoln Land Baptist Church", "city": "Springfield", "address": "PO Box 4504; 4805 Old Rt 36, Springfield IL 62708", "region": "Central", "email": "dr.mattoon@juno.com", "phone": "(217) 525-3553", "notes": [], "photo": "", "calls": []}, {"id": "b961ed3279f6", "pastor": "Stephen Barr", "church": "Faith Baptist Temple", "city": "Eureka", "address": "107 N Major St, Eureka IL 61530", "region": "Central", "email": "", "phone": "(309) 467-5328", "notes": [], "photo": "", "calls": []}, {"id": "6f01623279f6", "pastor": "Steve Rowell", "church": "Bethel Baptist Church", "city": "Pekin", "address": "2720 Broadway, Pekin IL 61554", "region": "Central", "email": "bbc.pekin@gmail.com", "phone": "(309) 347-7210", "notes": [], "photo": "", "calls": []}, {"id": "a67d643279f6", "pastor": "Terry Rowell", "church": "Bible Baptist Church", "city": "Peoria", "address": "6707 N Sheridan Rd", "region": "Central", "email": "pngrev@aol.com", "phone": "3096861296", "notes": [], "photo": "", "calls": [{"id": "legacy_a67d643279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://bbcpeoria.org"}]}, {"id": "30cb313279f6", "pastor": "Thad Peacock", "church": "Grace Baptist Church", "city": "Springfield", "address": "2812 S Walnut St, Springfield IL 62704", "region": "Central", "email": "", "phone": "(217) 522-2881", "notes": [], "photo": "", "calls": []}, {"id": "6dbbd63279f6", "pastor": "Tim Beddingfield", "church": "Cedar Hills Baptist Church", "city": "Dunlap", "address": "12716 N Allen Rd, Dunlap IL 61525", "region": "Central", "email": "cedarhillsbaptistchurch@gmail.com", "phone": "(309) 243-7686", "notes": [], "photo": "", "calls": [{"id": "legacy_6dbbd63279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "secretary - gave info"}]}, {"id": "431f433279f6", "pastor": "Timothy Severt", "church": "Harvest Baptist Temple", "city": "Mackinaw", "address": "PO Box 949; 200 E Fast Ave, Mackinaw IL 61755", "region": "Central", "email": "", "phone": "(309) 642-4606", "notes": [], "photo": "", "calls": []}, {"id": "78fe073279f6", "pastor": "Vince Kobosh", "church": "Freedom Baptist Church", "city": "Bloomington", "address": "2006 Fox Creek Rd, Bloomington IL 61701", "region": "Central", "email": "vbkbak40@gmail.com", "phone": "(309) 750-1686", "notes": [], "photo": "", "calls": []}, {"id": "2eaa0f3279f6", "pastor": "William Pierce", "church": "Berea Baptist Church", "city": "Bartonville", "address": "7609 W Smithville Rd, Bartonville IL 61607", "region": "Central", "email": "wepierce@juno.com", "phone": "(309) 697-3392", "notes": [], "photo": "", "calls": [{"id": "legacy_2eaa0f3279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "MISSIONS APARTMENT (small) - too small to take us on"}]}, {"id": "8cc6ee3279f6", "pastor": "Zach Rogers", "church": "Bible Baptist Church", "city": "Bartonville", "address": "9024 W Lancaster Rd, Bartonville IL 61607", "region": "Central", "email": "", "phone": "(309) 621-1732", "notes": [], "photo": "", "calls": [{"id": "legacy_8cc6ee3279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "doesnt support missionaries / has prophets chamber and said we can base out of there"}]}, {"id": "35fb163279f6", "pastor": "Jonathan Roberson", "church": "First Baptist Church of Clinton", "city": "Clinton", "address": "220 Illini Dr, Clinton, IL 61727", "region": "Central", "email": "preacherman61727@yahoo.com", "phone": "2177917848", "notes": [], "photo": "", "calls": []}, {"id": "df2d603279f6", "pastor": "", "church": "Grace Baptist Church", "city": "Decatur", "address": "3770 N Water St, Decatur IL 62526", "region": "Central East", "email": "", "phone": "(217) 877-0009", "notes": [], "photo": "", "calls": []}, {"id": "cd7acf3279f6", "pastor": "", "church": "Latham Baptist Church", "city": "Latham", "address": "331 N Macon St, Latham IL 62543", "region": "Central East", "email": "", "phone": "(217) 674-3366", "notes": [], "photo": "", "calls": []}, {"id": "dae2153279f6", "pastor": "Allan Harris", "church": "Faith Baptist Church", "city": "Tuscola", "address": "300 E North Line Rd, Tuscola IL 61953", "region": "Central East", "email": "", "phone": "(217) 253-2084", "notes": [], "photo": "", "calls": []}, {"id": "ed16093279f6", "pastor": "Allan Rudie", "church": "Faith Baptist Church", "city": "Danville", "address": "920 Warrington Ave, Danville IL 61832", "region": "Central East", "email": "info@faithdanville.org", "phone": "(217) 443-3743", "notes": [], "photo": "", "calls": []}, {"id": "4524193279f6", "pastor": "Brandon Tipsword", "church": "Faith Baptist Church", "city": "Champaign", "address": "4601 N Market St", "region": "Central East", "email": "fbcchampaign@gmail.com", "phone": "2173679918", "notes": [], "photo": "", "calls": [{"id": "legacy_4524193279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.fbccu.org; https://www.facebook.com/Faith-Baptist-Church-975154892512427/"}]}, {"id": "4b82f33279f6", "pastor": "Bryan McDonald", "church": "Prairie View Baptist Church", "city": "Lake City", "address": "2663 Main St, Lake City IL 61937", "region": "Central East", "email": "", "phone": "(217) 873-2464", "notes": [], "photo": "", "calls": []}, {"id": "c2cea63279f6", "pastor": "Daniel Haifley", "church": "Maranatha Baptist Church", "city": "Mattoon", "address": "3400 DeWitt Ave, Mattoon IL 61938", "region": "Central East", "email": "", "phone": "(217) 234-4777", "notes": [], "photo": "", "calls": [{"id": "legacy_c2cea63279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "said not availible now - call back at 1:00 PM (2/23/26)"}]}, {"id": "a552ed3279f6", "pastor": "Derek Bradshaw", "church": "Salem Baptist Church", "city": "Decatur", "address": "2650 S Taylorville Rd, Decatur IL 62521", "region": "Central East", "email": "pastorDerekBradshaw@gmail.com", "phone": "(217) 422-4274", "notes": [], "photo": "", "calls": [{"id": "legacy_a552ed3279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to pastor"}]}, {"id": "5f58453279f6", "pastor": "James LeCrone", "church": "Metropolitan Baptist Church", "city": "Decatur", "address": "2339 N Oakland Ave, Decatur IL 62526", "region": "Central East", "email": "", "phone": "(217) 877-0998", "notes": [], "photo": "", "calls": []}, {"id": "6073e83279f6", "pastor": "James Wagahoff", "church": "Blessed Hope Baptist Church", "city": "Raymond", "address": "PO Box 603; Rt 48 W, Raymond IL 62560", "region": "Central East", "email": "revwag@yahoo.com, jonandamywagahoff@gmail.com", "phone": "(217) 836-0860, 2172509688", "notes": [], "photo": "", "calls": [{"id": "legacy_6073e83279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.blessedhopebaptistchurch.com; https://www.facebook.com/bhbcraymond/"}]}, {"id": "1eb6c33279f6", "pastor": "Jeremy Baier", "church": "Pillar and Ground Independent Baptist Church", "city": "Gibson City", "address": "628 E 12th St, Gibson City IL 60936", "region": "Central East", "email": "", "phone": "(217) 840-1566", "notes": [], "photo": "", "calls": [{"id": "legacy_1eb6c33279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "closing church; https://www.pillarandgroundgibson.com"}]}, {"id": "054c623279f6", "pastor": "Larry Simon", "church": "Bible Baptist Church", "city": "Pana", "address": "203 N Poplar St, Pana IL 62557", "region": "Central East", "email": "plsimon60@hotmail.com", "phone": "(217) 562-2380", "notes": [], "photo": "", "calls": []}, {"id": "2d67b53279f6", "pastor": "Levi Deatrick", "church": "Grace Baptist Church", "city": "Paxton", "address": "931 S Railroad Ave, Paxton IL 60957", "region": "Central East", "email": "gbcpaxton@gmail.com", "phone": "(217) 379-3456", "notes": [], "photo": "", "calls": []}, {"id": "83e85f3279f6", "pastor": "Lucas Shelley", "church": "Southside Baptist Church", "city": "Effingham", "address": "2308 S Veterans Dr, Effingham IL 62401", "region": "Central East", "email": "ssbceff@gmail.com", "phone": "(217) 347-5116", "notes": [], "photo": "", "calls": []}, {"id": "024b113279f6", "pastor": "Mitch Estep", "church": "First Baptist Church", "city": "Monticello", "address": "114 N Emerson St, Monticello IL 61856", "region": "Central East", "email": "", "phone": "(217) 762-2161", "notes": [], "photo": "", "calls": []}, {"id": "b848383279f6", "pastor": "Randy Miller", "church": "Knobs Baptist Church", "city": "Tower Hill", "address": "1486 N 900 East Rd, Tower Hill IL 62571", "region": "Central East", "email": "millerkbc@gmail.com", "phone": "(217) 567-3290", "notes": [], "photo": "", "calls": []}, {"id": "49a8d83279f6", "pastor": "Robert Brown", "church": "Central Baptist Church", "city": "Decatur", "address": "945 S Jasper St, Decatur IL 62521", "region": "Central East", "email": "info@cbcdecatur.net", "phone": "(217) 615-1980", "notes": [], "photo": "", "calls": [{"id": "legacy_49a8d83279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://cbcdecatur.net; https://www.facebook.com/centralbaptistchurchdecatur/"}]}, {"id": "3edf7f3279f6", "pastor": "Ronald Emel", "church": "Oak Grove Baptist Church", "city": "Bethany", "address": "1466 County Rd 625 E, Bethany IL 61914", "region": "Central East", "email": "", "phone": "(217) 665-3977", "notes": [], "photo": "", "calls": []}, {"id": "97bc9a3279f6", "pastor": "Ryan Banman", "church": "East Park Baptist Church", "city": "Decatur", "address": "1919 Baltimore Ave, Decatur IL 62521", "region": "Central East", "email": "epbchurch@juno.com", "phone": "(217) 422-1033", "notes": [], "photo": "", "calls": []}, {"id": "6cd15d3279f6", "pastor": "Ryan Hayden", "church": "Bible Baptist Church", "city": "Mattoon", "address": "3401 Marion Ave, Mattoon IL 61938", "region": "Central East", "email": "", "phone": "(217) 402-9959", "notes": [], "photo": "", "calls": []}, {"id": "a9c9b33279f6", "pastor": "Steve House", "church": "Temple Baptist Church", "city": "Decatur", "address": "1818 E Mound Rd, Decatur IL 62526", "region": "Central East", "email": "missions@tbcdecatur.com", "phone": "(217) 877-7030", "notes": [], "photo": "", "calls": [{"id": "legacy_a9c9b33279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "call back around 12:15 on 2/26"}]}, {"id": "25c8973279f6", "pastor": "Terry Anglea", "church": "Faith Baptist Church", "city": "Bourbonnais", "address": "1280 Armour Rd, Bourbonnais IL 60914", "region": "Central East", "email": "faithbc.missions@gmail.com", "phone": "(815) 933-9400, (815) 937-0394", "notes": [], "photo": "", "calls": [{"id": "legacy_25c8973279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.faith-bc.com/home.html"}]}, {"id": "8829123279f6", "pastor": "Tyson Olheiser", "church": "Calvary Baptist Church", "city": "Urbana", "address": "2106 E Windsor Rd, Urbana IL 61802", "region": "Central East", "email": "office@cbcurbana.org", "phone": "(217) 367-2262", "notes": [], "photo": "", "calls": [{"id": "legacy_8829123279f6", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to pastor"}]}, {"id": "ae54cd3279f7", "pastor": "", "church": "First Christian Church", "city": "Dallas City", "address": "167 E Third St, Dallas City IL 62330", "region": "Central West", "email": "", "phone": "(217) 852-3264", "notes": [], "photo": "", "calls": []}, {"id": "b3faed3279f7", "pastor": "", "church": "Lighthouse Baptist Church", "city": "Griggsville", "address": "205 S Stanford St, Griggsville IL 62340", "region": "Central West", "email": "", "phone": "(217) 833-2542", "notes": [], "photo": "", "calls": []}, {"id": "eb87733279f7", "pastor": "Caleb Sparrow", "church": "First Baptist Church", "city": "Colchester", "address": "PO Box 332; 301 E South St, Colchester IL 62326", "region": "Central West", "email": "", "phone": "(309) 431-1687", "notes": [], "photo": "", "calls": []}, {"id": "fe35333279f7", "pastor": "David Hamilton", "church": "Emmanuel Baptist Church", "city": "Kewanee", "address": "220 W Mill St, Kewanee IL 61443", "region": "Central West", "email": "", "phone": "(309) 852-2455", "notes": [], "photo": "", "calls": []}, {"id": "a6f73b3279f7", "pastor": "Gary McKee", "church": "Shooting Park Road Baptist Church", "city": "Peru", "address": "4281 Shooting Park Rd, Peru IL 61354", "region": "Central West", "email": "", "phone": "(815) 223-2800", "notes": [], "photo": "", "calls": []}, {"id": "61bbe13279f7", "pastor": "Greg Hill", "church": "First Baptist Church", "city": "Versailles", "address": "PO Box 158; 111 E 1st St, Versailles IL 62378", "region": "Central West", "email": "swhall@adams.net", "phone": "(217) 225-3555", "notes": [], "photo": "", "calls": []}, {"id": "a501253279f7", "pastor": "Joe Hamilton", "church": "First Baptist Church", "city": "Wyoming", "address": "500 N Main St, Wyoming IL 61491", "region": "Central West", "email": "firstbaptistchurch@amen.net", "phone": "(309) 695-4035", "notes": [], "photo": "", "calls": []}, {"id": "ccf0543279f7", "pastor": "Joe Tonellato", "church": "Lighthouse Baptist Church", "city": "Jacksonville", "address": "310 N Clay Ave, Jacksonville IL 62650", "region": "Central West", "email": "", "phone": "(217) 245-0287", "notes": [], "photo": "", "calls": []}, {"id": "8081c73279f7", "pastor": "Ken Sanders", "church": "Meredosia First Baptist Church", "city": "Meredosia", "address": "210 N Marion St, Meredosia IL 62665", "region": "Central West", "email": "", "phone": "(217) 584-1486", "notes": [], "photo": "", "calls": []}, {"id": "5c800b3279f7", "pastor": "Larry Mulch", "church": "Park View Bible Church", "city": "Hamilton", "address": "PO Box 43; 380 N 18th St, Hamilton IL 62341", "region": "Central West", "email": "", "phone": "(217) 847-2717", "notes": [], "photo": "", "calls": []}, {"id": "86ca9a3279f7", "pastor": "Richard Shriber", "church": "Good News Baptist Church", "city": "Galesburg", "address": "1074 Monroe St, Galesburg IL 61401", "region": "Central West", "email": "gnbc1611@gmail.com", "phone": "(309) 344-5800", "notes": [], "photo": "", "calls": []}, {"id": "e4c0aa3279f7", "pastor": "William Hall", "church": "Heritage Baptist Church", "city": "Princeton", "address": "818 N Church St, Princeton IL 61356", "region": "Central West", "email": "Heritagebcprinceton@gmail.com", "phone": "(815) 872-2022", "notes": [], "photo": "", "calls": []}, {"id": "eaa32b3279f7", "pastor": "Leejay Richards", "church": "Naperville Baptist Church", "city": "Naperville", "address": "500 Warwick Drive Naperville, IL 60565", "region": "Norheast", "email": "info@napervillebaptist.church", "phone": "7656152333", "notes": [], "photo": "", "calls": []}, {"id": "a04e8f3279f7", "pastor": "Aaron Butts", "church": "Lighthouse Baptist Church", "city": "Lasalle", "address": "3194 Rt 251 N", "region": "North", "email": "Lighthouse88@hotmail.com", "phone": "8152234050", "notes": [], "photo": "", "calls": [{"id": "legacy_a04e8f3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://lasalle.church"}]}, {"id": "35ca1d3279f7", "pastor": "Kevin Spears", "church": "Fellowship Baptist Church", "city": "Sycamore", "address": "2425 Bethany Rd", "region": "North", "email": "", "phone": "8155171569", "notes": [], "photo": "", "calls": [{"id": "legacy_35ca1d3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.fbcofdekalb.com"}]}, {"id": "78bb383279f7", "pastor": "Micah Potter", "church": "Heritage Baptist Church", "city": "Roscoe", "address": "12848 Willowbrook Rd", "region": "North", "email": "INFO@heritageroscoe.org", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_78bb383279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://heritageroscoe.org"}]}, {"id": "28dcbb3279f7", "pastor": "Phillip Willard", "church": "Bible Baptist Church of Harrison", "city": "Rockton", "address": "11878 Genessee St", "region": "North", "email": "", "phone": "", "notes": [], "photo": "", "calls": []}, {"id": "13aac23279f7", "pastor": "", "church": "Emmanuel Baptist Church", "city": "Lemont", "address": "1195 McCarthy Rd, Lemont IL 60439", "region": "Northeast", "email": "Emmanuelchurchlemontil@gmail.com", "phone": "(630) 257-8484", "notes": [], "photo": "", "calls": []}, {"id": "24f5263279f7", "pastor": "Aaron Barrett", "church": "Heartland Baptist Church", "city": "Antioch", "address": "1350 Main St", "region": "Northeast", "email": "Pastor@HBCAntioch.com", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_24f5263279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.hbcantioch.com"}]}, {"id": "16876a3279f7", "pastor": "Abraham Chae", "church": "Grace Baptist Church", "city": "Lockport", "address": "501 N State St, Lockport IL 60441", "region": "Northeast", "email": "gbclockport@gmail.com", "phone": "(815) 838-0718", "notes": [], "photo": "", "calls": [{"id": "legacy_16876a3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.gbcoflockport.com; https://www.facebook.com/Grace-Baptist-Church-111673138870323/"}]}, {"id": "88cf103279f7", "pastor": "Adam Bjork", "church": "Lighthouse Baptist Church", "city": "Elgin", "address": "385 Silver St, Elgin IL 60123", "region": "Northeast", "email": "", "phone": "(847) 742-2974", "notes": [], "photo": "", "calls": [{"id": "legacy_88cf103279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "texted dates"}]}, {"id": "5a87513279f7", "pastor": "Allen Thompson", "church": "Maplewood Bible Baptist Church", "city": "Chicago", "address": "4956 W George St, Chicago IL 60641", "region": "Northeast", "email": "maplewoodbiblebaptistchurch@gmail.com, pastorallenthompson@gmail.com", "phone": "(773) 545-6207", "notes": [], "photo": "", "calls": [{"id": "legacy_5a87513279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.maplewoodbiblebaptistchurch.org/; https://www.facebook.com/Maplewood-Bible-Baptist-Church-141755032523160/"}]}, {"id": "d8fb633279f7", "pastor": "Barry Lee", "church": "First Baptist Church", "city": "Sauk Village", "address": "22240 Burnham Ave", "region": "Northeast", "email": "fbcsv@hotmail.com", "phone": "7087584010", "notes": [], "photo": "", "calls": [{"id": "legacy_d8fb633279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.heartsinservice.org; https://www.facebook.com/First-Baptist-Church-of-Sauk-Village-223216001040598/"}]}, {"id": "78d55a3279f7", "pastor": "Bill Clark", "church": "First Baptist Church", "city": "Bridgeview", "address": "7259 W 74th St, Bridgeview IL 60455", "region": "Northeast", "email": "fbcbridgeview@yahoo.com", "phone": "(708) 546-0517, 7084582429", "notes": [], "photo": "", "calls": [{"id": "legacy_78d55a3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.fbcbridgeview.org; https://www.facebook.com/First-Baptist-Church-of-Bridgeview-136047963087440/"}]}, {"id": "cfc07d3279f7", "pastor": "Bill Dustin", "church": "State Road Baptist Church", "city": "Burbank", "address": "8310 State Rd, Burbank IL 60459", "region": "Northeast", "email": "", "phone": "(708) 636-5748", "notes": [], "photo": "", "calls": [{"id": "legacy_cfc07d3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "https://www.facebook.com/StateRoadBaptistChurch/"}]}, {"id": "8e2ccd3279f7", "pastor": "Bill Stedman", "church": "Faith Baptist Church", "city": "Posen", "address": "14841 S Kedzie Ave, Posen IL 60469", "region": "Northeast", "email": "fbcposen@sbcglobal.net", "phone": "(708) 597-2325, (708) 331-0403", "notes": [], "photo": "", "calls": [{"id": "legacy_8e2ccd3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to the pastor"}]}, {"id": "3770473279f7", "pastor": "Brett Hanyes", "church": "Beecher Fellowship Baptist Church", "city": "Beecher", "address": "PO Box 197; 1160 Romans Rd, Beecher IL 60401", "region": "Northeast", "email": "bfbch1611@gmail.com", "phone": "219.713.7378, 7089466020", "notes": [], "photo": "", "calls": []}, {"id": "0e55d43279f7", "pastor": "Brian Nutter", "church": "First Baptist Church", "city": "Crete", "address": "1156 W New Monee Rd, Crete IL 60417", "region": "Northeast", "email": "fbccrete@sbcglobal.net", "phone": "(708) 672-5944", "notes": [], "photo": "", "calls": []}, {"id": "170a583279f7", "pastor": "Brian Petrick", "church": "Biblical Baptist Church", "city": "Waukegan", "address": "39236 N Green Bay Rd, Waukegan IL 60087", "region": "Northeast", "email": "", "phone": "(847) 417-8621", "notes": [], "photo": "", "calls": []}, {"id": "94f0b03279f7", "pastor": "Brian Roose", "church": "New Beginnings Baptist Church", "city": "Creston", "address": "PO Box 220; 305 N Grove St, Creston IL 60113", "region": "Northeast", "email": "alroose@comcast.net", "phone": "(815) 384-3194", "notes": [], "photo": "", "calls": []}, {"id": "d043c03279f7", "pastor": "Casey Coughlin", "church": "The Welcome Hill Missionary Baptist Church", "city": "Lemont", "address": "11461 Bell Rd", "region": "Northeast", "email": "welcome2welcomehill@gmail.com", "phone": "6302576611", "notes": [], "photo": "", "calls": [{"id": "legacy_d043c03279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "https://www.welcomehill.org/; https://www.facebook.com/Welcome-Hill-Baptist-Church-115790508441485/"}]}, {"id": "9c25993279f7", "pastor": "Courtney Lewis", "church": "Cornerstone Baptist Church", "city": "Chicago", "address": "1210 E 62nd St", "region": "Northeast", "email": "cornerstonebaptistchurchcares@gmail.com", "phone": "7736431865", "notes": [], "photo": "", "calls": [{"id": "legacy_9c25993279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.cornerstonebaptistchicago.com/"}]}, {"id": "86e4023279f7", "pastor": "Dale Steenhoven", "church": "Will County Baptist Church", "city": "Joliet", "address": "625 McDonough St, Joliet, IL 60436", "region": "Northeast", "email": "steenhoven@yahoo.com", "phone": "(815) 726-4127", "notes": [], "photo": "", "calls": []}, {"id": "48ca773279f7", "pastor": "Daniel Higgason", "church": "Sauk Village Baptist Church", "city": "Sauk Village", "address": "1918 E 223rd St, Sauk Village IL 60411", "region": "Northeast", "email": "", "phone": "(708) 757-4284", "notes": [], "photo": "", "calls": []}, {"id": "91c0fb3279f7", "pastor": "Daniel Woodward", "church": "First Baptist Church", "city": "Dwight", "address": "401 N Clinton St, Dwight IL 60420", "region": "Northeast", "email": "", "phone": "(815) 584-3182, (815) 584-1682", "notes": [], "photo": "", "calls": []}, {"id": "adfecb3279f7", "pastor": "Daryl York", "church": "Brentwood Baptist Church", "city": "Des Plaines", "address": "588 Dara James, Des Plaines IL 60016", "region": "Northeast", "email": "webmaster@brentwoodbapt.org, missions@brentwoodbapt.org, pastoryork@brentwoodbapt.org", "phone": "(847) 298-3399", "notes": [], "photo": "", "calls": [{"id": "legacy_adfecb3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to pastor; http://brentwoodbapt.org; https://www.facebook.com/BrentwoodBaptistChurchDesPlaines/"}]}, {"id": "9114c93279f7", "pastor": "David Meece", "church": "Westlawn Baptist Church", "city": "Chicago", "address": "6401 S Komensky Ave, Chicago IL 60632", "region": "Northeast", "email": "elmerritt@aol.com", "phone": "(773) 284-6451", "notes": [], "photo": "", "calls": [{"id": "legacy_9114c93279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://westlawnbaptistchicago.com; https://www.facebook.com/westlawnbaptistchicago/"}]}, {"id": "5bd8df3279f7", "pastor": "Den Karrow", "church": "Fifty-Eighth Avenue Baptist Church", "city": "Cicero", "address": "2228 S 58th Ave, Cicero IL 60804", "region": "Northeast", "email": "", "phone": "(708) 656-8737", "notes": [], "photo": "", "calls": []}, {"id": "f48fcc3279f7", "pastor": "Dennis Cocks", "church": "New Hope Baptist Church", "city": "Plano", "address": "4101 Needham Rd, Plano IL 60545", "region": "Northeast", "email": "faithfulword1@gmail.com", "phone": "630.882.0882", "notes": [], "photo": "", "calls": [{"id": "legacy_f48fcc3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to pastor"}]}, {"id": "0433bf3279f7", "pastor": "Dustin Moore", "church": "Ravenswood Baptist Church", "city": "Chicago", "address": "4455 N Seeley Ave, Chicago IL 60625", "region": "Northeast", "email": "rbcchicago1@sbcglobal.net", "phone": "(773) 561-6576", "notes": [], "photo": "", "calls": [{"id": "legacy_0433bf3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "missed him - call 2/4/26"}]}, {"id": "9f3a623279f7", "pastor": "Edward Fort", "church": "Mission Independent Baptist Church", "city": "Chicago", "address": "1766 W Devon Ave", "region": "Northeast", "email": "FortChicag@aol.com", "phone": "7732679132", "notes": [], "photo": "", "calls": [{"id": "legacy_9f3a623279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "https://www.missionindependentbaptistchurchchicago.com/; https://www.facebook.com/fortchicago/"}]}, {"id": "eb446d3279f7", "pastor": "Gil Palmer", "church": "First Baptist Church", "city": "Lockport", "address": "800 Thornton Ave, Lockport IL 60441", "region": "Northeast", "email": "fbclockportil@gmail.com", "phone": "(815) 838-4004", "notes": [], "photo": "", "calls": [{"id": "legacy_eb446d3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "call back 3/5"}]}, {"id": "0b6ac83279f7", "pastor": "Jack Lezza", "church": "Independent Baptist Church", "city": "Bolingbrook", "address": "380 W Boughton Rd, Bolingbrook IL 60440", "region": "Northeast", "email": "office@ibcbolingbrook.org, PastorJack@ibcbolingbrook.org", "phone": "(630) 759-1900", "notes": [], "photo": "", "calls": [{"id": "legacy_0b6ac83279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave info to the pastor; http://www.ibcbolingbrook.org; https://www.facebook.com/ibcbolingbrook/"}]}, {"id": "91fe893279f7", "pastor": "Jim Jett", "church": "South Side Baptist Church", "city": "Oak Lawn", "address": "10110 S Central Ave, Oak Lawn IL 60453", "region": "Northeast", "email": "", "phone": "(708) 425-3435", "notes": [], "photo": "", "calls": []}, {"id": "9adf483279f7", "pastor": "John Reed", "church": "Hazelgreen Baptist Church", "city": "Alsip", "address": "5022 W 115th St, Alsip IL 60803", "region": "Northeast", "email": "info@hazelgreenbaptist.com", "phone": "(708) 389-5941", "notes": [], "photo": "", "calls": []}, {"id": "7b2c2d3279f7", "pastor": "John Willis", "church": "Waymark Baptist Temple", "city": "Aurora", "address": "N/A", "region": "Northeast", "email": "", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_7b2c2d3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://waymarkbaptist.faithweb.com"}]}, {"id": "266a623279f7", "pastor": "Joseph Soldano", "church": "Fox River Bible Church", "city": "South Elgin", "address": "260 E Spring Ave", "region": "Northeast", "email": "foxriverbiblechurchkjv@gmail.com", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_266a623279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://foxriverbiblechurch.com; https://www.facebook.com/FoxRiverBibleChurch/"}]}, {"id": "86a6163279f7", "pastor": "Keith Ellis", "church": "Jordan Baptist Church", "city": "Burbank", "address": "5040 W 87th St, Burbank IL 60459", "region": "Northeast", "email": "", "phone": "(708) 636-8632", "notes": [], "photo": "", "calls": []}, {"id": "e8e5a33279f7", "pastor": "Kerry Allen", "church": "Fox River Baptist Church", "city": "Aurora", "address": "1205 7th Ave, Aurora IL 60505", "region": "Northeast", "email": "kerryjamesallen@yahoo.com", "phone": "(630) 820-5870", "notes": [], "photo": "", "calls": []}, {"id": "d7ced93279f7", "pastor": "Lampton Liddell", "church": "New Eden Baptist Church", "city": "Chicago", "address": "634 W 59th St, Chicago IL 60621", "region": "Northeast", "email": "churchneweden@yahoo.com", "phone": "(773) 651-6440", "notes": [], "photo": "", "calls": [{"id": "legacy_d7ced93279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://newedenbapt.tripod.com/"}]}, {"id": "e07f6b3279f7", "pastor": "Larry Koontz", "church": "Faithway Baptist Church", "city": "Hampshire", "address": "195 Washington Ave", "region": "Northeast", "email": "FaithwayBaptistChurch@gmail.com", "phone": "8153219366", "notes": [], "photo": "", "calls": [{"id": "legacy_e07f6b3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.faithwaybc.org"}]}, {"id": "07a5d93279f7", "pastor": "Mike French", "church": "Victory Baptist Church", "city": "Alsip", "address": "12451 S Kostner Ave, Alsip IL 60658", "region": "Northeast", "email": "victory.il@juno.com", "phone": "(312) 519-5412", "notes": [], "photo": "", "calls": []}, {"id": "ce08603279f7", "pastor": "Nathan Barber", "church": "Shorewood Baptist Church", "city": "Joliet", "address": "1113 Republic Ave Unit 2, Joliet IL 60435", "region": "Northeast", "email": "", "phone": "(779) 379-5080", "notes": [], "photo": "", "calls": []}, {"id": "8650a73279f7", "pastor": "Phil Cavanaugh", "church": "Northwest Bible Baptist Church", "city": "Elgin", "address": "9N889 Nesler Rd", "region": "Northeast", "email": "missions@nwbbc.com", "phone": "8476956222", "notes": [], "photo": "", "calls": [{"id": "legacy_8650a73279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://nwbbc.com; https://www.facebook.com/nwbbc"}]}, {"id": "9481893279f7", "pastor": "Ralph Warren", "church": "Lake County Baptist Temple", "city": "Waukegan", "address": "1550 W Yorkhouse Rd, Waukegan IL 60087", "region": "Northeast", "email": "PastorRLW@aol.com", "phone": "(847) 623-7600", "notes": [], "photo": "", "calls": [{"id": "legacy_9481893279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "secretary - pastor out of country - call back in april"}]}, {"id": "604f693279f7", "pastor": "Ronald Rueben", "church": "Lighthouse Baptist Church", "city": "Plainfield", "address": "13909 S Budler Rd, Plainfield IL 60544", "region": "Northeast", "email": "pastor@lbc3.org", "phone": "(815) 886-3909", "notes": [], "photo": "", "calls": [{"id": "legacy_604f693279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.lbc3.org"}]}, {"id": "4e56fd3279f7", "pastor": "Sam Waterloo", "church": "Sauk Trail Baptist Temple", "city": "Richton Park", "address": "4411 Sauk Trail", "region": "Northeast", "email": "office@stbt.org", "phone": "7084811490", "notes": [], "photo": "", "calls": [{"id": "legacy_4e56fd3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.stbt.org; https://www.facebook.com/stbt.org"}]}, {"id": "6d5ef13279f7", "pastor": "Tim Wright", "church": "Lighthouse Baptist Church", "city": "Zion", "address": "1901 Hermon Ave", "region": "Northeast", "email": "", "phone": "8477318801", "notes": [], "photo": "", "calls": [{"id": "legacy_6d5ef13279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://zlbchurch.org"}]}, {"id": "67430c3279f7", "pastor": "Timothy Spitsbergen", "church": "Calvary Baptist Church", "city": "Tinley Park", "address": "17430 94th Ave, Tinley Park IL 60477", "region": "Northeast", "email": "cbctinleypark@gmail.com", "phone": "(708) 349-0107", "notes": [], "photo": "", "calls": []}, {"id": "75f9b03279f7", "pastor": "David Hemphill", "church": "Valley Baptist Church", "city": "Oswego", "address": "2480 Wolf\u2019s Crossing Rd, Oswego, IL 60543", "region": "Northeast", "email": "pastor@valleybaptist.com", "phone": "6306088264", "notes": [], "photo": "", "calls": []}, {"id": "c4c1163279f7", "pastor": "Al Bugbee", "church": "Victory Baptist Church", "city": "Rockford", "address": "7028 Rydberg Rd, Rockford IL 61109", "region": "Northwest", "email": "vbcrockford73@gmail.com", "phone": "(815) 874-6846", "notes": [], "photo": "", "calls": [{"id": "legacy_c4c1163279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "PASTOR - said to call back at the end of MARCH"}]}, {"id": "311dcb3279f7", "pastor": "Bill Gluck", "church": "Community Baptist Church", "city": "Andalusia", "address": "PO Box 557; 309 E 3rd St, Andalusia IL 61232", "region": "Northwest", "email": "", "phone": "(309) 798-2857, (309) 798-2538", "notes": [], "photo": "", "calls": [{"id": "legacy_311dcb3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "secretary - call back on march 5"}]}, {"id": "f1fef23279f7", "pastor": "Bob Bisconti", "church": "Fellowship Baptist Church", "city": "South Beloit", "address": "863 Roscoe Ave, South Beloit IL 61080", "region": "Northwest", "email": "pastor@fbcsouthbeloit.com", "phone": "(815) 389-1378", "notes": [], "photo": "", "calls": [{"id": "legacy_f1fef23279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.fbcsouthbeloit.com; https://www.facebook.com/Fellowship-Baptist-Church-of-South-Beloit-IL-152730191435290/"}]}, {"id": "acd3853279f7", "pastor": "Darrell Grimm", "church": "New Life Baptist Church", "city": "Galesburg", "address": "1232 W Fremont St, Galesburg, IL 61401", "region": "Northwest", "email": "cbcgalesburg@gmail.com", "phone": "", "notes": [], "photo": "", "calls": []}, {"id": "7eecd23279f7", "pastor": "Dave Myers", "church": "First Baptist Church of Pecatonica", "city": "Pecatonica", "address": "Box 546; 209 W Fifth St, Pecatonica IL 61063", "region": "Northwest", "email": "", "phone": "(815) 239-1533", "notes": [], "photo": "", "calls": []}, {"id": "f26c563279f7", "pastor": "David McDaniel", "church": "Cathedral Baptist Church", "city": "Rockford", "address": "5622 35th St, Rockford IL 61109", "region": "Northwest", "email": "", "phone": "(815) 874-4016", "notes": [], "photo": "", "calls": [{"id": "legacy_f26c563279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "secretary - pastor not in (mornings)"}]}, {"id": "8bac743279f7", "pastor": "David Murphy", "church": "First Baptist Church", "city": "Geneseo", "address": "15300 Ford Rd, Geneseo IL 61254", "region": "Northwest", "email": "firstbaptistchurchgeneseo@gmail.com", "phone": "(309) 944-3735", "notes": [], "photo": "", "calls": []}, {"id": "cb9a563279f7", "pastor": "David Napuunoa", "church": "Lighthouse Baptist Church", "city": "Rock Island", "address": "4309 Blackhawk Rd, Rock Island IL 61201", "region": "Northwest", "email": "", "phone": "(309) 788-4049", "notes": [], "photo": "", "calls": []}, {"id": "3ebf753279f7", "pastor": "Dudley Matties", "church": "Bible Baptist Church", "city": "Belvidere", "address": "5831 Tripp Rd, Belvidere IL 61008", "region": "Northwest", "email": "", "phone": "(815) 544-9216", "notes": [], "photo": "", "calls": []}, {"id": "7c736a3279f7", "pastor": "Jeremy Huston", "church": "Foundation Baptist Church", "city": "Cary", "address": "525 Ada St, Cary IL 60013", "region": "Northwest", "email": "pastorjeremyhuston@gmail.com", "phone": "(815) 271-2121", "notes": [], "photo": "", "calls": []}, {"id": "f9b8793279f7", "pastor": "John Erenz", "church": "New Beginnings Baptist Church", "city": "Rochelle", "address": "PO Box 253; 305 N Grove St, Rochelle IL 61068", "region": "Northwest", "email": "info@mynbbc.org", "phone": "(815) 384-3194", "notes": [], "photo": "", "calls": []}, {"id": "16444e3279f7", "pastor": "Joseph Proctor", "church": "Coyne Center Baptist Church", "city": "Milan", "address": "1619 Coyne Center Rd, Milan IL 61264", "region": "Northwest", "email": "", "phone": "(309) 787-2105", "notes": [], "photo": "", "calls": [{"id": "legacy_16444e3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "small - wants to have lunch"}]}, {"id": "2204943279f7", "pastor": "Mark Swanson", "church": "Berean Baptist Church", "city": "Rockford", "address": "5626 Safford Rd, Rockford IL 61101", "region": "Northwest", "email": "bereanbaptist@rockford.com", "phone": "(815) 962-4661, (815) 962-4841", "notes": [], "photo": "", "calls": [{"id": "legacy_2204943279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "gave information"}]}, {"id": "2df2073279f7", "pastor": "Matt Fox", "church": "Faith Baptist Church", "city": "Moline", "address": "520 12th St", "region": "Northwest", "email": "matt@thefoxfamily.us", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_2df2073279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.faithbaptistmoline.org; https://www.facebook.com/Faith-Baptist-Church-295693913862121/"}]}, {"id": "3942a83279f7", "pastor": "Rick Bevans", "church": "Central Baptist Church", "city": "Moline", "address": "1901 12th St, Moline IL 61265", "region": "Northwest", "email": "Rick.Bevans@gmail.com", "phone": "(309) 762-0650", "notes": [], "photo": "", "calls": [{"id": "legacy_3942a83279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://centralbaptistmoline.com; https://www.facebook.com/Central-Baptist-of-Moline-Il-138921882814993/"}]}, {"id": "753db53279f7", "pastor": "Rocky Fritz", "church": "First Baptist Church", "city": "Amboy", "address": "24 N Mason Ave, Amboy IL 61310", "region": "Northwest", "email": "pastorocky@aol.com", "phone": "(815) 857-2682, (815) 857-3372", "notes": [], "photo": "", "calls": [{"id": "legacy_753db53279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://fbcamboy.com; https://www.facebook.com/FirstBaptistChurchAmboy/"}]}, {"id": "e760c93279f7", "pastor": "Tommy McMurtry", "church": "Liberty Baptist Church", "city": "Rock Falls", "address": "2002 9th Ave, Rock Falls IL 61071", "region": "Northwest", "email": "", "phone": "(815) 625-4101, (815) 579-1209", "notes": [], "photo": "", "calls": []}, {"id": "d03a503279f7", "pastor": "Wayne Epps", "church": "Calvary Baptist Church", "city": "Dixon", "address": "313 Van Buren Ave, Dixon IL 61021", "region": "Northwest", "email": "wkepps@juno.com", "phone": "(815) 288-2453", "notes": [], "photo": "", "calls": [{"id": "legacy_d03a503279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "too small for support - will keep in mind for future assistance; https://www.facebook.com/Calvary-Baptist-Church-Dixon-Illinois-126387727408087/"}]}, {"id": "266f913279f7", "pastor": "Don Smith", "church": "New Testament Baptist Church", "city": "Centralia", "address": "1801 S Brookside St, Centralia IL 62801", "region": "South", "email": "newtestamentbc@att.net", "phone": "(618) 533-0205", "notes": [], "photo": "", "calls": [{"id": "legacy_266f913279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.newtestamentbc.com"}]}, {"id": "b966f23279f7", "pastor": "Glenn Aulgur", "church": "Victory Baptist Church", "city": "Carterville", "address": "PO Box 202; 1400 Samuel Rd, Carterville IL 62918", "region": "South", "email": "", "phone": "(618) 985-6912", "notes": [], "photo": "", "calls": []}, {"id": "1ad3843279f7", "pastor": "Ron Reynolds", "church": "Mt Vernon Baptist Temple", "city": "Mt Vernon", "address": "817 Woodland Dr, Mt Vernon IL 62864", "region": "South", "email": "pastor@mtvernonbtc.com", "phone": "(618) 244-5404", "notes": [], "photo": "", "calls": []}, {"id": "2995573279f7", "pastor": "Sean Hicks", "church": "Cornerstone Baptist Church", "city": "Salem", "address": "3561 Boone St Rd, Salem IL 62881", "region": "South", "email": "pastor@cornerstonesalem.com, cbcsalem@gmail.com", "phone": "(618) 548-1547", "notes": [], "photo": "", "calls": [{"id": "legacy_2995573279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.cornerstonesalem.com; https://www.facebook.com/cornerstonebcsalem/"}]}, {"id": "a93a6f3279f7", "pastor": "Steven Flach", "church": "Faith Baptist Church", "city": "Benton", "address": "14883 IL-34", "region": "South", "email": "faithbcbenton@gmail.com", "phone": "6184399306", "notes": [], "photo": "", "calls": [{"id": "legacy_a93a6f3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.fbcbentonill.org"}]}, {"id": "8ad9ff3279f7", "pastor": "Art Donley", "church": "Bible Baptist Church", "city": "Harrisburg", "address": "606 W Church St, Harrisburg IL 62946", "region": "Southeast", "email": "", "phone": "(618) 253-8651", "notes": [], "photo": "", "calls": []}, {"id": "f86bb13279f7", "pastor": "Brian Braden", "church": "Ohio Valley Baptist Church", "city": "Metropolis", "address": "516 Girard St, Metropolis IL 62960", "region": "Southeast", "email": "ovc2008@earthlink.net", "phone": "(618) 638-3362", "notes": [], "photo": "", "calls": []}, {"id": "3e27583279f7", "pastor": "Chris Jennette", "church": "Calvary Baptist Church", "city": "Olney", "address": "430 E Mack Ave", "region": "Southeast", "email": "cjagape97@gmail.com", "phone": "6183924531", "notes": [], "photo": "", "calls": [{"id": "legacy_3e27583279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.olneycalvarybaptist.com/; https://www.facebook.com/calvary.baptist.165"}]}, {"id": "8cc85f3279f7", "pastor": "Jesse McCammon", "church": "Calvary Baptist Church", "city": "Flora", "address": "901 N Olive Rd, Flora IL 62839", "region": "Southeast", "email": "floracal@floracalvarybaptist.com", "phone": "(618) 662-4996", "notes": [], "photo": "", "calls": []}, {"id": "481a703279f7", "pastor": "Justin Painter", "church": "Calvary Baptist Church", "city": "Newton", "address": "10335 N 1100th St, Newton IL 62448", "region": "Southeast", "email": "cbcpastorrdl@hotmail.com", "phone": "(618) 783-4036", "notes": [], "photo": "", "calls": []}, {"id": "098c793279f7", "pastor": "Lee Gurley", "church": "New Hebron Baptist Church", "city": "Robinson", "address": "6732 N 1075th St, Robinson IL 62454", "region": "Southeast", "email": "churchnewhebronbaptist@gmail.com", "phone": "(618) 544-7131", "notes": [], "photo": "", "calls": [{"id": "legacy_098c793279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "pastor - said hed get back with me."}]}, {"id": "623eed3279f7", "pastor": "Philip Price", "church": "Lighthouse Baptist Church", "city": "Dennison", "address": "21504 N 2240th St", "region": "Southeast", "email": "", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_623eed3279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.lighthousebconline.org; https://www.facebook.com/Lighthouse-Baptist-Church-of-Dennison-IL-240408846040963/"}]}, {"id": "55f5453279f7", "pastor": "Timothy Meece", "church": "Lighthouse Baptist Church", "city": "Harrisburg", "address": "70 Lighthouse Rd, Harrisburg IL 62946", "region": "Southeast", "email": "", "phone": "(618) 252-7579", "notes": [], "photo": "", "calls": []}, {"id": "0acfe03279f7", "pastor": "Chris Shurilla", "church": "Victory Bible Baptist Church", "city": "Collinsville", "address": "2007 Beltline Rd, Collinsville IL 62234", "region": "Southwest", "email": "", "phone": "(618) 520-7538", "notes": [], "photo": "", "calls": []}, {"id": "f168df3279f7", "pastor": "Collin Hirsch", "church": "Holts Prairie Baptist Church", "city": "Pinckneyville", "address": "5622 SR 154, Pinckneyville IL 62274", "region": "Southwest", "email": "holtsprairie@yahoo.com", "phone": "(618) 357-9779", "notes": [], "photo": "", "calls": []}, {"id": "543c863279f7", "pastor": "David Wright", "church": "Victory Baptist Church", "city": "Cahokia", "address": "1771 Camp Jackson Rd, Cahokia IL 62206", "region": "Southwest", "email": "vbccahokia@gmail.com", "phone": "(618) 857-8103", "notes": [], "photo": "", "calls": [{"id": "legacy_543c863279f7", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.vbccahokia.com"}]}, {"id": "b9eb9c3279f8", "pastor": "Donald Letson", "church": "First Baptist Church", "city": "Brighton", "address": "304 N Maple St, Brighton IL 62012", "region": "Southwest", "email": "pastor@fbcbrighton.org", "phone": "(618) 372-3201", "notes": [], "photo": "", "calls": [{"id": "legacy_b9eb9c3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://fbcbrighton.org; https://www.facebook.com/firstbaptistbrightonillinois/?rf=100280536988272"}]}, {"id": "35991a3279f8", "pastor": "Gary Huffman", "church": "Calvary Baptist Church", "city": "Belleville", "address": "423 Lucinda Ave, Belleville IL 62221", "region": "Southwest", "email": "cbcbelleville@juno.com", "phone": "(618) 234-3620", "notes": [], "photo": "", "calls": []}, {"id": "1274033279f8", "pastor": "John Gibson", "church": "Eastland Baptist Church", "city": "Jerseyville", "address": "23027 Cherry Ln, Jerseyville IL 62052", "region": "Southwest", "email": "pastorjohn1980@yahoo.com", "phone": "(618) 498-6819", "notes": [], "photo": "", "calls": []}, {"id": "44482f3279f8", "pastor": "Jon Tyler", "church": "Faith Baptist Church", "city": "Godfrey", "address": "7505 Humbert Rd, Godfrey IL 62035", "region": "Southwest", "email": "fbcgodfrey@sbcglobal.net", "phone": "(618) 462-1072", "notes": [], "photo": "", "calls": []}, {"id": "2752603279f8", "pastor": "Mitchell Sanderson", "church": "First Baptist Church", "city": "Troy", "address": "204 S Main St, Troy IL 62294", "region": "Southwest", "email": "fbctroyil@gmail.com", "phone": "(618) 667-2129", "notes": [], "photo": "", "calls": [{"id": "legacy_2752603279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://fbctroyil.com; https://www.facebook.com/pg/First-Baptist-Church-Of-Troy-Illinois-403036986449453"}]}, {"id": "8104643279f8", "pastor": "Paul Pendl", "church": "Central Baptist Church", "city": "Granite City", "address": "3940 Hwy 111, Granite City IL 62040", "region": "Southwest", "email": "", "phone": "(618) 931-0964", "notes": [], "photo": "", "calls": [{"id": "legacy_8104643279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "https://www.cbccares.org/"}]}, {"id": "68b12d3279f8", "pastor": "Rick Koonce", "church": "Faith Baptist Church", "city": "Belleville", "address": "PO Box 562; 405 E Main St, Belleville IL 62222", "region": "Southwest", "email": "info@faithbaptist-church.org, info@faithbaptistbelleville.com", "phone": "618) 234-3391", "notes": [], "photo": "", "calls": [{"id": "legacy_68b12d3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://www.faithbaptist-church.org/; https://www.facebook.com/faithbelleville"}]}, {"id": "6e4af53279f8", "pastor": "Tony Ye", "church": "Gateway Baptist Church", "city": "Belleville", "address": "YMCA, 2627 Carlyle Ave, Belleville IL 62221", "region": "Southwest", "email": "", "phone": "904-710-0295", "notes": [], "photo": "", "calls": []}, {"id": "14a4513279f8", "pastor": "William Hendricks", "church": "First Baptist Church of Grafton", "city": "Grafton", "address": "150 S Brown St", "region": "Southwest", "email": "fbcgrafton@gmail.com", "phone": "6187863379", "notes": [], "photo": "", "calls": [{"id": "legacy_14a4513279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://fbcgrafton.org"}]}, {"id": "94c91f3279f8", "pastor": "Jason Moncofsky", "church": "Grace Baptist Church", "city": "Quincy", "address": "300 N. 30th Street", "region": "West Central", "email": "pastor@gbcquincy.com", "phone": "2172244055", "notes": [], "photo": "", "calls": [{"id": "legacy_94c91f3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "http://gbcquincy.com"}]}, {"id": "6949cb3279f8", "pastor": "Danny Ortiz", "church": "Iglesia Biblica Bautista", "city": "Hammond", "address": "PO Box 4296; 604 173rd St, Hammond IN 46324", "region": "", "email": "pastorortizviejo@hotmail.com", "phone": "(219) 937-9434, (708) 203-2248", "notes": [], "photo": "", "calls": []}, {"id": "3f93f43279f8", "pastor": "Abraham Chae", "church": "", "city": "Lockport", "address": "501 N State St, Lockport, IL 60441", "region": "Northeast", "email": "yellowman1@gmail.com, gbclockport@gmail.com", "phone": "(224) 622-7319", "notes": [], "photo": "", "calls": []}, {"id": "7a47503279f8", "pastor": "Adam Bjork", "church": "", "city": "Elgin", "address": "385 Silver St, Elgin, IL 60123", "region": "Northeast", "email": "", "phone": "(847) 742-2974", "notes": [], "photo": "", "calls": []}, {"id": "cf53953279f8", "pastor": "Ben Anglea", "church": "", "city": "Bourbonnais", "address": "1280 Armour Rd, Bourbonnais, IL", "region": "Northeast", "email": "", "phone": "(815) 922-8610", "notes": [], "photo": "", "calls": []}, {"id": "a95a5d3279f8", "pastor": "Chris Shurilla", "church": "", "city": "Collinsville", "address": "2007 Beltline Rd, Collinsville, IL 62234", "region": "Southwest", "email": "", "phone": "(618) 920-1174", "notes": [], "photo": "", "calls": []}, {"id": "aa43263279f8", "pastor": "Christopher Lowe", "church": "Faith Baptist Church", "city": "Belleville", "address": "405 E Main St, PO Box 562, Belleville, IL", "region": "Southwest", "email": "", "phone": "(334) 782-2897", "notes": [], "photo": "", "calls": []}, {"id": "7ed35b3279f8", "pastor": "Dale Steenhoven", "church": "Will County Baptist Temple", "city": "Joliet", "address": "625 McDonough St, Joliet, IL 60436", "region": "Northeast", "email": "steenhoven@yahoo.com", "phone": "(815) 726-4127", "notes": [], "photo": "", "calls": []}, {"id": "0287773279f8", "pastor": "Dan Woodward", "church": "", "city": "Dwight", "address": "401 N Clinton St, Dwight, IL 60420", "region": "Northeast", "email": "missions@fbcdwight.org", "phone": "(815) 252-0691", "notes": [], "photo": "", "calls": []}, {"id": "77e0f63279f8", "pastor": "Daniel Zdziarski", "church": "Tabernacle Baptist Church", "city": "Quincy", "address": "2410 Lind St, Quincy, IL", "region": "West", "email": "", "phone": "(217) 506-2822", "notes": [], "photo": "", "calls": []}, {"id": "6003143279f8", "pastor": "Darrell Grimm", "church": "", "city": "Galesburg", "address": "1232 W Fremont St, Galesburg, IL 61401", "region": "West", "email": "cbcgalesburg@gmail.com", "phone": "(217) 358-3590", "notes": [], "photo": "", "calls": []}, {"id": "f20dd03279f8", "pastor": "Dave Brown", "church": "Central Baptist Church", "city": "Decatur", "address": "1275 Mt Gilead Rd, Decatur, IL", "region": "Central", "email": "", "phone": "(217) 855-5209", "notes": [], "photo": "", "calls": []}, {"id": "4035e63279f8", "pastor": "Dave Murphy", "church": "First Baptist Church", "city": "Geneseo", "address": "15300 Ford Rd, Geneseo, IL 61254", "region": "Northwest", "email": "firstbaptistchurchgeneseo@gmail.com", "phone": "(309) 944-3735", "notes": [], "photo": "", "calls": []}, {"id": "7282b83279f8", "pastor": "Dennis Karrow", "church": "Fifty-Eighth Ave Baptist Church", "city": "Cicero", "address": "2228 S 58th, Cicero, IL", "region": "Northeast", "email": "", "phone": "(708) 656-8737", "notes": [], "photo": "", "calls": []}, {"id": "fc79073279f8", "pastor": "Don Letson", "church": "", "city": "Brighton", "address": "304 N Maple St, Brighton, IL 62012", "region": "Southwest", "email": "pastor@fbcbrighton.org", "phone": "(231) 638-3140", "notes": [], "photo": "", "calls": []}, {"id": "c450c83279f8", "pastor": "Gerardo Andrade", "church": "Iglesia Biblica Bautista Kishwaukee", "city": "Rockford", "address": "2742 9th St, Rockford, IL", "region": "Northwest", "email": "", "phone": "(331) 901-8461", "notes": [], "photo": "", "calls": []}, {"id": "5f04593279f8", "pastor": "Gil Aranda", "church": "Berean Fundamental Baptist Church", "city": "Zion", "address": "3020 29th St, Zion, IL", "region": "Northeast", "email": "", "phone": "(847) 505-8730", "notes": [], "photo": "", "calls": []}, {"id": "54a13f3279f8", "pastor": "Jay Griggs", "church": "Faith Baptist Temple", "city": "Eureka", "address": "107 N Major St, Eureka, IL", "region": "Central", "email": "", "phone": "(309) 415-9198", "notes": [], "photo": "", "calls": []}, {"id": "4966af3279f8", "pastor": "Jim Eddy", "church": "Victory Baptist Church", "city": "Macomb", "address": "10460 N 1200th, Macomb, IL", "region": "West", "email": "lamarshbaptist@gmail.com", "phone": "(309) 221-4527", "notes": [], "photo": "", "calls": []}, {"id": "947a763279f8", "pastor": "Jonathan Roberson", "church": "First Baptist Church", "city": "Clinton", "address": "220 Illini Dr, Clinton, IL 61727", "region": "Central", "email": "firstbaptistchurch3@frontier.com, preacherman61727@yahoo.com", "phone": "(217) 791-7848", "notes": [], "photo": "", "calls": []}, {"id": "5bab603279f8", "pastor": "Jose Mendez", "church": "Iglesia Bautista Quad Cities", "city": "Moline", "address": "1901 12th St, Moline, IL", "region": "Northwest", "email": "", "phone": "(641) 919-6561", "notes": [], "photo": "", "calls": []}, {"id": "d46c853279f8", "pastor": "Josh Beshea", "church": "Woodridge Baptist Church", "city": "Woodridge", "address": "6613 Taylor Dr, Woodridge, IL", "region": "Northeast", "email": "", "phone": "(318) 658-3078", "notes": [], "photo": "", "calls": []}, {"id": "45aaad3279f8", "pastor": "Keith Ellis", "church": "", "city": "Burbank", "address": "5040 W 87th St, Burbank, IL", "region": "Northeast", "email": "", "phone": "(217) 851-6127", "notes": [], "photo": "", "calls": []}, {"id": "d837383279f8", "pastor": "Keith Thibo", "church": "Bay View Baptist Church", "city": "Washington", "address": "22648 Grosenbach Rd #9232, Washington, IL", "region": "Central", "email": "", "phone": "(309) 698-2000", "notes": [], "photo": "", "calls": []}, {"id": "4c294c3279f8", "pastor": "Lampton Liddell", "church": "", "city": "Chicago", "address": "634 W 59th St, Chicago, IL 60621", "region": "Northeast", "email": "l.liddell@yahoo.com", "phone": "(773) 651-6440", "notes": [], "photo": "", "calls": []}, {"id": "de764a3279f8", "pastor": "Larry Berger", "church": "Victory Hill Baptist Church", "city": "Steger", "address": "23030 State St, Steger, IL 60475", "region": "Northeast", "email": "", "phone": "(708) 758-3945", "notes": [], "photo": "", "calls": []}, {"id": "66dc543279f8", "pastor": "Leejay Richards", "church": "", "city": "Naperville", "address": "500 Warwick Drive, Naperville, IL 60565", "region": "Northeast", "email": "info@napervillebaptist.church", "phone": "(765) 615-2333", "notes": [], "photo": "", "calls": []}, {"id": "89d42f3279f8", "pastor": "Lucas Shelley", "church": "", "city": "Effingham", "address": "2308 S Veterans Dr, Effingham, IL", "region": "Southeast", "email": "ssbceffpastor@gmail.com", "phone": "(217) 690-8212", "notes": [], "photo": "", "calls": []}, {"id": "7454a23279f8", "pastor": "Mark Wilkerson", "church": "", "city": "Rantoul", "address": "3105 County Rd 1700 E, Rantoul, IL 61866", "region": "Central East", "email": "mbc.rantoul@gmail.com", "phone": "(217) 778-7014", "notes": [], "photo": "", "calls": []}, {"id": "3f05ec3279f8", "pastor": "Marty Montgomery", "church": "", "city": "Springfield", "address": "2721 S Fillmore St, Springfield, IL 62704", "region": "Central", "email": "montgomerys.springfield2015@gmail.com", "phone": "(217) 685-1554", "notes": [], "photo": "", "calls": []}, {"id": "ed10273279f8", "pastor": "Steve Raglin", "church": "Trinity Baptist Church", "city": "Murphysboro", "address": "371 Health Department Road, Murphysboro, IL", "region": "South", "email": "raglinsteve@yahoo.com", "phone": "(618) 303-4853", "notes": [], "photo": "", "calls": []}, {"id": "e5499c3279f8", "pastor": "Terry Anglea", "church": "", "city": "Bourbonnais", "address": "4742 N 2250W Rd, Bourbonnais, IL", "region": "Northeast", "email": "faithbc1969@gmail.com", "phone": "(815) 685-0040", "notes": [], "photo": "", "calls": []}, {"id": "2029973279f8", "pastor": "Gary Branam", "church": "Baileyville Baptist Church", "city": "Baileyville", "address": "303 W Franklin Street, Baileyville, IL", "region": "Northwest", "email": "baileyvillebaptist@yahoo.com", "phone": "(815) 232-6222, (218) 343-3223", "notes": [], "photo": "", "calls": [{"id": "legacy_2029973279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - #convo; Short conversation; Requested packet; Sent packet"}]}, {"id": "28c0623279f8", "pastor": "Troy Prater", "church": "Faith Baptist Church", "city": "Morris", "address": "3950 Goose Lake Rd, Morris, IL", "region": "Northeast", "email": "tdprater@gmail.com", "phone": "(646) 724-5748, (815) 942-0675", "notes": [], "photo": "", "calls": [{"id": "legacy_28c0623279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - #convo; Short conversation; Requested packet; Sent packet"}]}, {"id": "728ee53279f8", "pastor": "Paul Robinson", "church": "Harvest Baptist Church", "city": "Ottawa", "address": "420 N 3059th Rd, Ottawa, IL", "region": "Central North", "email": "harvestbaptistchurch11@hotmail.com", "phone": "(815) 579-9510", "notes": [], "photo": "", "calls": [{"id": "legacy_728ee53279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Booked May 17"}]}, {"id": "d70fa43279f8", "pastor": "Brian Petrick", "church": "Biblical Baptist Church", "city": "Beach Park", "address": "39236 N Green Bay Rd Ste 1, Beach Park, IL", "region": "Northeast", "email": "pastorbrianbbc@yahoo.com", "phone": "(847) 417-8621", "notes": [], "photo": "", "calls": [{"id": "legacy_d70fa43279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Duplicate phone field matched"}]}, {"id": "2f768a3279f8", "pastor": "Bryan McDonald", "church": "Prarie View Baptist Church", "city": "Lake City", "address": "2423 500E, Lake City, IL 61937", "region": "Central", "email": "pastor@prairieviewbaptist.org", "phone": "(706) 987-0486", "notes": [], "photo": "", "calls": [{"id": "legacy_2f768a3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Duplicate phone field matched; church name appears misspelled as \u201cPrarie\u201d"}]}, {"id": "d6ae7d3279f8", "pastor": "Jeremy Huston", "church": "", "city": "Cary", "address": "525 Ada Street, Cary, IL", "region": "Northeast", "email": "jeremy@pbcmaverick", "phone": "(815) 271-2121", "notes": [], "photo": "", "calls": [{"id": "legacy_d6ae7d3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Email may be incomplete"}]}, {"id": "cd115f3279f8", "pastor": "Chuck Thompson", "church": "Sauk Village Baptist Church", "city": "Sauk Village", "address": "1918 E 223rd St, Sauk Village, IL", "region": "Northeast", "email": "", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_cd115f3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Missing phone"}]}, {"id": "8b61eb3279f8", "pastor": "David McDaniel", "church": "Kishwaukee Baptist Church", "city": "Rockford", "address": "2742 9th, Rockford, IL", "region": "Northwest", "email": "", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_8b61eb3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Missing phone"}]}, {"id": "d663613279f8", "pastor": "Phillip Price", "church": "Lighthouse Baptist Church", "city": "Dennison", "address": "21504 2250th Street, Dennison, IL", "region": "Southeast", "email": "", "phone": "", "notes": [], "photo": "", "calls": [{"id": "legacy_d663613279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Missing phone"}]}, {"id": "7ae0473279f8", "pastor": "Chris Cunningham", "church": "", "city": "Roseville", "address": "190 S Main St, Roseville, IL 61473", "region": "West", "email": "hillpreacher121@gmail.com", "phone": "(870) 251-6139", "notes": [], "photo": "", "calls": [{"id": "legacy_7ae0473279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Region adjusted to closest fit: Central West"}]}, {"id": "67473c3279f8", "pastor": "Bob Shaw", "church": "Greenland Baptist Church", "city": "Beecher City", "address": "2222 E 3050, Beecher City, IL", "region": "South Central", "email": "", "phone": "(618) 487-5702", "notes": [], "photo": "", "calls": [{"id": "legacy_67473c3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Region adjusted to closest fit: South"}]}, {"id": "6ca7da3279f8", "pastor": "Brian Bussey", "church": "Calvary Baptist Church", "city": "Canton", "address": "20 N Avenue I, Canton, IL 61520", "region": "Central", "email": "preacherbussey@gmail.com", "phone": "(573) 606-9971, (309) 647-3444", "notes": [], "photo": "", "calls": [{"id": "legacy_6ca7da3279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Thomas Hector; #convo; Extremely short, requested I send information packet; Sent packet"}]}, {"id": "7f34433279f8", "pastor": "Mark Hiltibidal", "church": "", "city": "Raleigh", "address": "6489 IL-34, Raleigh, IL 62977", "region": "Southeast", "email": "markhiltibidal@ymail.com", "phone": "(618) 308-2436", "notes": [], "photo": "", "calls": [{"id": "legacy_7f34433279f8", "date": "Imported", "outcome": "imported", "meetingBooked": false, "meetingDate": "", "details": "IL - Thomas Hector; #convo; Short conversation; Doesn\u2019t typically support home missions, but will look over packet and consider it; Sent packet"}]}];
-
-function avatarColor(n){ let h=0; for(let c of(n||'X')) h=(h*31+c.charCodeAt(0))&0xffffffff; return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
-function initials(n){ return(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(''); }
-function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
-function esc(s){ return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function formatDate(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
-
-function load(){
-  try{ contacts=JSON.parse(localStorage.getItem(STORAGE_KEY))||[]; }catch{ contacts=[]; }
-  if(!localStorage.getItem(SEED_KEY)||contacts.length===0){
-    contacts=SEED_DATA.map(c=>({...c,calls:c.calls||[],notes:c.notes||[],photo:c.photo||'',state:c.state||'IL'}));
-    localStorage.setItem(SEED_KEY,'1');
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(contacts));
-  }
-}
-function save(){
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(contacts));
-  // count-label updated in renderList
-}
-
-function renderAll(){ renderFilters(); renderList(); save(); }
+function ac(n){let h=0;for(let c of(n||'X'))h=(h*31+c.charCodeAt(0))&0xffffffff;return AC[Math.abs(h)%AC.length];}
+function ini(n){return(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');}
+function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function primaryPhone(p){return(p||'').split(/[,;\/]/)[0].trim();}
+function load(){contacts=JSON.parse(localStorage.getItem('relay_v5')||'null')||SAMPLE.map(c=>({...c}));}
+function save(){localStorage.setItem('relay_v5',JSON.stringify(contacts));}
+function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 
 function renderFilters(){
-  const states = ['All', ...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
-  document.getElementById('state-filter-row').innerHTML = states.map(s=>
-    `<button class="filter-pill${filterState===s?' active':''}" onclick="setStateFilter('${s}')">${s==='All'?'All States':s}</button>`
-  ).join('');
-
-  const visibleContacts = filterState==='All' ? contacts : contacts.filter(c=>(c.state||'').toUpperCase()===filterState);
-  const regions = ['All', ...Array.from(new Set(visibleContacts.map(c=>c.region||'').filter(Boolean))).sort()];
-  document.getElementById('region-filter-row').innerHTML = regions.map(r=>
-    `<button class="filter-pill${filterReg===r?' active':''}" onclick="setRegionFilter('${r}')">${r==='All'?'All Regions':r}</button>`
-  ).join('');
+  const states=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
+  document.getElementById('state-filter-row').innerHTML=states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s}</button>`).join('');
+  const vis=fState==='All'?contacts:contacts.filter(c=>(c.state||'').toUpperCase()===fState);
+  const regs=['All',...Array.from(new Set(vis.map(c=>c.region||'').filter(Boolean))).sort()];
+  document.getElementById('region-filter-row').innerHTML=regs.map(r=>`<button class="filter-pill${fReg===r?' active':''}" onclick="setRF('${r}')">${r==='All'?'All Regions':r}</button>`).join('');
 }
+function setSF(s){fState=s;fReg='All';renderFilters();renderList();}
+function setRF(r){fReg=r;renderList();}
 
-function setStateFilter(s){ filterState=s; filterReg='All'; renderFilters(); renderList(); }
-function setRegionFilter(r){ filterReg=r; renderFilters(); renderList(); }
-
-function lastCall(c){
-  const real=(c.calls||[]).filter(x=>x.outcome!=='imported');
-  return real.length?real[real.length-1]:null;
+function buildFilteredList(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  let f=contacts.filter(c=>{
+    const ms=fState==='All'||(c.state||'').toUpperCase()===fState;
+    const mr=fReg==='All'||(c.region||'')===fReg;
+    const mq=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);
+    return ms&&mr&&mq;
+  });
+  f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));
+  return f;
 }
 
 function renderList(){
-  const q=document.getElementById('search').value.trim().toLowerCase();
-  let filtered=contacts.filter(c=>{
-    const matchState = filterState==='All' || (c.state||'').toUpperCase()===filterState;
-    const matchReg = filterReg==='All' || (c.region||'')===filterReg;
-    const matchQ=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.state||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);
-    return matchState&&matchReg&&matchQ;
-  });
-  filtered.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));
-
-  document.getElementById('count-label').textContent=filtered.length+' / '+contacts.length;
+  filteredList=buildFilteredList();
+  document.getElementById('count-label').textContent=filteredList.length+' / '+contacts.length;
   const list=document.getElementById('main-list');
-
-  if(!filtered.length){
-    list.innerHTML=`<div class="empty-state"><p>No contacts found</p></div>`;
-    return;
-  }
-
-  list.innerHTML=filtered.map(c=>{
-    const[bg,fg]=avatarColor(c.pastor||c.church||'?');
-    const av=c.photo?`<img src="${c.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(initials(c.pastor||c.church||'?'));
-    const avStyle=c.photo?'':`background:${bg};color:${fg}`;
-    const lc=lastCall(c);
-    const meta=lc?OUTCOME_META[lc.outcome]||OUTCOME_META.imported:null;
-    const lcBadge=meta
-      ?`<span class="last-call-badge ${meta.lcb}">${meta.icon} ${meta.label}</span>`
-      :`<span class="last-call-badge lcb-none">No calls yet</span>`;
-    const loc=[c.city,c.state].filter(Boolean).join(', ')+(c.region?' · '+c.region:'');
-    const telHref=c.phone?`tel:${c.phone.replace(/[^+0-9]/g,'')}`:'';
-
-    return `<div class="contact-row">
-      <div style="padding:0 5px"><div class="row-avatar" style="${avStyle}">${av}</div></div>
-      <div class="row-cell">
-        <div class="row-name">${esc(c.pastor||'—')}</div>
-        <div class="row-sub">${esc(c.church||'')}</div>
-      </div>
-      <div class="row-cell col-location">
-        <div class="row-plain">${esc(loc)||'—'}</div>
-      </div>
-      <div class="row-cell col-region">
-        <div class="row-plain">${esc(c.phone)||'—'}</div>
-      </div>
-      <div class="row-cell col-last-call">${lcBadge}</div>
-      <div class="row-actions">
-        ${telHref
-          ?`<a href="${telHref}" class="action-btn call" title="Call ${esc(c.pastor||c.church)}">📞</a>`
-          :`<button class="action-btn call" disabled style="opacity:.35;cursor:default">📞</button>`}
-        <button class="action-btn log" onclick="openCallModal('${c.id}')" title="Log a call">📋</button>
-        <button class="action-btn details" onclick="openDetailCard('${c.id}')" title="View details">👁</button>
+  if(!filteredList.length){list.innerHTML='<div class="empty-state">No contacts found</div>';return;}
+  list.innerHTML=filteredList.map((c,i)=>{
+    const[bg,fg]=ac(c.pastor||c.church||'?');
+    const lcall=lc(c);
+    const statusCls=lcall?('status-'+(lcall.outcome==='imported'?'none':lcall.outcome)):'status-none';
+    const pillMap={pastor:['P','pill-pastor'],voicemail:['VM','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
+    const pillData=lcall&&pillMap[lcall.outcome]?pillMap[lcall.outcome]:null;
+    const pill=pillData?`<span class="status-pill ${pillData[1]}">${pillData[0]}</span>`:`<span class="status-pill pill-none">—</span>`;
+    const loc=[c.city,c.state].filter(Boolean).join(', ');
+    const hasReminder=(c.calls||[]).some(x=>x.outcome==='reminder');
+    return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
+      <div style="padding:0 4px"><div class="row-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div></div>
+      <div class="row-cell"><div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div><div class="row-sub">${esc(c.church||'')}</div></div>
+      <div class="row-cell"><div class="row-plain">${esc(loc)||'—'}</div></div>
+      <div class="row-cell">${pill}</div>
+      <div class="row-actions" onclick="event.stopPropagation()">
+        <button class="action-btn log" onclick="openLogModal('${c.id}')" title="Log call">📋</button>
       </div>
     </div>`;
   }).join('');
 }
 
-/* ─── Field helper ─── */
-function fld(label,value,full){
-  const empty=!value;
-  return `<div class="field-card${full?' full':''}"><div class="field-label">${label}</div><div class="field-value${empty?' empty':''}">${empty?'—':esc(value)}</div></div>`;
+/* ── FULL SCREEN CALLING CARD ── */
+function openCallingCard(idx){
+  filteredList=buildFilteredList();
+  callingIdx=idx;
+  contactMenuOpen=false;
+  renderCallingCard();
 }
 
-/* ─── Detail card ─── */
-function openDetailCard(cid){
-  const c=contacts.find(x=>x.id===cid); if(!c) return;
-  const[bg,fg]=avatarColor(c.pastor||c.church||'?');
-  const av=c.photo?`<img src="${c.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(initials(c.pastor||c.church||'?'));
-  const avStyle=c.photo?'':`background:${bg};color:${fg}`;
+function renderCallingCard(){
+  const c=filteredList[callingIdx];
+  if(!c){closeCard();return;}
+  const[bg,fg]=ac(c.pastor||c.church||'?');
+  const total=filteredList.length;
+  const pct=Math.round(((callingIdx+1)/total)*100);
+  const ph=primaryPhone(c.phone);
+  const tel=ph?`tel:${ph.replace(/[^+0-9]/g,'')}`:null;
+  const sms=ph?`sms:${ph.replace(/[^+0-9]/g,'')}`:null;
+  const mailto=c.email?`mailto:${c.email}`:null;
   const calls=(c.calls||[]).slice().reverse();
   const realCalls=calls.filter(x=>x.outcome!=='imported');
+  const menuOpen=contactMenuOpen;
 
-  showModal(`
-  <div class="modal-backdrop" onclick="closeModal(event)">
-    <div class="detail-card" onclick="event.stopPropagation()">
-      <div class="card-header">
-        <div class="card-avatar" style="${avStyle}">${av}</div>
-        <div class="card-header-info">
-          <div class="card-name">${esc(c.pastor||'Unknown Pastor')}</div>
-          <div class="card-church">${esc(c.church||'')}${(c.city||c.state)?' · '+[c.city,c.state].filter(Boolean).join(', '):''}</div>
-        </div>
-        <div class="card-header-actions">
-          <button class="card-edit" onclick="openContactModal('${c.id}')">✏️ Edit</button>
-          <button class="card-delete" onclick="deleteContact('${c.id}')">🗑</button>
-          <button class="card-close" onclick="closeModal()">✕</button>
-        </div>
+  const card=document.getElementById('fullscreen-card');
+  card.classList.add('visible');
+  card.style.display='';
+  card.innerHTML=`
+    <!-- Top bar -->
+    <div class="card-topbar">
+      <button class="card-back-btn" onclick="closeCard()">← Back</button>
+      <div class="card-topbar-center">
+        <div class="card-progress-label">${callingIdx+1} of ${total}</div>
+        <div class="card-progress-bar-wrap"><div class="card-progress-bar-fill" style="width:${pct}%"></div></div>
       </div>
-      <div class="card-body">
-        <div class="fields-grid">
-          ${fld('Region',c.region)}
-          ${fld('Phone',c.phone)}
-          ${c.email?`<div class="field-card full"><div class="field-label">Email</div><div class="field-value"><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`:fld('Email',null)}
-          ${fld('Address',c.address,true)}
-        </div>
-
-        <div class="section-header">
-          <span class="section-title">Call log (${realCalls.length} calls)</span>
-          <button class="log-call-btn" onclick="openCallModal('${c.id}')">📞 Log a call</button>
-        </div>
-        <div class="call-log-list">
-          ${calls.length?calls.map(call=>{
-            const meta=OUTCOME_META[call.outcome]||OUTCOME_META.imported;
-            const mb=call.meetingBooked?`<span class="meeting-badge">📅 ${call.meetingDate?esc(call.meetingDate):'Meeting booked'}</span>`:'';
-            return `<div class="call-entry">
-              <div class="call-entry-top">
-                <span class="outcome-badge ${meta.cls}">${meta.icon} ${meta.label}</span>
-                ${mb}
-                <span class="call-date">${call.date}</span>
-              </div>
-              ${call.details?`<div class="call-details">${esc(call.details)}</div>`:''}
-              <button class="call-delete" onclick="deleteCall('${c.id}','${call.id}')">×</button>
-            </div>`;
-          }).join(''):`<div class="no-calls">No calls logged yet.</div>`}
-        </div>
-      </div>
+      <button class="card-edit-btn" onclick="openContactModal('${c.id}')">✏️ Edit</button>
     </div>
-  </div>`);
-}
 
-/* ─── Log call modal ─── */
-function openCallModal(cid){
-  logCallOutcome=null; logCallMeeting=false;
-  showModal(`
-  <div class="modal-backdrop" onclick="closeModal(event)">
-    <div class="log-modal" onclick="event.stopPropagation()">
-      <h2>Log a call</h2>
-      <div class="form-group">
-        <label>Outcome *</label>
-        <div class="outcome-options">
-          <button class="outcome-opt" id="opt-pastor"    onclick="selectOutcome('pastor')"><span class="opt-icon">🙋</span>Spoke to Pastor</button>
-          <button class="outcome-opt" id="opt-voicemail" onclick="selectOutcome('voicemail')"><span class="opt-icon">📵</span>No Response / Voicemail</button>
-          <button class="outcome-opt" id="opt-secretary" onclick="selectOutcome('secretary')"><span class="opt-icon">📋</span>Spoke to Secretary</button>
-        </div>
-      </div>
-      <div id="meeting-section" style="display:none">
-        <div class="meeting-row">
-          <label>Meeting booked?</label>
-          <div class="toggle-wrap">
-            <button class="toggle-btn off" id="meeting-yes" onclick="setMeeting(true)">Yes</button>
-            <button class="toggle-btn on"  id="meeting-no"  onclick="setMeeting(false)">No</button>
+    <!-- Scrollable body -->
+    <div class="card-body">
+
+      <!-- Hero -->
+      <div class="card-hero">
+        <div class="card-hero-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div>
+        <div class="card-hero-info">
+          <div class="card-hero-name">${esc(c.pastor||'Unknown Pastor')}</div>
+          <div class="card-hero-church">${esc(c.church||'—')}</div>
+          <div class="card-hero-location">
+            📍 ${esc([c.city,c.state].filter(Boolean).join(', ')||'—')}
+            ${c.region?`<span class="card-hero-region">${esc(c.region)}</span>`:''}
           </div>
         </div>
-        <div id="meeting-date-row" style="display:none">
-          <div class="form-group"><label>Meeting date</label><input type="text" id="meeting-date" placeholder="e.g. June 15, 2026" /></div>
+      </div>
+
+      <!-- Info strip: phone / email / address -->
+      <div class="card-info-strip">
+        <div class="info-item">
+          <div class="info-label">Phone</div>
+          <div class="info-value${!c.phone?' empty':''}">${c.phone?esc(c.phone):'—'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email</div>
+          <div class="info-value${!c.email?' empty':''}">${c.email?esc(c.email):'—'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Address</div>
+          <div class="info-value${!c.address?' empty':''}">${c.address?esc(c.address):'—'}</div>
         </div>
       </div>
-      <div class="form-group">
-        <label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
-        <textarea id="call-details" placeholder="Who you spoke with, what was discussed, follow-up needed…"></textarea>
+
+      <!-- Action buttons -->
+      <div class="card-actions">
+        <button class="card-action-btn green${menuOpen?' active':''}" onclick="toggleContactMenu()">
+          <span class="btn-icon">👤</span>
+          <span class="btn-label">Contact</span>
+        </button>
+        <button class="card-action-btn blue" onclick="openLogModal('${c.id}')">
+          <span class="btn-icon">📋</span>
+          <span class="btn-label">Log Call</span>
+        </button>
+        <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')">
+          <span class="btn-icon">🔔</span>
+          <span class="btn-label">Reminder</span>
+        </button>
+        <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')">
+          <span class="btn-icon">📅</span>
+          <span class="btn-label">Calendar</span>
+        </button>
+      </div>
+
+      <!-- Contact sub-menu -->
+      <div class="contact-submenu${menuOpen?' open':''}" id="contact-submenu">
+        ${tel?`<a href="${tel}" class="contact-sub-btn call-sub">📞 Call</a>`:`<span class="contact-sub-btn" style="opacity:.3;cursor:default">📞 Call</span>`}
+        ${sms?`<a href="${sms}" class="contact-sub-btn text-sub">💬 Text</a>`:`<span class="contact-sub-btn" style="opacity:.3;cursor:default">💬 Text</span>`}
+        ${mailto?`<a href="${mailto}" class="contact-sub-btn email-sub">✉️ Email</a>`:`<span class="contact-sub-btn" style="opacity:.3;cursor:default">✉️ Email</span>`}
+      </div>
+
+      <!-- Call history -->
+      <div class="card-history">
+        <div class="history-title">Call history (${realCalls.length})</div>
+        ${calls.length
+          ? calls.map(x=>{
+              const m=OM[x.outcome]||OM.imported;
+              const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Meeting booked'}</span>`:'';
+              return `<div class="call-entry">
+                <div class="call-top"><span class="outcome-badge ${m.cls}">${m.icon} ${m.label}</span>${mb}<span class="call-date">${x.date}</span></div>
+                ${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}
+                <button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button>
+              </div>`;
+            }).join('')
+          : `<div class="no-calls">No calls logged yet.</div>`
+        }
+      </div>
+    </div>
+
+    <!-- Nav footer -->
+    <div class="card-nav">
+      <button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>← Prev</button>
+      <span style="font-size:11px;color:var(--muted);text-align:center;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.pastor||c.church||'')}</span>
+      <button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>Next →</button>
+    </div>
+  `;
+}
+
+function toggleContactMenu(){
+  contactMenuOpen=!contactMenuOpen;
+  renderCallingCard();
+}
+
+function closeCard(){
+  document.getElementById('fullscreen-card').classList.remove('visible');
+  document.getElementById('fullscreen-card').style.display='none';
+  document.getElementById('fullscreen-card').innerHTML='';
+  contactMenuOpen=false;
+  renderList();
+}
+
+function navCard(dir){
+  const next=callingIdx+dir;
+  if(next<0||next>=filteredList.length)return;
+  callingIdx=next;
+  contactMenuOpen=false;
+  renderCallingCard();
+}
+
+/* ── LOG MODAL ── */
+function openLogModal(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  logOut=null;logMtg=false;
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h2>Log a call</h2>
+      <div class="modal-sub">${esc(c.pastor||c.church||'')} · ${esc([c.city,c.state].filter(Boolean).join(', '))}</div>
+      <div class="fg"><label>Outcome *</label>
+        <div class="outcome-opts">
+          <button class="outcome-opt" id="op-pastor" onclick="selOut('pastor')"><span class="opt-icon">🙋</span>Spoke to Pastor</button>
+          <button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')"><span class="opt-icon">📵</span>No Response / Voicemail</button>
+          <button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')"><span class="opt-icon">📋</span>Spoke to Secretary</button>
+        </div>
+      </div>
+      <div id="mtg-sec" style="display:none">
+        <div class="meeting-row"><label>Meeting booked?</label>
+          <div class="toggle-wrap">
+            <button class="toggle-btn off" id="mtg-yes" onclick="setMtg(true)">Yes</button>
+            <button class="toggle-btn on" id="mtg-no" onclick="setMtg(false)">No</button>
+          </div>
+        </div>
+        <div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="text" id="mtg-d" placeholder="e.g. June 15, 2026"/></div></div>
+      </div>
+      <div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="call-det" placeholder="Who you spoke with, what was discussed…"></textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn-save" onclick="saveCall('${cid}')">Save call</button>
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button class="btn-save" onclick="saveLog('${cid}')">Save call</button>
       </div>
     </div>
   </div>`);
 }
-
-function selectOutcome(o){
-  logCallOutcome=o;
-  ['pastor','voicemail','secretary'].forEach(k=>{
-    const el=document.getElementById('opt-'+k); if(el) el.classList.toggle('selected',k===o);
-  });
-  const ms=document.getElementById('meeting-section');
-  if(ms) ms.style.display=o==='voicemail'?'none':'block';
-  if(o==='voicemail') logCallMeeting=false;
+function selOut(o){logOut=o;['pastor','voicemail','secretary'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');if(ms)ms.style.display=o==='voicemail'?'none':'block';if(o==='voicemail')logMtg=false;}
+function setMtg(v){logMtg=v;const y=document.getElementById('mtg-yes');if(y)y.className='toggle-btn '+(v?'on':'off');const n=document.getElementById('mtg-no');if(n)n.className='toggle-btn '+(v?'off':'on');const d=document.getElementById('mtg-date');if(d)d.style.display=v?'block':'none';}
+function saveLog(cid){
+  if(!logOut){alert('Please select an outcome.');return;}
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  if(!c.calls)c.calls=[];
+  const md=(document.getElementById('mtg-d')||{}).value||'';
+  c.calls.push({id:uid(),date:fmtDate(new Date()),outcome:logOut,meetingBooked:logMtg,meetingDate:md.trim(),details:(document.getElementById('call-det').value||'').trim()});
+  save();closeMKeepCard();renderCallingCard();renderList();
 }
-function setMeeting(val){
-  logCallMeeting=val;
-  const y=document.getElementById('meeting-yes'); if(y) y.className='toggle-btn '+(val?'on':'off');
-  const n=document.getElementById('meeting-no');  if(n) n.className='toggle-btn '+(val?'off':'on');
-  const dr=document.getElementById('meeting-date-row'); if(dr) dr.style.display=val?'block':'none';
-}
-function saveCall(cid){
-  if(!logCallOutcome){ alert('Please select an outcome.'); return; }
-  const c=contacts.find(x=>x.id===cid); if(!c) return;
-  if(!c.calls) c.calls=[];
-  const md=(document.getElementById('meeting-date')||{}).value||'';
-  c.calls.push({ id:uid(), date:formatDate(new Date()), outcome:logCallOutcome, meetingBooked:logCallMeeting, meetingDate:md.trim(), details:(document.getElementById('call-details').value||'').trim() });
-  closeModal(); save(); renderList();
-}
-function deleteCall(cid,callId){
-  const c=contacts.find(x=>x.id===cid); if(!c) return;
-  c.calls=(c.calls||[]).filter(x=>x.id!==callId);
-  save(); closeModal(); openDetailCard(cid);
+function delCall(cid,xid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  c.calls=(c.calls||[]).filter(x=>x.id!==xid);
+  save();renderCallingCard();renderList();
 }
 
-/* ─── Contact edit modal ─── */
+/* ── REMINDER MODAL ── */
+function openReminderModal(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h2>🔔 Set Reminder</h2>
+      <div class="modal-sub">Set a call-back reminder for ${esc(c.pastor||c.church||'this contact')}.</div>
+      <div class="fg"><label>Call back on</label><input type="date" id="rem-date"/></div>
+      <div class="fg"><label>Note <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="rem-note" placeholder="e.g. Call back after 10am, ask about missions budget…" style="height:60px"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button>
+      </div>
+    </div>
+  </div>`);
+}
+function saveReminder(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  const d=document.getElementById('rem-date').value;
+  const note=document.getElementById('rem-note').value||'';
+  if(!d){alert('Please pick a date.');return;}
+  const label=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if(!c.calls)c.calls=[];
+  c.calls.push({id:uid(),date:fmtDate(new Date()),outcome:'reminder',meetingBooked:false,meetingDate:'',details:`Call back ${label}${note?'\n'+note:''}`});
+  save();closeMKeepCard();renderCallingCard();renderList();
+}
+
+/* ── CALENDAR MODAL ── */
+function openCalendarModal(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h2>📅 Add to Calendar</h2>
+      <div class="modal-sub">Pick a date and we'll open Google Calendar with the event pre-filled.</div>
+      <div class="fg"><label>Meeting date</label><input type="date" id="cal-date"/></div>
+      <div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div>
+      <button class="cal-open-btn" onclick="openGCal('${cid}')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+        Open Google Calendar
+      </button>
+      <div class="modal-actions" style="margin-top:10px">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+      </div>
+    </div>
+  </div>`);
+}
+function openGCal(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  const d=document.getElementById('cal-date').value;
+  const t=document.getElementById('cal-time').value;
+  if(!d){alert('Please pick a date.');return;}
+  const title=encodeURIComponent(`Meeting: ${c.pastor||c.church||'Pastor'} — ${c.church||''}`);
+  const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));
+  const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);
+  let dates='';
+  if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=d.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}
+  else{const day=d.replace(/-/g,'');dates=`${day}/${day}`;}
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');
+  if(!c.calls)c.calls=[];
+  const lbl=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  c.calls.push({id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,details:`Meeting scheduled for ${lbl}`});
+  save();closeMKeepCard();renderCallingCard();renderList();
+}
+
+/* ── EDIT MODAL ── */
 function openContactModal(id){
   const c=id?contacts.find(x=>x.id===id):null;
   const v=f=>c?(c[f]||''):'';
-  const regOpts=['Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'].map(o=>`<option${v('region')===o?' selected':''}>${o}</option>`).join('');
-  const[bg,fg]=avatarColor((c&&c.pastor)||'?');
-  const prevInner=(c&&c.photo)?`<img src="${c.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:`<span style="color:${fg}">${initials((c&&c.pastor)||'?')}</span>`;
-  const prevStyle=(c&&c.photo)?'':`background:${bg};`;
-  pendingPhoto=null;
-  showModal(`
-  <div class="modal-backdrop" onclick="closeModal(event)">
-    <div class="edit-modal" onclick="event.stopPropagation()">
+  const ro=REGS.map(o=>`<option${v('region')===o?' selected':''}>${o}</option>`).join('');
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
       <h2>${c?'Edit contact':'New contact'}</h2>
-      <div class="photo-upload-wrap">
-        <div class="photo-preview" id="photo-preview" style="${prevStyle}" onclick="document.getElementById('f-photo-input').click()">
-          ${prevInner}<div class="photo-overlay">📷</div>
-        </div>
-        <div class="photo-upload-info">
-          <p>Click to upload a photo</p>
-          <div class="photo-btns">
-            <button class="photo-btn" type="button" onclick="document.getElementById('f-photo-input').click()">Upload</button>
-            <button class="photo-btn remove" type="button" id="remove-photo-btn" style="${(c&&c.photo)?'':'display:none'}" onclick="removePhoto()">Remove</button>
-          </div>
-        </div>
-        <input type="file" id="f-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" />
+      <div class="form-row">
+        <div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div>
+        <div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div>
       </div>
       <div class="form-row">
-        <div class="form-group-inline"><label>Pastor name</label><input id="f-pastor" value="${esc(v('pastor'))}" placeholder="First Last" /></div>
-        <div class="form-group-inline"><label>Church</label><input id="f-church" value="${esc(v('church'))}" placeholder="Church name" /></div>
+        <div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div>
+        <div class="fgi"><label>State</label><input id="fst" value="${esc(v('state')||'IL')}" placeholder="IL" maxlength="2" style="text-transform:uppercase"/></div>
       </div>
       <div class="form-row">
-        <div class="form-group-inline"><label>City</label><input id="f-city" value="${esc(v('city'))}" placeholder="City" /></div>
-        <div class="form-group-inline"><label>State</label><input id="f-state" value="${esc(v('state')||'IL')}" placeholder="IL" maxlength="2" style="text-transform:uppercase" /></div>
+        <div class="fgi"><label>Region</label><select id="fr"><option value="">—</option>${ro}</select></div>
+        <div class="fgi"><label>Phone</label><input id="fph" value="${esc(v('phone'))}" placeholder="(000) 000-0000"/></div>
       </div>
-      <div class="form-row">
-        <div class="form-group-inline"><label>Region</label><select id="f-region"><option value="">—</option>${regOpts}</select></div>
-        <div class="form-group-inline"><label>Phone</label><input id="f-phone" value="${esc(v('phone'))}" placeholder="(000) 000-0000" /></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group-inline full"><label>Address</label><input id="f-address" value="${esc(v('address'))}" placeholder="Street address" /></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group-inline full"><label>Email</label><input id="f-email" type="email" value="${esc(v('email'))}" placeholder="pastor@church.com" /></div>
-      </div>
+      <div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div>
+      <div class="form-row"><div class="fgi full"><label>Email</label><input id="fe" type="email" value="${esc(v('email'))}" placeholder="pastor@church.com"/></div></div>
       <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn-save" onclick="saveContactModal('${id||''}')">Save</button>
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button class="btn-save" onclick="saveCM('${id||''}')">Save</button>
       </div>
     </div>
   </div>`);
 }
-
-function handlePhotoUpload(e){
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=function(ev){
-    pendingPhoto=ev.target.result;
-    const p=document.getElementById('photo-preview'); if(!p) return;
-    p.style.background='';
-    p.innerHTML=`<img src="${pendingPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"><div class="photo-overlay">📷</div>`;
-    const rb=document.getElementById('remove-photo-btn'); if(rb) rb.style.display='';
-  };
-  reader.readAsDataURL(file);
-}
-function removePhoto(){
-  pendingPhoto='';
-  const nm=(document.getElementById('f-pastor')||{}).value||'';
-  const[bg,fg]=avatarColor(nm||'?');
-  const p=document.getElementById('photo-preview'); if(!p) return;
-  p.style.background=bg;
-  p.innerHTML=`<span style="color:${fg}">${initials(nm||'?')}</span><div class="photo-overlay">📷</div>`;
-  const rb=document.getElementById('remove-photo-btn'); if(rb) rb.style.display='none';
-}
-function saveContactModal(id){
-  const church=(document.getElementById('f-church')||{}).value||'';
-  const pastor=(document.getElementById('f-pastor')||{}).value||'';
-  if(!church.trim()&&!pastor.trim()){ alert('Church or pastor name is required.'); return; }
-  const data={
-    pastor:pastor.trim(), church:church.trim(),
-    city:(document.getElementById('f-city')||{}).value?.trim()||'',
-    state:((document.getElementById('f-state')||{}).value||'').trim().toUpperCase(),
-    region:(document.getElementById('f-region')||{}).value||'',
-    phone:(document.getElementById('f-phone')||{}).value?.trim()||'',
-    address:(document.getElementById('f-address')||{}).value?.trim()||'',
-    email:(document.getElementById('f-email')||{}).value?.trim()||'',
-  };
-  if(pendingPhoto!==null) data.photo=pendingPhoto;
-  if(id){ const c=contacts.find(x=>x.id===id); Object.assign(c,data); }
-  else { contacts.push({id:uid(),calls:[],notes:[],photo:'',...data}); }
-  pendingPhoto=null; closeModal(); save(); renderAll();
-}
-function deleteContact(id){
-  if(!confirm('Delete this contact? This cannot be undone.')) return;
-  contacts=contacts.filter(c=>c.id!==id);
-  closeModal(); save(); renderAll();
+function saveCM(id){
+  const ch=(document.getElementById('fc')||{}).value||'';
+  const pa=(document.getElementById('fp')||{}).value||'';
+  if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}
+  const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),region:(document.getElementById('fr')||{}).value||'',phone:(document.getElementById('fph')||{}).value?.trim()||'',address:(document.getElementById('fa')||{}).value?.trim()||'',email:(document.getElementById('fe')||{}).value?.trim()||''};
+  if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);}
+  else{contacts.push({id:uid(),calls:[],notes:[],photo:'',...d});}
+  save();closeMKeepCard();renderFilters();renderList();
+  if(id) renderCallingCard();
 }
 
-/* ─── Modal layer helpers ─── */
-function showModal(html){
-  const layer=document.getElementById('modal-layer');
-  layer.style.display='block';
-  layer.innerHTML=html;
-}
-function closeModal(e){
-  if(e&&e.target!==e.currentTarget) return;
-  pendingPhoto=null; logCallOutcome=null; logCallMeeting=false;
-  const layer=document.getElementById('modal-layer');
-  layer.style.display='none';
-  layer.innerHTML='';
-}
+/* ── HELPERS ── */
+function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
+function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
 
-load(); renderAll();
+load(); renderFilters(); renderList();
 </script>
 </body>
 </html>
