@@ -442,41 +442,39 @@ function renderProximityResults(lat, lng) {
 
   const pillMap={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['M','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
 
+  // Store proximity results for card navigation
+  window._proxResults = withDist;
+
+  const pillMap2={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['M','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
+
   resultsEl.innerHTML = `
     <div style="padding:10px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">
       ${withDist.length} contact${withDist.length!==1?'s':''} within ${radius} mi${noCoords.length?` · ${noCoords.length} without coordinates`:''}</div>
     ${withDist.map((c,i) => {
       const rcList = getRegionColor(c);
       const lcall = lc(c);
-      const pillData = lcall && pillMap[lcall.outcome] ? pillMap[lcall.outcome] : null;
+      const pillData = lcall && pillMap2[lcall.outcome] ? pillMap2[lcall.outcome] : null;
       const pill = pillData ? `<span class="status-pill ${pillData[1]}">${pillData[0]}</span>` : `<span class="status-pill pill-none">—</span>`;
       const distStr = c.dist < 10 ? c.dist.toFixed(1) : Math.round(c.dist);
-      // Find index in main contacts array for card navigation
-      const mainIdx = filteredList.indexOf(contacts.find(x=>x.id===c.id));
-      const clickIdx = contacts.indexOf(contacts.find(x=>x.id===c.id));
-      return `<div class="prox-result-row" onclick="openCardFromProximity('${c.id}')">
+      const hasReminder = (c.calls||[]).some(x=>x.outcome==='reminder');
+      return `<div class="contact-row" onclick="openCardFromProximity(${i})" style="grid-template-columns:44px 1fr 48px 48px;">
         <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
         <div class="row-cell">
-          <div class="row-name">${esc(c.pastor||'—')}</div>
+          <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''} <span style="font-size:10px;font-weight:600;color:var(--accent);margin-left:4px;">${distStr} mi</span></div>
           <div class="row-sub">${esc(c.church||'')}</div>
           <div class="row-loc">${esc([c.city,c.state].filter(Boolean).join(', '))}</div>
         </div>
-        <div style="text-align:right;padding-right:4px;">
-          <div class="prox-distance">${distStr} mi</div>
-          ${pill}
-        </div>
+        <div class="row-pill-cell">${pill}</div>
+        <div class="row-actions" onclick="event.stopPropagation()"><button class="log-btn" onclick="openLogModal('${c.id}')" style="display:flex;align-items:center;justify-content:center;">${ICONS.phone}</button></div>
       </div>`;
     }).join('')}`;
 }
 
-function openCardFromProximity(cid) {
-  // Build a filtered list from proximity results and open card
-  const resultsEl = document.getElementById('prox-results');
-  const rows = resultsEl.querySelectorAll('.prox-result-row');
-  const ids = Array.from(rows).map(r => r.getAttribute('onclick').match(/'([^']+)'/)[1]);
-  filteredList = ids.map(id => contacts.find(c => c.id === id)).filter(Boolean);
-  const idx = filteredList.findIndex(c => c.id === cid);
-  callingIdx = idx >= 0 ? idx : 0;
+function openCardFromProximity(idx) {
+  // Set filteredList to proximity order (closest first)
+  if(!window._proxResults || !window._proxResults.length) return;
+  filteredList = window._proxResults.map(c => contacts.find(x => x.id === c.id)).filter(Boolean);
+  callingIdx = idx;
   contactMenuOpen = false;
   infoExpanded = false;
   renderCallingCard();
