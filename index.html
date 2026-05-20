@@ -322,10 +322,20 @@ function primaryPhone(p){return(p||'').split(/[,;\/]/)[0].trim();}
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4GJpN5ZDqoTTFoG_B97W0GIDtmMAgb0jF8KeaWZXkOuYUR3mzpVDKOYFISjRK01gjxQ/exec';
 const SECRET = 'relay_secret_2026';
 
-async function api(params) {
-  const url = SCRIPT_URL + '?' + new URLSearchParams({...params, secret: SECRET});
-  const res = await fetch(url);
-  return res.json();
+function api(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'relay_cb_' + Date.now();
+    const url = SCRIPT_URL + '?' + new URLSearchParams({...params, secret: SECRET, callback: cbName});
+    const script = document.createElement('script');
+    window[cbName] = function(data) {
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = () => { delete window[cbName]; document.body.removeChild(script); reject(new Error('Script load error')); };
+    script.src = url;
+    document.body.appendChild(script);
+  });
 }
 
 let sheetsReady = false;
