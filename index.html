@@ -144,6 +144,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .outcome-noanswer2{background:#e8e6e1;color:#1e1e1e;}
 .outcome-imported {background:var(--surface2);color:var(--muted);}
 .outcome-reminder {background:#2e1f00;color:#f0b429;}
+.outcome-note     {background:var(--surface2);color:var(--muted);}
 .call-date{font-size:10px;color:var(--muted);margin-left:auto;}
 .call-details-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-top:5px;}
 .call-del{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:4px 6px;border-radius:4px;line-height:1;}
@@ -267,7 +268,8 @@ const OM={
   voicemail: {label:'Left Voicemail',          cls:'outcome-voicemail',  icon:'vm'},
   secretary: {label:'Spoke to Secretary',      cls:'outcome-secretary',  icon:'chair'},
   imported:  {label:'Imported note',           cls:'outcome-imported',   icon:''},
-  reminder:  {label:'Reminder',                cls:'outcome-reminder',   icon:'bellSm'}
+  reminder:  {label:'Reminder',                cls:'outcome-reminder',   icon:'bellSm'},
+  note:      {label:'Note',                     cls:'outcome-note',       icon:'noteSm'}
 };
 function starIcon(starred){
   return starred?ICONS.starFilled:ICONS.starEmpty;
@@ -277,6 +279,7 @@ function outcomeIcon(key){
   if(key==='chair') return ICONS.chair;
   if(key==='bellSm') return ICONS.bellSm;
   if(key==='vm') return '<span style="font-size:10px;font-weight:700;letter-spacing:.04em">M</span>';
+  if(key==='noteSm') return ICONS.noteSm;
   if(key==='na1') return '<span style="width:16px;height:16px;background:#2a2a2a;border:1.5px solid #666;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#e8e6e1">1</span>';
   if(key==='na2') return '<span style="width:16px;height:16px;background:transparent;border:1.5px solid #888;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#b0aea9">2</span>';
   return '';
@@ -294,7 +297,7 @@ const REGS=['Central','Central East','Central North','Central West','North','Nor
 // SVG Icon system
 const ICONS={
   person:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  phone:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  phone:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><polyline points="9 11 11 13 15 9"/></svg>`,
   bell:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
   calendar:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
   pencil:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
@@ -306,6 +309,7 @@ const ICONS={
   phoneOff:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.5 16.5L19 19a2 2 0 0 1-2 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6"/></svg>`,
   chair:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v-8a6 6 0 0 1 12 0v8"/><path d="M4 19h16"/><path d="M12 19v3"/><path d="M8 22h8"/></svg>`,
   bellSm:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  noteSm:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
   chevronUp:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`,
   chevronDown:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
   search:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
@@ -333,6 +337,12 @@ function primaryPhone(p){return String(p??'').split(/[,;\/]/)[0].trim();}
 
 // ── PROXIMITY SEARCH ──
 const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'];
+
+const STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia'};
+function stateDropdown(id, val){
+  const opts = US_STATES.map(s=>`<option value="${s}"${val===s?' selected':''}>${s} (${STATE_NAMES[s]||s})</option>`).join('');
+  return `<select id="${id}" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;"><option value="">— State —</option>${opts}</select>`;
+}
 
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 3958.8; // miles
@@ -781,6 +791,7 @@ function renderCallingCard(){
             <div style="text-align:right;flex-shrink:0">
               <div style="font-size:15px;font-weight:600;color:var(--text);line-height:1.1;display:flex;align-items:center;gap:4px;"><span style="color:${rc.text}">${ICONS.pin}</span> ${esc(c.city||'—')}</div>
               <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(c.state||'')}</div>
+              ${(c.lat&&c.lng&&c.lat!=='Unkown'&&c.lng!=='Unkown')?`<div style="font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.03em;opacity:.7">${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng).toFixed(4)}</div>`:''}
             </div>
           </div>
         </div>
@@ -801,7 +812,7 @@ function renderCallingCard(){
         ${calls.length?calls.map(x=>{
           const m=OM[x.outcome]||OM.imported;
           const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
-          return `<div class="call-entry"><div class="call-top"><span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button></div>`;
+          return `<div class="call-entry"><div class="call-top">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button></div>`;
         }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
@@ -857,6 +868,7 @@ function openLogModal(cid){
           <button class="outcome-opt" id="op-noanswer2" onclick="selOut('noanswer2')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#b0aea9;">②</span>No Answer (2nd)</button>
           <button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')" style="border-color:#8899ee44;"><span class="opt-icon" style="display:flex;align-items:center;color:#8899ee;">${ICONS.phoneOff}</span><span style="color:#8899ee;">Left Voicemail</span></button>
           <button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')" style="border-color:#c9a0f044;"><span class="opt-icon" style="display:flex;align-items:center;color:#c9a0f0;">${ICONS.chair}</span><span style="color:#c9a0f0;">Spoke to Secretary</span></button>
+          <button class="outcome-opt" id="op-note" onclick="selOut('note')"><span class="opt-icon" style="display:flex;align-items:center;color:var(--muted);">${ICONS.noteSm}</span><span>Add Note</span></button>
         </div>
       </div>
       <div id="mtg-sec" style="display:none">
@@ -878,7 +890,7 @@ function openLogModal(cid){
     </div>
   </div>`);
 }
-function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');const showMtg=(o==='pastor'||o==='secretary');if(ms)ms.style.display=showMtg?'block':'none';if(!showMtg)logMtg=false;}
+function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');const showMtg=(o==='pastor'||o==='secretary');const isNote=(o==='note');if(ms)ms.style.display=showMtg?'block':'none';if(!showMtg)logMtg=false;}
 function setMtg(v){logMtg=v;const y=document.getElementById('mtg-yes');if(y)y.className='toggle-btn '+(v?'on':'off');const n=document.getElementById('mtg-no');if(n)n.className='toggle-btn '+(v?'off':'on');const d=document.getElementById('mtg-date');if(d)d.style.display=v?'block':'none';}
 function saveLog(cid){
   if(!logOut){alert('Please select an outcome.');return;}
@@ -977,7 +989,7 @@ function openContactModal(id){
       </div>
       <div class="form-row">
         <div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div>
-        <div class="fgi"><label>State</label><input id="fst" value="${esc(v('state')||'IL')}" placeholder="IL" maxlength="2" style="text-transform:uppercase"/></div>
+        <div class="fgi"><label>State</label>${stateDropdown('fst', v('state')||'IL')}</div>
       </div>
       <div class="form-row">
         <div class="fgi"><label>Region</label><select id="fr"><option value="">—</option>${ro}</select></div>
