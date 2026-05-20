@@ -41,12 +41,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .main-list::-webkit-scrollbar{width:3px;}
 .main-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 
-.contact-row{display:grid;grid-template-columns:44px 1fr 48px 48px;padding:0 14px;min-height:64px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;border-left:3px solid transparent;}
+.contact-row{display:grid;grid-template-columns:44px 1fr 48px 48px;padding:0 14px;min-height:64px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
 .contact-row:active{background:var(--surface);}
-.contact-row.status-pastor    {border-left-color:#4cd68a;}
-.contact-row.status-voicemail {border-left-color:#8899ee;}
-.contact-row.status-secretary {border-left-color:#d4934a;}
-.contact-row.status-reminder  {border-left-color:#f0b429;}
+
+
+
+
+
+
 .row-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
 .row-cell{padding:6px 4px;min-width:0;}
 .row-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -55,9 +57,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .status-pill{display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 6px;border-radius:20px;text-transform:uppercase;}
 .pill-pastor   {background:#1a3a28;color:#4cd68a;}
 .pill-voicemail{background:#1e2244;color:#8899ee;}
-.pill-secretary{background:#2e2010;color:#d4934a;}
+.pill-secretary{background:#2a1f35;color:#c9a0f0;}
 .pill-reminder {background:#2e1f00;color:#f0b429;}
 .pill-none     {background:var(--surface2);color:var(--muted);}
+.pill-noanswer1{background:#2a2a2a;color:#e8e6e1;border:1.5px solid #666;font-size:9px;padding:3px 7px;border-radius:20px;font-weight:700;letter-spacing:.04em;}
+.pill-noanswer2{background:transparent;color:#b0aea9;border:1.5px solid #6b6860;font-size:9px;padding:3px 7px;border-radius:20px;font-weight:700;letter-spacing:.04em;}
 .row-pill-cell{display:flex;align-items:center;justify-content:center;}
 .row-actions{display:flex;align-items:center;justify-content:flex-end;}
 .log-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);font-size:16px;cursor:pointer;border:1px solid #6b7fd433;background:none;color:#8899ee;}
@@ -124,7 +128,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .outcome-badge{font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;}
 .outcome-pastor   {background:#1a3a28;color:#4cd68a;}
 .outcome-voicemail{background:#1e2244;color:#8899ee;}
-.outcome-secretary{background:#2e2010;color:#d4934a;}
+.outcome-secretary{background:#2a1f35;color:#c9a0f0;}
+.outcome-noanswer1{background:#1e1e1e;color:#e8e6e1;border:1px solid #555;}
+.outcome-noanswer2{background:#e8e6e1;color:#1e1e1e;}
 .outcome-imported {background:var(--surface2);color:var(--muted);}
 .outcome-reminder {background:#2e1f00;color:#f0b429;}
 .call-date{font-size:10px;color:var(--muted);margin-left:auto;}
@@ -215,14 +221,50 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 </div>
 
 <script>
+
+// National region mapping
+const STATE_REGION={
+  AL:'south',AK:'noncont',AZ:'west',AR:'south',CA:'west',CO:'west',CT:'northeast',
+  DE:'northeast',FL:'south',GA:'south',HI:'noncont',ID:'west',IL:'midwest',IN:'midwest',
+  IA:'midwest',KS:'midwest',KY:'south',LA:'south',ME:'northeast',MD:'northeast',
+  MA:'northeast',MI:'midwest',MN:'midwest',MS:'south',MO:'midwest',MT:'west',
+  NE:'midwest',NV:'west',NH:'northeast',NJ:'northeast',NM:'west',NY:'northeast',
+  NC:'south',ND:'midwest',OH:'midwest',OK:'south',OR:'west',PA:'northeast',
+  RI:'northeast',SC:'south',SD:'midwest',TN:'south',TX:'south',UT:'west',
+  VT:'northeast',VA:'south',WA:'west',WV:'south',WI:'midwest',WY:'west',DC:'northeast'
+};
+const REGION_COLORS={
+  northeast:{bg:'#2a1018',text:'#c45c7a',border:'#c45c7a44'},
+  south:    {bg:'#2a1520',text:'#e8a0b4',border:'#e8a0b444'},
+  midwest:  {bg:'#101e2a',text:'#5b9fd4',border:'#5b9fd444'},
+  west:     {bg:'#2a2010',text:'#d4a84b',border:'#d4a84b44'},
+  noncont:  {bg:'#0e2228',text:'#4ec9d4',border:'#4ec9d444'},
+  default:  {bg:'#1a1a1a',text:'#6b6860',border:'#2e2e2e'}
+};
+function getRegionColor(c){
+  const st=(c.state||'').toUpperCase().trim();
+  const key=STATE_REGION[st]||'default';
+  return REGION_COLORS[key]||REGION_COLORS.default;
+}
+
 const AC=[['#1a2e22','#4a9e6b'],['#1a1f35','#6b7fd4'],['#2e1a1a','#d46b6b'],['#2e2a1a','#d4b06b'],['#251a2e','#a06bd4'],['#1a2a2e','#6bc4d4'],['#222','#999'],['#1e2a1a','#7ab06b']];
 const OM={
-  pastor:{label:'Spoke to Pastor',cls:'outcome-pastor',icon:'🙋'},
-  voicemail:{label:'No Response / Voicemail',cls:'outcome-voicemail',icon:'📵'},
-  secretary:{label:'Spoke to Secretary',cls:'outcome-secretary',icon:'📋'},
-  imported:{label:'Imported note',cls:'outcome-imported',icon:'📝'},
-  reminder:{label:'Reminder',cls:'outcome-reminder',icon:'🔔'}
+  pastor:    {label:'Spoke to Pastor',         cls:'outcome-pastor',     icon:'🙋'},
+  noanswer1: {label:'No Answer (1st attempt)', cls:'outcome-noanswer1',  icon:'1'},
+  noanswer2: {label:'No Answer (2nd attempt)', cls:'outcome-noanswer2',  icon:'2'},
+  voicemail: {label:'Left Voicemail',          cls:'outcome-voicemail',  icon:'📵'},
+  secretary: {label:'Spoke to Secretary',      cls:'outcome-secretary',  icon:'📋'},
+  imported:  {label:'Imported note',           cls:'outcome-imported',   icon:'📝'},
+  reminder:  {label:'Reminder',                cls:'outcome-reminder',   icon:'🔔'}
 };
+function suggestedNext(c){
+  const calls=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');
+  if(!calls.length) return null;
+  const last=calls[calls.length-1].outcome;
+  if(last==='noanswer1') return 'noanswer2';
+  if(last==='noanswer2') return 'voicemail';
+  return null;
+}
 const REGS=['Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'];
 let contacts=[],fState='All',fReg='All',logOut=null,logMtg=false;
 let filteredList=[],callingIdx=0,contactMenuOpen=false;
@@ -255,7 +297,7 @@ function renderFilters(){
   document.getElementById('region-filter-row').innerHTML=regs.map(r=>`<button class="filter-pill${fReg===r?' active':''}" onclick="setRF('${r}')">${r==='All'?'All Regions':r}</button>`).join('');
 }
 function setSF(s){fState=s;fReg='All';renderFilters();renderList();}
-function setRF(r){fReg=r;renderList();}
+function setRF(r){fReg=r;renderFilters();renderList();}
 
 function buildFilteredList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
@@ -280,7 +322,7 @@ function renderList(){
 
   if(!filteredList.length){list.innerHTML='<div class="empty-state">No contacts found</div>';return;}
 
-  const pillMap={pastor:['P','pill-pastor'],voicemail:['VM','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
+  const pillMap={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['VM','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
 
   list.innerHTML=filteredList.map((c,i)=>{
     const[bg,fg]=ac(c.pastor||c.church||'?');
@@ -291,9 +333,10 @@ function renderList(){
     const loc=[c.city,c.state].filter(Boolean).join(', ');
     const hasReminder=(c.calls||[]).some(x=>x.outcome==='reminder');
 
+    const rcList=getRegionColor(c);
     if(isDesktop){
       return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
-        <div style="padding:0 4px"><div class="row-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div></div>
+        <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
         <div class="row-cell"><div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div><div class="row-sub">${esc(c.church||'')}</div></div>
         <div class="row-cell"><div class="row-loc">${esc(loc)||'—'}</div></div>
         <div class="row-pill-cell">${pill}</div>
@@ -302,7 +345,7 @@ function renderList(){
     }
     // Mobile: name+church+city on 3 lines, pill, log btn
     return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
-      <div style="padding:0 4px"><div class="row-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div></div>
+      <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
       <div class="row-cell">
         <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div>
         <div class="row-sub">${esc(c.church||'')}</div>
@@ -324,6 +367,7 @@ function renderCallingCard(){
   const c=filteredList[callingIdx];
   if(!c){closeCard();return;}
   const[bg,fg]=ac(c.pastor||c.church||'?');
+  const rc=getRegionColor(c);
   const total=filteredList.length;
   const pct=Math.round(((callingIdx+1)/total)*100);
   const ph=primaryPhone(c.phone);
@@ -346,10 +390,10 @@ function renderCallingCard(){
     </div>
     <div class="card-body">
       <div class="card-hero">
-        <div class="card-hero-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div>
+        <div class="card-hero-avatar" style="background:${rc.bg};color:${rc.text};border:2px solid ${rc.border}">${ini(c.pastor||c.church||'?')}</div>
         <div style="flex:1;min-width:0">
           <div class="card-hero-name">${esc(c.pastor||'Unknown Pastor')}</div>
-          <div class="card-hero-church">${esc(c.church||'—')}</div>
+          <div class="card-hero-church" style="color:${rc.text}">${esc(c.church||'—')}</div>
           <div class="card-hero-location">📍 ${esc([c.city,c.state].filter(Boolean).join(', ')||'—')}${c.region?` <span class="card-hero-region">${esc(c.region)}</span>`:''}</div>
         </div>
       </div>
@@ -400,14 +444,20 @@ function navCard(dir){
 function openLogModal(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
   logOut=null;logMtg=false;
+  const suggested=suggestedNext(c);
+  if(suggested){setTimeout(()=>selOut(suggested),50);}
+  const suggestionHTML=suggested?`<div style="background:#1a2e22;border:1px solid #4a9e6b33;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#4cd68a;">💡 Suggested: <strong>${OM[suggested]?.label||suggested}</strong></div>`:'';
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <h2>Log a call</h2>
       <div class="modal-sub">${esc(c.pastor||c.church||'')} · ${esc([c.city,c.state].filter(Boolean).join(', '))}</div>
+      <div id="log-suggestion">${suggestionHTML}</div>
       <div class="fg"><label>Outcome *</label>
         <div class="outcome-opts">
           <button class="outcome-opt" id="op-pastor" onclick="selOut('pastor')"><span class="opt-icon">🙋</span>Spoke to Pastor</button>
-          <button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')"><span class="opt-icon">📵</span>No Response / Voicemail</button>
+          <button class="outcome-opt" id="op-noanswer1" onclick="selOut('noanswer1')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#e8e6e1;">①</span>No Answer (1st)</button>
+          <button class="outcome-opt" id="op-noanswer2" onclick="selOut('noanswer2')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#b0aea9;">②</span>No Answer (2nd)</button>
+          <button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')"><span class="opt-icon">📵</span>Left Voicemail</button>
           <button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')"><span class="opt-icon">📋</span>Spoke to Secretary</button>
         </div>
       </div>
@@ -430,7 +480,7 @@ function openLogModal(cid){
     </div>
   </div>`);
 }
-function selOut(o){logOut=o;['pastor','voicemail','secretary'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');if(ms)ms.style.display=o==='voicemail'?'none':'block';if(o==='voicemail')logMtg=false;}
+function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');const showMtg=(o==='pastor'||o==='secretary');if(ms)ms.style.display=showMtg?'block':'none';if(!showMtg)logMtg=false;}
 function setMtg(v){logMtg=v;const y=document.getElementById('mtg-yes');if(y)y.className='toggle-btn '+(v?'on':'off');const n=document.getElementById('mtg-no');if(n)n.className='toggle-btn '+(v?'off':'on');const d=document.getElementById('mtg-date');if(d)d.style.display=v?'block':'none';}
 function saveLog(cid){
   if(!logOut){alert('Please select an outcome.');return;}
