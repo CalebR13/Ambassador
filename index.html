@@ -357,7 +357,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 function openProximityScreen() {
   const scr = document.getElementById('proximity-screen');
   scr.classList.add('visible');
-  const stateOpts = US_STATES.map(s => `<option value="${s}">${s}</option>`).join('');
+  const stateOpts = US_STATES.map(s => `<option value="${s}">${s} (${STATE_NAMES[s]||s})</option>`).join('');
   scr.innerHTML = `
     <div class="card-topbar">
       <button class="card-back-btn" onclick="closeProximityScreen()">←</button>
@@ -671,20 +671,65 @@ function toggleStar(cid){
   save();saveContact(c);renderList();renderCallingCard();
 }
 
+function getReminders(){
+  // Get all contacts with reminders, sorted by soonest due date
+  const now=new Date();
+  const result=[];
+  contacts.forEach(c=>{
+    const rems=(c.calls||[]).filter(x=>x.outcome==='reminder');
+    if(!rems.length) return;
+    // Get soonest reminder
+    const sorted=rems.slice().sort((a,b)=>{
+      const da=a.remDate?new Date(a.remDate+'T'+(a.remTime||'12:00')+':00'):new Date(0);
+      const db=b.remDate?new Date(b.remDate+'T'+(b.remTime||'12:00')+':00'):new Date(0);
+      return da-db;
+    });
+    const soonest=sorted[0];
+    const due=soonest.remDate?new Date(soonest.remDate+'T'+(soonest.remTime||'12:00')+':00'):null;
+    result.push({contact:c, reminder:soonest, due, overdue:due&&due<now});
+  });
+  result.sort((a,b)=>{
+    // Overdue first, then by date
+    if(a.overdue&&!b.overdue) return -1;
+    if(!a.overdue&&b.overdue) return 1;
+    if(!a.due&&!b.due) return 0;
+    if(!a.due) return 1;
+    if(!b.due) return -1;
+    return a.due-b.due;
+  });
+  return result;
+}
+
+let showingReminders=false;
+
+function toggleRemindersView(){
+  showingReminders=!showingReminders;
+  renderFilters();
+  renderList();
+}
+
 function renderFilters(){
   const states=['All','Starred',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
+  const remCount=getReminders().length;
+  const overdueCount=getReminders().filter(r=>r.overdue).length;
+  const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;"></span>`:''}🔔 Reminders${remCount?' ('+remCount+')':''}</button>`;
   const nearbyPill=`<button class="filter-pill${proxResults?' active':''}" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg> ${proxResults?'📍 '+proxLabel+' ('+proxResults.length+')':'Nearby'}</button>`;
   const clearPill=proxResults?`<button class="filter-pill" onclick="clearProximity()" style="color:var(--danger);border-color:var(--danger)44;">✕ Clear</button>`:'';
-  const statePills=proxResults?'':states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s==='Starred'?'<span style="color:#f0b429">★</span> Starred':s}</button>`).join('');
-  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+statePills;
+  const statePills=(proxResults||showingReminders)?'':states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s==='Starred'?'<span style="color:#f0b429">★</span> Starred':s}</button>`).join('');
+  document.getElementById('state-filter-row').innerHTML=remPill+nearbyPill+clearPill+statePills;
 }
-function setSF(s){fState=s;proxResults=null;proxLabel='';renderFilters();renderList();}
+function setSF(s){fState=s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
 function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
 
 function buildFilteredList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
   if(proxResults){
     let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);
+    if(q) f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));
+    return f;
+  }
+  if(showingReminders){
+    let f=getReminders().map(r=>r.contact);
     if(q) f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));
     return f;
   }
@@ -721,6 +766,8 @@ function renderList(){
 
     const rcList=getRegionColor(c);
     const proxItem=proxResults?proxResults.find(r=>r.id===c.id):null;
+    const remItem=showingReminders?getReminders().find(r=>r.contact.id===c.id):null;
+    const remBadge=remItem?`<span style="font-size:9px;font-weight:500;color:${remItem.overdue?'#e05555':'#f0b429'};margin-left:4px;">${remItem.overdue?'⚠':'🔔'} ${remItem.reminder.remDate?new Date(remItem.reminder.remDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'Reminder'}</span>`:'';
     const distBadge=proxItem?`<span style="font-size:10px;font-weight:600;color:var(--accent);margin-left:4px;">${proxItem.dist<10?proxItem.dist.toFixed(1):Math.round(proxItem.dist)} mi</span>`:'';
     if(isDesktop){
       return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
@@ -735,7 +782,7 @@ function renderList(){
     return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
       <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
       <div class="row-cell">
-        <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}</div>
+        <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}${remBadge}</div>
         <div class="row-sub">${esc(c.church||'')}</div>
         <div class="row-loc">${esc(loc)||''}</div>
       </div>
@@ -913,10 +960,20 @@ function openReminderModal(cid){
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2>
-      <div class="modal-sub">Call-back reminder for ${esc(c.pastor||c.church||'this contact')}.</div>
-      <div class="fg"><label>Call back on</label><input type="date" id="rem-date"/></div>
-      <div class="fg"><label>Note <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
-        <textarea id="rem-note" placeholder="e.g. Call back after 10am…" style="height:70px"></textarea>
+      <div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div>
+      <div class="fg"><label>Type</label>
+        <div style="display:flex;gap:8px;">
+          <button id="rtype-call" class="toggle-btn on" onclick="setRType('call')" style="flex:1;">📞 Call</button>
+          <button id="rtype-email" class="toggle-btn off" onclick="setRType('email')" style="flex:1;">✉️ Email</button>
+          <button id="rtype-other" class="toggle-btn off" onclick="setRType('other')" style="flex:1;">📋 Other</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div>
+        <div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div>
+      </div>
+      <div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="rem-note" placeholder="What do you need to do?" style="height:70px"></textarea>
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
@@ -924,15 +981,29 @@ function openReminderModal(cid){
       </div>
     </div>
   </div>`);
+  setTimeout(()=>{window._remType='call';},50);
+}
+function setRType(t){
+  window._remType=t;
+  ['call','email','other'].forEach(k=>{
+    const el=document.getElementById('rtype-'+k);
+    if(el) el.className='toggle-btn '+(k===t?'on':'off');
+  });
 }
 function saveReminder(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
   const d=document.getElementById('rem-date').value;
-  const note=document.getElementById('rem-note').value||'';
+  const t=document.getElementById('rem-time').value||'';
+  const note=(document.getElementById('rem-note').value||'').trim();
+  const rtype=window._remType||'call';
   if(!d){alert('Please pick a date.');return;}
-  const label=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const dateObj=new Date(d+'T'+(t||'12:00')+':00');
+  const dateLabel=dateObj.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
+  const timeLabel=t?dateObj.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
+  const typeLabel=rtype==='call'?'Call':rtype==='email'?'Email':'Other';
+  const details=`${typeLabel} reminder · ${dateLabel}${timeLabel?' at '+timeLabel:''}${note?'\n'+note:''}`;
   if(!c.calls)c.calls=[];
-  const remCall={id:uid(),date:fmtDate(new Date()),outcome:'reminder',meetingBooked:false,meetingDate:'',details:`Call back ${label}${note?'\n'+note:''}`};
+  const remCall={id:uid(),date:fmtDate(new Date()),outcome:'reminder',meetingBooked:false,meetingDate:'',details,remDate:d,remTime:t,remType:rtype};
   c.calls.push(remCall);
   save();saveCallEntry(cid,remCall);closeMKeepCard();renderCallingCard();renderList();
 }
