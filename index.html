@@ -312,7 +312,7 @@ const ICONS={
   search:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
 };
 
-let contacts=[],fState='All',logOut=null,logMtg=false;
+let contacts=[],fState='All',logOut=null,logMtg=false,proxResults=null,proxLabel='';
 let filteredList=[],callingIdx=0,contactMenuOpen=false,infoExpanded=false;
 
 const SAMPLE=[
@@ -442,7 +442,16 @@ function renderProximityResults(lat, lng) {
 
   const pillMap={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['M','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
 
-  // Store proximity results for card navigation
+  // Store in global proxResults and close screen
+  const city2 = (document.getElementById('prox-city')||{}).value||'';
+  const state2 = (document.getElementById('prox-state')||{}).value||'';
+  proxResults = withDist;
+  proxLabel = [city2,state2].filter(Boolean).join(', ');
+  closeProximityScreen();
+  renderFilters();
+  renderList();
+  return;
+  // (code below no longer runs)
   window._proxResults = withDist;
 
   const pillMap2={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['M','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
@@ -655,13 +664,21 @@ function toggleStar(cid){
 
 function renderFilters(){
   const states=['All','Starred',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()];
-  const nearbyPill=`<button class="filter-pill" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg> Nearby</button>`;
-  document.getElementById('state-filter-row').innerHTML=nearbyPill+states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s==='Starred'?'<span style="color:#f0b429">★</span> Starred':s}</button>`).join('');
+  const nearbyPill=`<button class="filter-pill${proxResults?' active':''}" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg> ${proxResults?'📍 '+proxLabel+' ('+proxResults.length+')':'Nearby'}</button>`;
+  const clearPill=proxResults?`<button class="filter-pill" onclick="clearProximity()" style="color:var(--danger);border-color:var(--danger)44;">✕ Clear</button>`:'';
+  const statePills=proxResults?'':states.map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s==='All'?'All States':s==='Starred'?'<span style="color:#f0b429">★</span> Starred':s}</button>`).join('');
+  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+statePills;
 }
-function setSF(s){fState=s;renderFilters();renderList();}
+function setSF(s){fState=s;proxResults=null;proxLabel='';renderFilters();renderList();}
+function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
 
 function buildFilteredList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
+  if(proxResults){
+    let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);
+    if(q) f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));
+    return f;
+  }
   let f=contacts.filter(c=>{
     const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);
     const mq=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);
@@ -694,10 +711,12 @@ function renderList(){
     const hasReminder=(c.calls||[]).some(x=>x.outcome==='reminder');
 
     const rcList=getRegionColor(c);
+    const proxItem=proxResults?proxResults.find(r=>r.id===c.id):null;
+    const distBadge=proxItem?`<span style="font-size:10px;font-weight:600;color:var(--accent);margin-left:4px;">${proxItem.dist<10?proxItem.dist.toFixed(1):Math.round(proxItem.dist)} mi</span>`:'';
     if(isDesktop){
       return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
         <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
-        <div class="row-cell"><div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div><div class="row-sub">${esc(c.church||'')}</div></div>
+        <div class="row-cell"><div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}</div><div class="row-sub">${esc(c.church||'')}</div></div>
         <div class="row-cell"><div class="row-loc">${esc(loc)||'—'}</div></div>
         <div class="row-pill-cell">${pill}</div>
         <div class="row-actions" onclick="event.stopPropagation()"><button class="log-btn" onclick="openLogModal('${c.id}')" style="display:flex;align-items:center;justify-content:center;">${ICONS.phone}</button></div>
@@ -707,7 +726,7 @@ function renderList(){
     return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
       <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
       <div class="row-cell">
-        <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div>
+        <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}</div>
         <div class="row-sub">${esc(c.church||'')}</div>
         <div class="row-loc">${esc(loc)||''}</div>
       </div>
