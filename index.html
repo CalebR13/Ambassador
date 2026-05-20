@@ -85,12 +85,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .fullscreen-card.visible{display:flex;}
 
 .card-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.card-back-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.card-back-btn{background:none;border:1px solid var(--border);border-radius:50%;width:36px;height:36px;font-family:var(--sans);font-size:16px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .card-topbar-center{flex:1;text-align:center;}
 .card-progress-label{font-size:11px;color:var(--muted);}
 .card-progress-bar-wrap{width:80px;height:3px;background:var(--border);border-radius:3px;overflow:hidden;margin:5px auto 0;}
 .card-progress-bar-fill{height:100%;background:#F3B53A;border-radius:3px;transition:width .3s;}
-.card-edit-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;}
+.card-edit-btn{background:none;border:1px solid var(--border);border-radius:50%;width:36px;height:36px;font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
 .card-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .card-body::-webkit-scrollbar{width:3px;}
@@ -135,7 +135,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .card-history{padding:16px;}
 .history-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px;font-weight:500;}
 .call-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;position:relative;}
-.call-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px;}
+.call-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px;padding-right:28px;}
 .outcome-badge{font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;}
 .outcome-pastor   {background:#1a3a28;color:#4cd68a;}
 .outcome-voicemail{background:#1e2244;color:#8899ee;}
@@ -146,12 +146,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .outcome-reminder {background:#2e1f00;color:#f0b429;}
 .call-date{font-size:10px;color:var(--muted);margin-left:auto;}
 .call-details-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-top:5px;}
-.call-del{position:absolute;top:9px;right:9px;background:none;border:none;cursor:pointer;color:var(--border);font-size:16px;padding:4px 6px;border-radius:4px;}
-.call-del:active{color:var(--danger);}
+.call-del{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:4px 6px;border-radius:4px;line-height:1;}
+.call-del:hover{color:var(--danger);}.call-del:active{color:var(--danger);}
 .no-calls{font-size:13px;color:var(--muted);font-style:italic;}
 
 .card-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom));}
-.nav-btn{display:flex;align-items:center;gap:6px;padding:12px 20px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;color:var(--text);min-width:90px;justify-content:center;}
+.nav-btn{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);font-family:var(--sans);font-size:18px;font-weight:600;cursor:pointer;color:var(--text);}
 .nav-btn:active:not(:disabled){background:var(--surface);}
 .nav-btn:disabled{opacity:.25;cursor:default;}
 .nav-btn.next{background:#F3B53A;border-color:#F3B53A;color:#000C1F;}
@@ -787,9 +787,9 @@ function renderCallingCard(){
       </div>
       <div class="card-actions">
         <button class="card-action-btn green${menuOpen?' active':''}" onclick="toggleContactMenu()"><span class="btn-icon">${ICONS.person}</span><span class="btn-label">Contact</span></button>
-        <button class="card-action-btn blue" onclick="openLogModal('${c.id}')"><span class="btn-icon">${ICONS.phone}</span><span class="btn-label">Log Call</span></button>
-        <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')"><span class="btn-icon">${ICONS.bell}</span><span class="btn-label">Reminder</span></button>
-        <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">${ICONS.calendar}</span><span class="btn-label">Calendar</span></button>
+        <button class="card-action-btn blue" onclick="openLogModal('${c.id}')"><span class="btn-icon">${ICONS.phone}</span><span class="btn-label">Log</span></button>
+        <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')"><span class="btn-icon">${ICONS.bell}</span><span class="btn-label">Remind</span></button>
+        <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">${ICONS.calendar}</span><span class="btn-label">Schedule</span></button>
       </div>
       <div class="contact-submenu${menuOpen?' open':''}" id="contact-submenu">
         ${tel?`<a href="${tel}" class="contact-sub-btn call-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${ICONS.phone} Call</a>`:`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${ICONS.phone} Call</span>`}
@@ -802,7 +802,7 @@ function renderCallingCard(){
           const m=OM[x.outcome]||OM.imported;
           const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
           return `<div class="call-entry"><div class="call-top"><span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button></div>`;
-        }).join(''):`<div class="no-calls">No calls logged yet.</div>`}
+        }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
@@ -866,7 +866,7 @@ function openLogModal(cid){
             <button class="toggle-btn on" id="mtg-no" onclick="setMtg(false)">No</button>
           </div>
         </div>
-        <div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="text" id="mtg-d" placeholder="e.g. June 15, 2026"/></div></div>
+        <div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="date" id="mtg-d"/></div></div>
       </div>
       <div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
         <textarea id="call-det" placeholder="Who you spoke with, what was discussed…"></textarea>
