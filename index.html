@@ -1,261 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Relay</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--border:#2e2e2e;
-  --text:#e8e6e1;--muted:#6b6860;--accent:#4a9e6b;--accent-light:#1a2e22;
-  --danger:#e05555;
-  --serif:'DM Serif Display',Georgia,serif;
-  --sans:'DM Sans',system-ui,sans-serif;
-  --radius:12px;--radius-sm:8px;
-}
-html,body{height:100%;margin:0;padding:0;background:#0f0f0f;-webkit-tap-highlight-color:transparent;}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hidden;}
-#app{display:flex;flex-direction:column;height:100vh;height:100dvh;position:relative;overflow:hidden;}
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424; --border: #2e2e2e;
+    --text: #e8e6e1; --muted: #6b6860; --accent: #4a9e6b; --accent-light: #1a2e22;
+    --danger: #e05555;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  html, body { height: 100%; margin: 0; padding: 0; background: #0f0f0f; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); overflow: hidden; }
 
-/* ── TOP BAR ── */
-.top-bar{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:10px 14px;display:flex;align-items:center;gap:8px;
-  flex-shrink:0;flex-wrap:wrap;
-}
-.top-bar-title{font-family:var(--serif);font-size:20px;color:var(--accent);flex-shrink:0;}
-.search-wrap{position:relative;flex:1;min-width:100px;}
-.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);width:14px;height:14px;pointer-events:none;}
-#search{width:100%;padding:9px 10px 9px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--surface2);color:var(--text);font-family:var(--sans);}
-#search:focus{outline:none;border-color:var(--accent);}
-.filter-row{display:flex;gap:5px;overflow-x:auto;width:100%;padding-bottom:2px;}
-.filter-row::-webkit-scrollbar{display:none;}
-.filter-pill{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;font-family:var(--sans);color:var(--muted);white-space:nowrap;flex-shrink:0;}
-.filter-pill.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.top-bar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.count-badge{font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--muted);white-space:nowrap;}
-.add-btn{padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  /* APP SHELL */
+  #app { display: flex; flex-direction: column; height: 100vh; position: relative; overflow: hidden; }
 
-/* ── LIST ── */
-.list-header{display:grid;grid-template-columns:44px 1fr auto 52px;padding:0 14px;height:34px;align-items:center;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;}
-.list-header-cell{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500;padding:0 4px;}
-.main-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.main-list::-webkit-scrollbar{width:3px;}
-.main-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  /* TOP BAR */
+  .top-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+  .top-bar-title { font-family: var(--serif); font-size: 18px; color: var(--accent); margin-right: 4px; }
+  .search-wrap { position: relative; flex: 1; max-width: 280px; }
+  .search-wrap svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 13px; height: 13px; }
+  #search { width: 100%; padding: 6px 8px 6px 26px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; background: var(--surface2); color: var(--text); font-family: var(--sans); }
+  #search:focus { outline: none; border-color: var(--accent); }
+  .filter-row { display: flex; gap: 4px; overflow-x: auto; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-pill { font-size: 10px; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); background: none; cursor: pointer; font-family: var(--sans); color: var(--muted); white-space: nowrap; }
+  .filter-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .top-bar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .count-badge { font-size: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 8px; color: var(--muted); }
+  .add-btn { padding: 5px 12px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 12px; font-weight: 500; cursor: pointer; }
 
-/* Mobile: simple tall rows, tap-friendly */
-.contact-row{
-  display:grid;grid-template-columns:44px 1fr auto 52px;
-  padding:0 14px;min-height:64px;align-items:center;
-  border-bottom:1px solid var(--border);cursor:pointer;
-  transition:background .1s;border-left:3px solid transparent;
-}
-.contact-row:active{background:var(--surface);}
-.contact-row.status-pastor    {border-left-color:#4cd68a;}
-.contact-row.status-voicemail {border-left-color:#8899ee;}
-.contact-row.status-secretary {border-left-color:#d4934a;}
-.contact-row.status-reminder  {border-left-color:#f0b429;}
-.row-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
-.row-cell{padding:6px 4px;min-width:0;}
-.row-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.row-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-.row-loc{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
-.status-pill{display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;letter-spacing:.04em;padding:3px 7px;border-radius:20px;text-transform:uppercase;}
-.pill-pastor   {background:#1a3a28;color:#4cd68a;}
-.pill-voicemail{background:#1e2244;color:#8899ee;}
-.pill-secretary{background:#2e2010;color:#d4934a;}
-.pill-reminder {background:#2e1f00;color:#f0b429;}
-.pill-none     {background:var(--surface2);color:var(--muted);}
-.row-actions{display:flex;align-items:center;justify-content:flex-end;padding:0 2px;}
-.log-btn{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:var(--radius-sm);font-size:16px;cursor:pointer;border:1px solid #6b7fd433;background:none;color:#8899ee;}
-.log-btn:active{background:#1e2244;}
-.reminder-dot{width:7px;height:7px;border-radius:50%;background:#f0b429;display:inline-block;margin-left:5px;vertical-align:middle;}
-.empty-state{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:14px;}
+  /* LIST */
+  .list-header { display: grid; grid-template-columns: 38px 1.4fr 1fr 1fr 80px; padding: 0 12px; height: 32px; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10; }
+  .list-header-cell { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; padding: 0 6px; }
+  .main-list { flex: 1; overflow-y: auto; }
+  .main-list::-webkit-scrollbar { width: 3px; }
+  .main-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .contact-row { display: grid; grid-template-columns: 38px 1.4fr 1fr 1fr 80px; padding: 0 12px; min-height: 50px; align-items: center; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; border-left: 3px solid transparent; }
+  .contact-row.status-pastor    { border-left-color: #4cd68a; }
+  .contact-row.status-voicemail { border-left-color: #8899ee; }
+  .contact-row.status-secretary { border-left-color: #d4934a; }
+  .contact-row.status-reminder  { border-left-color: #f0b429; }
+  .contact-row.status-none      { border-left-color: transparent; }
+  .contact-row:hover { background: var(--surface); }
+  .row-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+  .row-cell { padding: 6px; min-width: 0; }
+  .row-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-plain { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
+  .last-call-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; }
+  .lcb-pastor { background: #1a3a28; color: #4cd68a; }
+  .lcb-voicemail { background: #1e2244; color: #8899ee; }
+  .lcb-secretary { background: #2e2010; color: #d4934a; }
+  .lcb-none { background: var(--surface2); color: var(--muted); }
+  .lcb-reminder { background: #2e1f00; color: #f0b429; }
+  .row-actions { display: flex; align-items: center; gap: 5px; padding: 0 6px; justify-content: flex-end; }
+  .action-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text); text-decoration: none; transition: all .12s; }
+  .action-btn:hover { background: var(--surface2); }
+  .action-btn.log { border-color: #6b7fd433; color: #8899ee; }
+  .action-btn.log:hover { background: #1e2244; }
+  .empty-state { display: flex; align-items: center; justify-content: center; height: 200px; color: var(--muted); font-size: 13px; }
+  .status-pill { display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; }
+  .pill-pastor    { background: #1a3a28; color: #4cd68a; }
+  .pill-voicemail { background: #1e2244; color: #8899ee; }
+  .pill-secretary { background: #2e2010; color: #d4934a; }
+  .pill-reminder  { background: #2e1f00; color: #f0b429; }
+  .pill-none      { background: var(--surface2); color: var(--muted); }
+  .reminder-dot { width: 7px; height: 7px; border-radius: 50%; background: #f0b429; display: inline-block; margin-left: 4px; vertical-align: middle; } border-radius: 50%; background: #f0b429; display: inline-block; margin-left: 4px; vertical-align: middle; }
 
-/* ── FULLSCREEN CARD ── */
-.fullscreen-card{
-  position:absolute;inset:0;z-index:100;
-  background:var(--bg);flex-direction:column;overflow:hidden;
-}
-.fullscreen-card.visible{display:flex;}
+  /* FULL SCREEN CALLING CARD */
+  .fullscreen-card {
+    position: absolute; inset: 0; z-index: 100;
+    background: var(--bg);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .fullscreen-card.visible { display: flex; }
 
-/* Card topbar */
-.card-topbar{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
-}
-.card-back-btn{
-  background:none;border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:8px 14px;font-family:var(--sans);font-size:13px;font-weight:500;
-  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;
-}
-.card-topbar-center{flex:1;text-align:center;}
-.card-progress-label{font-size:11px;color:var(--muted);}
-.card-progress-bar-wrap{width:80px;height:3px;background:var(--border);border-radius:3px;overflow:hidden;margin:5px auto 0;}
-.card-progress-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;}
-.card-edit-btn{background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;}
+  /* Card top bar */
+  .card-topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .card-back-btn {
+    background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 5px 12px; font-family: var(--sans); font-size: 12px;
+    color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 5px;
+  }
+  .card-back-btn:hover { background: var(--surface2); }
+  .card-topbar-center { flex: 1; text-align: center; }
+  .card-progress-label { font-size: 11px; color: var(--muted); }
+  .card-progress-bar-wrap { width: 120px; height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 4px auto 0; }
+  .card-progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+  .card-edit-btn {
+    background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 4px 10px; font-family: var(--sans); font-size: 11px;
+    color: var(--muted); cursor: pointer;
+  }
+  .card-edit-btn:hover { background: var(--surface2); color: var(--text); }
 
-/* Card scrollable body */
-.card-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.card-body::-webkit-scrollbar{width:3px;}
-.card-body::-webkit-scrollbar-thumb{background:var(--border);}
+  /* Card scroll body */
+  .card-body { flex: 1; overflow-y: auto; }
+  .card-body::-webkit-scrollbar { width: 3px; }
+  .card-body::-webkit-scrollbar-thumb { background: var(--border); }
 
-/* Hero */
-.card-hero{
-  padding:20px 20px 16px;
-  display:flex;align-items:center;gap:16px;
-  border-bottom:1px solid var(--border);
-  background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);
-}
-.card-hero-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;flex-shrink:0;}
-.card-hero-name{font-family:var(--serif);font-size:26px;line-height:1.1;margin-bottom:3px;}
-.card-hero-church{font-size:13px;color:var(--muted);margin-bottom:5px;}
-.card-hero-location{font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.card-hero-region{font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:2px 9px;}
+  /* Hero section */
+  .card-hero {
+    padding: 28px 32px 20px;
+    display: flex; align-items: center; gap: 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+  }
+  .card-hero-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 500; flex-shrink: 0;
+  }
+  .card-hero-info { flex: 1; min-width: 0; }
+  .card-hero-name { font-family: var(--serif); font-size: 32px; line-height: 1.1; margin-bottom: 4px; }
+  .card-hero-church { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  .card-hero-location { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .card-hero-region { font-size: 11px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 8px; }
 
-/* Info strip */
-.card-info-strip{display:flex;border-bottom:1px solid var(--border);background:var(--surface);}
-.info-item{flex:1;padding:12px 14px;border-right:1px solid var(--border);}
-.info-item:last-child{border-right:none;}
-.info-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px;}
-.info-value{font-size:12px;color:var(--text);line-height:1.4;word-break:break-word;}
-.info-value.empty{color:var(--muted);font-style:italic;}
+  /* Info strip */
+  .card-info-strip {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .info-item {
+    flex: 1; padding: 12px 16px;
+    border-right: 1px solid var(--border);
+  }
+  .info-item:last-child { border-right: none; }
+  .info-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; }
+  .info-value { font-size: 12px; color: var(--text); line-height: 1.4; word-break: break-word; }
+  .info-value.empty { color: var(--muted); font-style: italic; }
 
-/* Action buttons — big tap targets on mobile */
-.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;}
-.card-action-btn{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-  padding:16px 8px;border-radius:var(--radius);border:1px solid var(--border);
-  background:var(--surface);font-family:var(--sans);cursor:pointer;color:var(--text);
-  min-height:72px;transition:all .15s;
-}
-.card-action-btn:active{transform:scale(.97);}
-.btn-icon{font-size:24px;line-height:1;}
-.btn-label{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;}
-.card-action-btn.green{border-color:#4a9e6b44;background:#1a2e2244;}
-.card-action-btn.green:active{background:var(--accent-light);border-color:var(--accent);}
-.card-action-btn.blue{border-color:#6b7fd444;background:#1e224444;}
-.card-action-btn.blue:active{background:#1e2244;border-color:#8899ee;}
-.card-action-btn.yellow{border-color:#f0b42944;background:#2e1f0044;}
-.card-action-btn.yellow:active{background:#2e1f00;border-color:#f0b429;}
-.card-action-btn.teal{border-color:#2a7a8a44;background:#0e222644;}
-.card-action-btn.teal:active{background:#0e2226;border-color:#4ac4d4;}
+  /* Action buttons */
+  .card-actions {
+    display: flex; gap: 10px; padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .card-action-btn {
+    flex: 1; min-width: 90px;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 12px 8px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: none;
+    font-family: var(--sans); cursor: pointer; transition: all .15s;
+    color: var(--text); position: relative;
+  }
+  .card-action-btn .btn-icon { font-size: 22px; }
+  .card-action-btn .btn-label { font-size: 10px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+  .card-action-btn.green { border-color: #4a9e6b44; }
+  .card-action-btn.green:hover, .card-action-btn.green.active { background: var(--accent-light); border-color: var(--accent); }
+  .card-action-btn.blue { border-color: #6b7fd444; }
+  .card-action-btn.blue:hover { background: #1e2244; border-color: #8899ee; }
+  .card-action-btn.yellow { border-color: #f0b42944; }
+  .card-action-btn.yellow:hover { background: #2e1f00; border-color: #f0b429; }
+  .card-action-btn.teal { border-color: #2a7a8a44; }
+  .card-action-btn.teal:hover { background: #0e2226; border-color: #4ac4d4; }
 
-/* Contact submenu */
-.contact-submenu{display:none;flex-direction:column;gap:8px;padding:0 16px 16px;}
-.contact-submenu.open{display:flex;}
-.contact-sub-btn{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:14px;border-radius:var(--radius);border:1px solid var(--border);
-  background:var(--surface);font-family:var(--sans);font-size:14px;font-weight:500;
-  cursor:pointer;color:var(--text);text-decoration:none;transition:all .12s;
-}
-.contact-sub-btn:active{transform:scale(.98);}
-.call-sub{border-color:#4a9e6b44;color:#4cd68a;}
-.call-sub:active{background:var(--accent-light);}
-.text-sub{border-color:#6b7fd444;color:#8899ee;}
-.text-sub:active{background:#1e2244;}
-.email-sub{border-color:#d4b06b44;color:#d4b06b;}
-.email-sub:active{background:#2e2a1a;}
+  /* Contact sub-menu */
+  .contact-submenu {
+    display: none; flex-direction: column; gap: 6px;
+    padding: 12px 32px; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .contact-submenu.open { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .contact-sub-btn {
+    flex: 1; min-width: 80px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--bg);
+    font-family: var(--sans); font-size: 12px; font-weight: 500;
+    cursor: pointer; color: var(--text); text-decoration: none;
+    transition: all .12s;
+  }
+  .contact-sub-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .contact-sub-btn.call-sub { border-color: #4a9e6b44; color: #4a9e6b; }
+  .contact-sub-btn.call-sub:hover { background: var(--accent-light); }
+  .contact-sub-btn.text-sub { border-color: #6b7fd444; color: #8899ee; }
+  .contact-sub-btn.text-sub:hover { background: #1e2244; }
+  .contact-sub-btn.email-sub { border-color: #d4b06b44; color: #d4b06b; }
+  .contact-sub-btn.email-sub:hover { background: #2e2a1a; }
 
-/* Call history */
-.card-history{padding:16px;}
-.history-title{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px;font-weight:500;}
-.call-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;position:relative;}
-.call-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px;}
-.outcome-badge{font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;}
-.outcome-pastor   {background:#1a3a28;color:#4cd68a;}
-.outcome-voicemail{background:#1e2244;color:#8899ee;}
-.outcome-secretary{background:#2e2010;color:#d4934a;}
-.outcome-imported {background:var(--surface2);color:var(--muted);}
-.outcome-reminder {background:#2e1f00;color:#f0b429;}
-.call-date{font-size:10px;color:var(--muted);margin-left:auto;}
-.call-details-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-top:5px;}
-.call-del{position:absolute;top:9px;right:9px;background:none;border:none;cursor:pointer;color:var(--border);font-size:16px;padding:4px 6px;border-radius:4px;}
-.call-del:active{color:var(--danger);}
-.no-calls{font-size:13px;color:var(--muted);font-style:italic;}
+  /* History */
+  .card-history { padding: 20px 32px 24px; }
+  .history-title { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 12px; font-weight: 500; }
+  .call-entry { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; position: relative; }
+  .call-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
+  .outcome-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+  .outcome-pastor { background: #1a3a28; color: #4cd68a; }
+  .outcome-voicemail { background: #1e2244; color: #8899ee; }
+  .outcome-secretary { background: #2e2010; color: #d4934a; }
+  .outcome-imported { background: var(--surface2); color: var(--muted); }
+  .outcome-reminder { background: #2e1f00; color: #f0b429; }
+  .call-date { font-size: 10px; color: var(--muted); margin-left: auto; }
+  .call-details-text { font-size: 13px; color: var(--text); line-height: 1.6; white-space: pre-wrap; margin-top: 5px; }
+  .call-del { position: absolute; top: 9px; right: 9px; background: none; border: none; cursor: pointer; color: var(--border); font-size: 14px; padding: 2px 5px; border-radius: 3px; }
+  .call-del:hover { color: var(--danger); }
+  .no-calls { font-size: 12px; color: var(--muted); font-style: italic; }
 
-/* Card nav */
-.card-nav{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 16px;border-top:1px solid var(--border);
-  background:var(--surface);flex-shrink:0;
-  padding-bottom:max(12px, env(safe-area-inset-bottom));
-}
-.nav-btn{
-  display:flex;align-items:center;gap:6px;
-  padding:12px 20px;border-radius:var(--radius);
-  border:1px solid var(--border);background:var(--surface2);
-  font-family:var(--sans);font-size:14px;font-weight:600;
-  cursor:pointer;color:var(--text);transition:all .12s;min-width:90px;justify-content:center;
-}
-.nav-btn:active:not(:disabled){background:var(--surface);}
-.nav-btn:disabled{opacity:.25;cursor:default;}
-.nav-btn.next{background:var(--accent);border-color:var(--accent);color:#fff;}
-.nav-btn.next:active:not(:disabled){opacity:.85;}
-.nav-center{font-size:11px;color:var(--muted);text-align:center;flex:1;padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* Card nav footer */
+  .card-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-top: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .nav-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 20px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: none;
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text); transition: all .12s;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: .3; cursor: default; }
+  .nav-btn.next { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav-btn.next:hover:not(:disabled) { opacity: .88; }
 
-/* ── MODALS ── */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;z-index:200;padding:0;}
-.modal-box{
-  background:var(--surface);border-radius:20px 20px 0 0;
-  width:100%;max-width:600px;max-height:90vh;overflow-y:auto;
-  border:1px solid var(--border);padding:24px 20px;
-  padding-bottom:max(24px,env(safe-area-inset-bottom));
-}
-.modal-box h2{font-family:var(--serif);font-size:22px;margin-bottom:5px;}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:18px;}
-.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-.fg label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500;}
-.fg input,.fg textarea,.fg select{
-  padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);
-  font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;
-}
-.fg input:focus,.fg textarea:focus,.fg select:focus{outline:none;border-color:var(--accent);}
-.fg textarea{resize:vertical;height:80px;}
-.outcome-opts{display:flex;flex-direction:column;gap:8px;}
-.outcome-opt{
-  border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;
-  cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);
-  background:var(--surface2);font-family:var(--sans);text-align:left;
-  display:flex;align-items:center;gap:12px;transition:all .12s;
-}
-.outcome-opt:active{transform:scale(.99);}
-.outcome-opt.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
-.opt-icon{font-size:20px;}
-.meeting-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:14px;}
-.meeting-row label{font-size:14px;flex:1;}
-.toggle-wrap{display:flex;gap:6px;}
-.toggle-btn{padding:7px 16px;border:1px solid var(--border);border-radius:20px;font-size:13px;font-family:var(--sans);cursor:pointer;background:none;color:var(--muted);}
-.toggle-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;}
-.btn-cancel{padding:12px 20px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;cursor:pointer;color:var(--text);flex:1;}
-.btn-save{padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;flex:2;}
-.cal-open-btn{width:100%;padding:14px;background:#1a73e8;color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-.fgi{display:flex;flex-direction:column;gap:5px;}
-.fgi.full{grid-column:1/-1;}
-.fgi label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500;}
-.fgi input,.fgi select{padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);}
-.fgi input:focus,.fgi select:focus{outline:none;border-color:var(--accent);}
-.fgi select option{background:var(--surface);}
-
-/* ── DESKTOP overrides (600px+) ── */
-@media(min-width:600px){
-  .top-bar{flex-wrap:nowrap;padding:8px 20px;}
-  .filter-row{width:auto;flex:1;}
-  .contact-row{grid-template-columns:44px 1.5fr 1fr 70px 52px;min-height:52px;}
-  .list-header{grid-template-columns:44px 1.5fr 1fr 70px 52px;}
-  .show-desktop{display:block;}
-  .card-hero-name{font-size:30px;}
-  .card-actions{grid-template-columns:repeat(4,1fr);}
-  .contact-submenu.open{flex-direction:row;}
-  .modal-backdrop{align-items:center;padding:20px;}
-  .modal-box{border-radius:16px;max-height:85vh;}
-  .outcome-opts{display:grid;grid-template-columns:1fr 1fr 1fr;flex-direction:unset;}
-}
+  /* MODALS (for log/reminder/calendar/edit) */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+  .modal-box { background: var(--surface); border-radius: 14px; width: 440px; max-width: 100%; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border); padding: 24px; box-shadow: 0 24px 80px rgba(0,0,0,.8); }
+  .modal-box h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 6px; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .fg label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; }
+  .fg input, .fg textarea, .fg select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); width: 100%; }
+  .fg input:focus, .fg textarea:focus, .fg select:focus { outline: none; border-color: var(--accent); }
+  .fg textarea { resize: vertical; height: 75px; }
+  .outcome-opts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+  .outcome-opt { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 4px; text-align: center; cursor: pointer; font-size: 10px; font-weight: 500; color: var(--muted); background: none; font-family: var(--sans); line-height: 1.4; transition: all .12s; }
+  .outcome-opt:hover { border-color: var(--accent); color: var(--text); }
+  .outcome-opt.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+  .opt-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+  .meeting-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 12px; }
+  .meeting-row label { font-size: 13px; flex: 1; }
+  .toggle-wrap { display: flex; gap: 5px; }
+  .toggle-btn { padding: 4px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; font-family: var(--sans); cursor: pointer; background: none; color: var(--muted); transition: all .12s; }
+  .toggle-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .btn-cancel { padding: 7px 16px; background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; cursor: pointer; color: var(--text); }
+  .btn-cancel:hover { background: var(--surface2); }
+  .btn-save { padding: 7px 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .cal-open-btn { width: 100%; padding: 11px; background: #1a73e8; color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+  .cal-open-btn:hover { opacity: .9; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .fgi { display: flex; flex-direction: column; gap: 4px; }
+  .fgi.full { grid-column: 1/-1; }
+  .fgi label { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 500; }
+  .fgi input, .fgi select { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--sans); font-size: 13px; background: var(--bg); color: var(--text); }
+  .fgi input:focus, .fgi select:focus { outline: none; border-color: var(--accent); }
+  .fgi select option { background: var(--surface); }
 </style>
 </head>
 <body>
@@ -264,41 +269,41 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
     <span class="top-bar-title">Relay</span>
     <div class="search-wrap">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="search" placeholder="Search…" oninput="renderList()"/>
+      <input type="text" id="search" placeholder="Search contacts…" oninput="renderList()" />
     </div>
+    <div class="filter-row" id="state-filter-row"></div>
+    <div class="filter-row" id="region-filter-row"></div>
     <div class="top-bar-right">
       <span id="count-label" class="count-badge">0</span>
       <button class="add-btn" onclick="openContactModal(null)">＋ Add</button>
     </div>
   </div>
-  <div class="filter-row" id="state-filter-row" style="padding:6px 14px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;"></div>
-  <div class="filter-row" id="region-filter-row" style="padding:4px 14px 6px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;"></div>
-
   <div class="list-header">
     <div></div>
     <div class="list-header-cell">Pastor / Church</div>
-    <div class="list-header-cell show-desktop" style="display:none">City, State</div>
-    <div class="list-header-cell show-desktop" style="display:none">Last call</div>
-    <div class="list-header-cell" style="text-align:right">Log</div>
+    <div class="list-header-cell">City, State</div>
+    <div class="list-header-cell">Last call</div>
+    <div class="list-header-cell" style="text-align:right">Actions</div>
   </div>
   <div class="main-list" id="main-list"></div>
-
+  <!-- Full screen card -->
   <div id="fullscreen-card" class="fullscreen-card"></div>
+  <!-- Modal layer -->
   <div id="modal-layer" style="position:fixed;inset:0;z-index:200;pointer-events:none;"></div>
 </div>
 
 <script>
 const AC=[['#1a2e22','#4a9e6b'],['#1a1f35','#6b7fd4'],['#2e1a1a','#d46b6b'],['#2e2a1a','#d4b06b'],['#251a2e','#a06bd4'],['#1a2a2e','#6bc4d4'],['#222','#999'],['#1e2a1a','#7ab06b']];
 const OM={
-  pastor:{label:'Spoke to Pastor',cls:'outcome-pastor',icon:'🙋'},
-  voicemail:{label:'No Response / Voicemail',cls:'outcome-voicemail',icon:'📵'},
-  secretary:{label:'Spoke to Secretary',cls:'outcome-secretary',icon:'📋'},
-  imported:{label:'Imported note',cls:'outcome-imported',icon:'📝'},
-  reminder:{label:'Reminder',cls:'outcome-reminder',icon:'🔔'}
+  pastor:{label:'Spoke to Pastor',cls:'outcome-pastor',lcb:'lcb-pastor',icon:'🙋'},
+  voicemail:{label:'No Response / Voicemail',cls:'outcome-voicemail',lcb:'lcb-voicemail',icon:'📵'},
+  secretary:{label:'Spoke to Secretary',cls:'outcome-secretary',lcb:'lcb-secretary',icon:'📋'},
+  imported:{label:'Imported note',cls:'outcome-imported',lcb:'lcb-none',icon:'📝'},
+  reminder:{label:'Reminder',cls:'outcome-reminder',lcb:'lcb-reminder',icon:'🔔'}
 };
 const REGS=['Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'];
-let contacts=[],fState='All',fReg='All',logOut=null,logMtg=false;
-let filteredList=[],callingIdx=0,contactMenuOpen=false;
+let contacts=[], fState='All', fReg='All', logOut=null, logMtg=false;
+let filteredList=[], callingIdx=0, contactMenuOpen=false;
 
 const SAMPLE=[
   {id:'c1',pastor:'Brandon Dillard',church:'Lamarsh Baptist Church',city:'Mapleton',state:'IL',region:'Central',email:'lamarshbaptist@gmail.com',phone:'(309) 697-4451',address:'9507 W Maple Ridge Rd',notes:[],photo:'',calls:[{id:'l1',date:'Imported',outcome:'imported',meetingBooked:false,meetingDate:'',details:'asked to send packet again'}]},
@@ -316,8 +321,8 @@ function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function primaryPhone(p){return(p||'').split(/[,;\/]/)[0].trim();}
-function load(){contacts=JSON.parse(localStorage.getItem('relay_v6')||'null')||SAMPLE.map(c=>({...c}));}
-function save(){localStorage.setItem('relay_v6',JSON.stringify(contacts));}
+function load(){contacts=JSON.parse(localStorage.getItem('relay_v5')||'null')||SAMPLE.map(c=>({...c}));}
+function save(){localStorage.setItem('relay_v5',JSON.stringify(contacts));}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 
 function renderFilters(){
@@ -344,10 +349,9 @@ function buildFilteredList(){
 
 function renderList(){
   filteredList=buildFilteredList();
-  document.getElementById('count-label').textContent=filteredList.length+'/'+contacts.length;
+  document.getElementById('count-label').textContent=filteredList.length+' / '+contacts.length;
   const list=document.getElementById('main-list');
   if(!filteredList.length){list.innerHTML='<div class="empty-state">No contacts found</div>';return;}
-  const isMobile=window.innerWidth<600;
   list.innerHTML=filteredList.map((c,i)=>{
     const[bg,fg]=ac(c.pastor||c.church||'?');
     const lcall=lc(c);
@@ -357,40 +361,26 @@ function renderList(){
     const pill=pillData?`<span class="status-pill ${pillData[1]}">${pillData[0]}</span>`:`<span class="status-pill pill-none">—</span>`;
     const loc=[c.city,c.state].filter(Boolean).join(', ');
     const hasReminder=(c.calls||[]).some(x=>x.outcome==='reminder');
-    if(isMobile){
-      return `<div class="contact-row ${statusCls}" style="grid-template-columns:44px 1fr 52px" onclick="openCallingCard(${i})">
-        <div style="padding:0 4px"><div class="row-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div></div>
-        <div class="row-cell">
-          <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div>
-          <div class="row-sub">${esc(c.church||'')}</div>
-          <div class="row-loc">${esc(loc)||''}</div>
-        </div>
-        <div class="row-actions" onclick="event.stopPropagation()">
-          <button class="log-btn" onclick="openLogModal('${c.id}')">📋</button>
-        </div>
-      </div>`;
-    }
     return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
       <div style="padding:0 4px"><div class="row-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div></div>
-      <div class="row-cell">
-        <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div>
-        <div class="row-sub">${esc(c.church||'')}</div>
-      </div>
-      <div class="row-cell"><div class="row-loc">${esc(loc)||'—'}</div></div>
+      <div class="row-cell"><div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}</div><div class="row-sub">${esc(c.church||'')}</div></div>
+      <div class="row-cell"><div class="row-plain">${esc(loc)||'—'}</div></div>
       <div class="row-cell">${pill}</div>
       <div class="row-actions" onclick="event.stopPropagation()">
-        <button class="log-btn" onclick="openLogModal('${c.id}')">📋</button>
+        <button class="action-btn log" onclick="openLogModal('${c.id}')" title="Log call">📋</button>
       </div>
     </div>`;
   }).join('');
 }
 
-/* ── CALLING CARD ── */
+/* ── FULL SCREEN CALLING CARD ── */
 function openCallingCard(idx){
   filteredList=buildFilteredList();
-  callingIdx=idx;contactMenuOpen=false;
+  callingIdx=idx;
+  contactMenuOpen=false;
   renderCallingCard();
 }
+
 function renderCallingCard(){
   const c=filteredList[callingIdx];
   if(!c){closeCard();return;}
@@ -404,9 +394,12 @@ function renderCallingCard(){
   const calls=(c.calls||[]).slice().reverse();
   const realCalls=calls.filter(x=>x.outcome!=='imported');
   const menuOpen=contactMenuOpen;
+
   const card=document.getElementById('fullscreen-card');
   card.classList.add('visible');
+  card.style.display='';
   card.innerHTML=`
+    <!-- Top bar -->
     <div class="card-topbar">
       <button class="card-back-btn" onclick="closeCard()">← Back</button>
       <div class="card-topbar-center">
@@ -415,56 +408,112 @@ function renderCallingCard(){
       </div>
       <button class="card-edit-btn" onclick="openContactModal('${c.id}')">✏️ Edit</button>
     </div>
+
+    <!-- Scrollable body -->
     <div class="card-body">
+
+      <!-- Hero -->
       <div class="card-hero">
         <div class="card-hero-avatar" style="background:${bg};color:${fg}">${ini(c.pastor||c.church||'?')}</div>
-        <div style="flex:1;min-width:0">
+        <div class="card-hero-info">
           <div class="card-hero-name">${esc(c.pastor||'Unknown Pastor')}</div>
           <div class="card-hero-church">${esc(c.church||'—')}</div>
-          <div class="card-hero-location">📍 ${esc([c.city,c.state].filter(Boolean).join(', ')||'—')}${c.region?` <span class="card-hero-region">${esc(c.region)}</span>`:''}</div>
+          <div class="card-hero-location">
+            📍 ${esc([c.city,c.state].filter(Boolean).join(', ')||'—')}
+            ${c.region?`<span class="card-hero-region">${esc(c.region)}</span>`:''}
+          </div>
         </div>
       </div>
+
+      <!-- Info strip: phone / email / address -->
       <div class="card-info-strip">
-        <div class="info-item"><div class="info-label">Phone</div><div class="info-value${!c.phone?' empty':''}">${c.phone?esc(c.phone):'—'}</div></div>
-        <div class="info-item"><div class="info-label">Email</div><div class="info-value${!c.email?' empty':''}">${c.email?esc(c.email):'—'}</div></div>
-        <div class="info-item"><div class="info-label">Address</div><div class="info-value${!c.address?' empty':''}">${c.address?esc(c.address):'—'}</div></div>
+        <div class="info-item">
+          <div class="info-label">Phone</div>
+          <div class="info-value${!c.phone?' empty':''}">${c.phone?esc(c.phone):'—'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Email</div>
+          <div class="info-value${!c.email?' empty':''}">${c.email?esc(c.email):'—'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Address</div>
+          <div class="info-value${!c.address?' empty':''}">${c.address?esc(c.address):'—'}</div>
+        </div>
       </div>
+
+      <!-- Action buttons -->
       <div class="card-actions">
-        <button class="card-action-btn green${menuOpen?' active':''}" onclick="toggleContactMenu()"><span class="btn-icon">👤</span><span class="btn-label">Contact</span></button>
-        <button class="card-action-btn blue" onclick="openLogModal('${c.id}')"><span class="btn-icon">📋</span><span class="btn-label">Log Call</span></button>
-        <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')"><span class="btn-icon">🔔</span><span class="btn-label">Reminder</span></button>
-        <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">📅</span><span class="btn-label">Calendar</span></button>
+        <button class="card-action-btn green${menuOpen?' active':''}" onclick="toggleContactMenu()">
+          <span class="btn-icon">👤</span>
+          <span class="btn-label">Contact</span>
+        </button>
+        <button class="card-action-btn blue" onclick="openLogModal('${c.id}')">
+          <span class="btn-icon">📋</span>
+          <span class="btn-label">Log Call</span>
+        </button>
+        <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')">
+          <span class="btn-icon">🔔</span>
+          <span class="btn-label">Reminder</span>
+        </button>
+        <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')">
+          <span class="btn-icon">📅</span>
+          <span class="btn-label">Calendar</span>
+        </button>
       </div>
+
+      <!-- Contact sub-menu -->
       <div class="contact-submenu${menuOpen?' open':''}" id="contact-submenu">
-        ${tel?`<a href="${tel}" class="contact-sub-btn call-sub">📞 Call</a>`:`<span class="contact-sub-btn" style="opacity:.3">📞 Call</span>`}
-        ${sms?`<a href="${sms}" class="contact-sub-btn text-sub">💬 Text</a>`:`<span class="contact-sub-btn" style="opacity:.3">💬 Text</span>`}
-        ${mailto?`<a href="${mailto}" class="contact-sub-btn email-sub">✉️ Email</a>`:`<span class="contact-sub-btn" style="opacity:.3">✉️ Email</span>`}
+        ${tel?`<a href="${tel}" class="contact-sub-btn call-sub">📞 Call</a>`:`<span class="contact-sub-btn" style="opacity:.3;cursor:default">📞 Call</span>`}
+        ${sms?`<a href="${sms}" class="contact-sub-btn text-sub">💬 Text</a>`:`<span class="contact-sub-btn" style="opacity:.3;cursor:default">💬 Text</span>`}
+        ${mailto?`<a href="${mailto}" class="contact-sub-btn email-sub">✉️ Email</a>`:`<span class="contact-sub-btn" style="opacity:.3;cursor:default">✉️ Email</span>`}
       </div>
+
+      <!-- Call history -->
       <div class="card-history">
         <div class="history-title">Call history (${realCalls.length})</div>
-        ${calls.length?calls.map(x=>{
-          const m=OM[x.outcome]||OM.imported;
-          const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
-          return `<div class="call-entry"><div class="call-top"><span class="outcome-badge ${m.cls}">${m.icon} ${m.label}</span>${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button></div>`;
-        }).join(''):`<div class="no-calls">No calls logged yet.</div>`}
+        ${calls.length
+          ? calls.map(x=>{
+              const m=OM[x.outcome]||OM.imported;
+              const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Meeting booked'}</span>`:'';
+              return `<div class="call-entry">
+                <div class="call-top"><span class="outcome-badge ${m.cls}">${m.icon} ${m.label}</span>${mb}<span class="call-date">${x.date}</span></div>
+                ${x.details?`<div class="call-details-text">${esc(x.details)}</div>`:''}
+                <button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button>
+              </div>`;
+            }).join('')
+          : `<div class="no-calls">No calls logged yet.</div>`
+        }
       </div>
     </div>
+
+    <!-- Nav footer -->
     <div class="card-nav">
       <button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>← Prev</button>
-      <span class="nav-center">${esc(c.pastor||c.church||'')}</span>
+      <span style="font-size:11px;color:var(--muted);text-align:center;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.pastor||c.church||'')}</span>
       <button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>Next →</button>
-    </div>`;
+    </div>
+  `;
 }
-function toggleContactMenu(){contactMenuOpen=!contactMenuOpen;renderCallingCard();}
+
+function toggleContactMenu(){
+  contactMenuOpen=!contactMenuOpen;
+  renderCallingCard();
+}
+
 function closeCard(){
-  const card=document.getElementById('fullscreen-card');
-  card.classList.remove('visible');card.innerHTML='';
-  contactMenuOpen=false;renderList();
+  document.getElementById('fullscreen-card').classList.remove('visible');
+  document.getElementById('fullscreen-card').style.display='none';
+  document.getElementById('fullscreen-card').innerHTML='';
+  contactMenuOpen=false;
+  renderList();
 }
+
 function navCard(dir){
   const next=callingIdx+dir;
   if(next<0||next>=filteredList.length)return;
-  callingIdx=next;contactMenuOpen=false;renderCallingCard();
+  callingIdx=next;
+  contactMenuOpen=false;
+  renderCallingCard();
 }
 
 /* ── LOG MODAL ── */
@@ -523,10 +572,10 @@ function openReminderModal(cid){
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <h2>🔔 Set Reminder</h2>
-      <div class="modal-sub">Call-back reminder for ${esc(c.pastor||c.church||'this contact')}.</div>
+      <div class="modal-sub">Set a call-back reminder for ${esc(c.pastor||c.church||'this contact')}.</div>
       <div class="fg"><label>Call back on</label><input type="date" id="rem-date"/></div>
       <div class="fg"><label>Note <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
-        <textarea id="rem-note" placeholder="e.g. Call back after 10am…" style="height:70px"></textarea>
+        <textarea id="rem-note" placeholder="e.g. Call back after 10am, ask about missions budget…" style="height:60px"></textarea>
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
@@ -555,7 +604,10 @@ function openCalendarModal(cid){
       <div class="modal-sub">Pick a date and we'll open Google Calendar with the event pre-filled.</div>
       <div class="fg"><label>Meeting date</label><input type="date" id="cal-date"/></div>
       <div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div>
-      <button class="cal-open-btn" onclick="openGCal('${cid}')">📅 Open Google Calendar</button>
+      <button class="cal-open-btn" onclick="openGCal('${cid}')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+        Open Google Calendar
+      </button>
       <div class="modal-actions" style="margin-top:10px">
         <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
       </div>
@@ -617,14 +669,14 @@ function saveCM(id){
   if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);}
   else{contacts.push({id:uid(),calls:[],notes:[],photo:'',...d});}
   save();closeMKeepCard();renderFilters();renderList();
-  if(id)renderCallingCard();
+  if(id) renderCallingCard();
 }
 
+/* ── HELPERS ── */
 function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
 function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
 
-load();renderFilters();renderList();
-window.addEventListener('resize',renderList);
+load(); renderFilters(); renderList();
 </script>
 </body>
 </html>
