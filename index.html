@@ -318,8 +318,133 @@ function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}
 function primaryPhone(p){return(p||'').split(/[,;\/]/)[0].trim();}
-function load(){contacts=JSON.parse(localStorage.getItem('relay_v7')||'null')||SAMPLE.map(c=>({...c}));}
-function save(){localStorage.setItem('relay_v7',JSON.stringify(contacts));}
+// ── Google Sheets Backend ──
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4GJpN5ZDqoTTFoG_B97W0GIDtmMAgb0jF8KeaWZXkOuYUR3mzpVDKOYFISjRK01gjxQ/exec';
+const SECRET = 'relay_secret_2026';
+
+async function api(params) {
+  const url = SCRIPT_URL + '?' + new URLSearchParams({...params, secret: SECRET});
+  const res = await fetch(url);
+  return res.json();
+}
+
+let sheetsReady = false;
+let callsCache = {};
+
+async function load() {
+  // Fall back to sample data if no script URL set
+  if (SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbx4GJpN5ZDqoTTFoG_B97W0GIDtmMAgb0jF8KeaWZXkOuYUR3mzpVDKOYFISjRK01gjxQ/exec') {
+    contacts = SAMPLE.map(c=>({...c}));
+    return;
+  }
+  try {
+    showLoadingOverlay('Loading contacts…');
+    const [rawContacts, rawCalls] = await Promise.all([
+      api({action:'getContacts'}),
+      api({action:'getCalls'})
+    ]);
+    // Build calls cache keyed by contactId
+    callsCache = {};
+    rawCalls.forEach(call => {
+      if (!callsCache[call.contactId]) callsCache[call.contactId] = [];
+      callsCache[call.contactId].push({
+        id: String(call.id),
+        date: call.date,
+        outcome: call.outcome,
+        meetingBooked: call.meetingBooked === true || call.meetingBooked === 'true',
+        meetingDate: call.meetingDate || '',
+        details: call.details || ''
+      });
+    });
+    contacts = rawContacts.map(c => ({
+      id: String(c.id),
+      pastor: c.pastor || '',
+      church: c.church || '',
+      city: c.city || '',
+      state: c.state || '',
+      region: c.region || '',
+      phone: c.phone || '',
+      email: c.email || '',
+      address: c.address || '',
+      starred: c.starred === true || c.starred === 'true',
+      lat: c.lat || '',
+      lng: c.lng || '',
+      photo: '',
+      notes: [],
+      calls: callsCache[String(c.id)] || []
+    }));
+    sheetsReady = true;
+    hideLoadingOverlay();
+  } catch(err) {
+    hideLoadingOverlay();
+    console.error('Sheets load error:', err);
+    contacts = JSON.parse(localStorage.getItem('relay_v7')||'null') || SAMPLE.map(c=>({...c}));
+  }
+}
+
+async function save() {
+  // Always save to localStorage as backup
+  localStorage.setItem('relay_v7', JSON.stringify(contacts));
+}
+
+async function saveContact(c) {
+  save();
+  if (!sheetsReady) return;
+  try {
+    await api({action:'saveContact', data: JSON.stringify({
+      id: c.id, pastor: c.pastor, church: c.church,
+      city: c.city, state: c.state, region: c.region,
+      phone: c.phone, email: c.email, address: c.address,
+      starred: c.starred ? 'true' : 'false',
+      lat: c.lat || '', lng: c.lng || ''
+    })});
+  } catch(err) { console.error('saveContact error:', err); }
+}
+
+async function saveCallEntry(contactId, call) {
+  save();
+  if (!sheetsReady) return;
+  try {
+    await api({action:'saveCall', data: JSON.stringify({
+      id: call.id, contactId: contactId,
+      date: call.date, outcome: call.outcome,
+      meetingBooked: call.meetingBooked ? 'true' : 'false',
+      meetingDate: call.meetingDate || '',
+      details: call.details || ''
+    })});
+  } catch(err) { console.error('saveCall error:', err); }
+}
+
+async function deleteCallEntry(callId) {
+  save();
+  if (!sheetsReady) return;
+  try { await api({action:'deleteCall', id: callId}); }
+  catch(err) { console.error('deleteCall error:', err); }
+}
+
+async function deleteContactEntry(contactId) {
+  save();
+  if (!sheetsReady) return;
+  try { await api({action:'deleteContact', id: contactId}); }
+  catch(err) { console.error('deleteContact error:', err); }
+}
+
+function showLoadingOverlay(msg) {
+  let el = document.getElementById('loading-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loading-overlay';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';
+    el.innerHTML = '<div style="font-size:28px">⚓</div><div id="loading-msg" style="font-size:14px;color:var(--muted)"></div>';
+    document.body.appendChild(el);
+  }
+  document.getElementById('loading-msg').textContent = msg;
+  el.style.display = 'flex';
+}
+function hideLoadingOverlay() {
+  const el = document.getElementById('loading-overlay');
+  if (el) el.style.display = 'none';
+}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 function lastContactedStr(c){
   const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');
@@ -335,7 +460,7 @@ function toggleInfo(){
 function toggleStar(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
   c.starred=!c.starred;
-  save();renderList();renderCallingCard();
+  save();saveContact(c);renderList();renderCallingCard();
 }
 
 function renderFilters(){
@@ -556,13 +681,14 @@ function saveLog(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
   if(!c.calls)c.calls=[];
   const md=(document.getElementById('mtg-d')||{}).value||'';
-  c.calls.push({id:uid(),date:fmtDate(new Date()),outcome:logOut,meetingBooked:logMtg,meetingDate:md.trim(),details:(document.getElementById('call-det').value||'').trim()});
-  save();closeMKeepCard();renderCallingCard();renderList();
+  const newCall={id:uid(),date:fmtDate(new Date()),outcome:logOut,meetingBooked:logMtg,meetingDate:md.trim(),details:(document.getElementById('call-det').value||'').trim()};
+  c.calls.push(newCall);
+  save();saveCallEntry(cid,newCall);closeMKeepCard();renderCallingCard();renderList();
 }
 function delCall(cid,xid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
   c.calls=(c.calls||[]).filter(x=>x.id!==xid);
-  save();renderCallingCard();renderList();
+  save();deleteCallEntry(xid);renderCallingCard();renderList();
 }
 
 /* ── REMINDER MODAL ── */
@@ -590,8 +716,9 @@ function saveReminder(cid){
   if(!d){alert('Please pick a date.');return;}
   const label=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   if(!c.calls)c.calls=[];
-  c.calls.push({id:uid(),date:fmtDate(new Date()),outcome:'reminder',meetingBooked:false,meetingDate:'',details:`Call back ${label}${note?'\n'+note:''}`});
-  save();closeMKeepCard();renderCallingCard();renderList();
+  const remCall={id:uid(),date:fmtDate(new Date()),outcome:'reminder',meetingBooked:false,meetingDate:'',details:`Call back ${label}${note?'\n'+note:''}`};
+  c.calls.push(remCall);
+  save();saveCallEntry(cid,remCall);closeMKeepCard();renderCallingCard();renderList();
 }
 
 /* ── CALENDAR MODAL ── */
@@ -665,21 +792,22 @@ function saveCM(id){
   const pa=(document.getElementById('fp')||{}).value||'';
   if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}
   const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),region:(document.getElementById('fr')||{}).value||'',phone:(document.getElementById('fph')||{}).value?.trim()||'',address:(document.getElementById('fa')||{}).value?.trim()||'',email:(document.getElementById('fe')||{}).value?.trim()||''};
-  if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);}
-  else{contacts.push({id:uid(),calls:[],notes:[],photo:'',...d});}
-  save();closeMKeepCard();renderFilters();renderList();
+  let savedContact;
+  if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}
+  else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}
+  save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();
   if(id)renderCallingCard();
 }
 
 function deleteContact(id){
   if(!confirm('Delete this contact? This cannot be undone.'))return;
   contacts=contacts.filter(c=>c.id!==id);
-  save();closeMKeepCard();closeCard();renderFilters();renderList();
+  save();deleteContactEntry(id);closeMKeepCard();closeCard();renderFilters();renderList();
 }
 function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
 function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
 
-load();renderFilters();renderList();
+load().then(()=>{renderFilters();renderList();});
 window.addEventListener('resize',renderList);
 </script>
 </body>
