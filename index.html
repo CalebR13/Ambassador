@@ -292,7 +292,7 @@ function suggestedNext(c){
   if(last==='noanswer2') return 'voicemail';
   return null;
 }
-const REGS=['Central','Central East','Central North','Central West','North','Northeast','Northwest','South','South Central','Southeast','Southwest','West','West Central','Other'];
+
 
 // SVG Icon system
 const ICONS={
@@ -827,7 +827,7 @@ function renderCallingCard(){
       ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--text)">${c.phone?esc(c.phone):'—'}</div></div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.email?esc(c.email):'—'}</div></div>
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?esc(c.address):'—'}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'—'}</div></div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'—'}</div></div>
       </div>`:''}
     </div>
@@ -890,7 +890,7 @@ function openLogModal(cid){
     </div>
   </div>`);
 }
-function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');const showMtg=(o==='pastor'||o==='secretary');const isNote=(o==='note');if(ms)ms.style.display=showMtg?'block':'none';if(!showMtg)logMtg=false;}
+function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary','note'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');const showMtg=(o==='pastor'||o==='secretary');const isNote=(o==='note');if(ms)ms.style.display=showMtg?'block':'none';if(!showMtg)logMtg=false;}
 function setMtg(v){logMtg=v;const y=document.getElementById('mtg-yes');if(y)y.className='toggle-btn '+(v?'on':'off');const n=document.getElementById('mtg-no');if(n)n.className='toggle-btn '+(v?'off':'on');const d=document.getElementById('mtg-date');if(d)d.style.display=v?'block':'none';}
 function saveLog(cid){
   if(!logOut){alert('Please select an outcome.');return;}
@@ -958,7 +958,7 @@ function openGCal(cid){
   const d=document.getElementById('cal-date').value;
   const t=document.getElementById('cal-time').value;
   if(!d){alert('Please pick a date.');return;}
-  const title=encodeURIComponent(`Meeting: ${c.pastor||c.church||'Pastor'} — ${c.church||''}`);
+  const title=encodeURIComponent(`${c.city||''}${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');
   const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));
   const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);
   let dates='';
@@ -976,7 +976,7 @@ function openGCal(cid){
 function openContactModal(id){
   const c=id?contacts.find(x=>x.id===id):null;
   const v=f=>c?(c[f]||''):'';
-  const ro=REGS.map(o=>`<option${v('region')===o?' selected':''}>${o}</option>`).join('');
+
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="modal-box" onclick="event.stopPropagation()">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -992,8 +992,7 @@ function openContactModal(id){
         <div class="fgi"><label>State</label>${stateDropdown('fst', v('state')||'IL')}</div>
       </div>
       <div class="form-row">
-        <div class="fgi"><label>Region</label><select id="fr"><option value="">—</option>${ro}</select></div>
-        <div class="fgi"><label>Phone</label><input id="fph" value="${esc(v('phone'))}" placeholder="(000) 000-0000"/></div>
+        <div class="fgi full"><label>Phone</label><input id="fph" value="${esc(v('phone'))}" placeholder="(000) 000-0000"/></div>
       </div>
       <div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div>
       <div class="form-row"><div class="fgi full"><label>Email</label><input id="fe" type="email" value="${esc(v('email'))}" placeholder="pastor@church.com"/></div></div>
@@ -1008,7 +1007,7 @@ function saveCM(id){
   const ch=(document.getElementById('fc')||{}).value||'';
   const pa=(document.getElementById('fp')||{}).value||'';
   if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}
-  const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),region:(document.getElementById('fr')||{}).value||'',phone:(document.getElementById('fph')||{}).value?.trim()||'',address:(document.getElementById('fa')||{}).value?.trim()||'',email:(document.getElementById('fe')||{}).value?.trim()||''};
+  const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:(document.getElementById('fph')||{}).value?.trim()||'',address:(document.getElementById('fa')||{}).value?.trim()||'',email:(document.getElementById('fe')||{}).value?.trim()||''};
   let savedContact;
   if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}
   else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}
