@@ -69,6 +69,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .reminder-dot{width:7px;height:7px;border-radius:50%;background:#f0b429;display:inline-block;margin-left:5px;vertical-align:middle;}
 .empty-state{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:14px;}
 
+/* ── PROXIMITY SCREEN ── */
+.proximity-screen{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
+.proximity-screen.visible{display:flex;}
+.prox-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.prox-result-row{display:grid;grid-template-columns:44px 1fr 70px;padding:0 14px;min-height:60px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+.prox-result-row:active{background:var(--surface);}
+.prox-distance{font-size:13px;font-weight:600;color:var(--accent);text-align:right;white-space:nowrap;}
+.prox-distance-sub{font-size:10px;color:var(--muted);text-align:right;}
+
+.save-status{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 12px;border-radius:20px;z-index:300;pointer-events:none;opacity:0;transition:opacity .3s;font-family:var(--sans);}
+
 /* ── FULLSCREEN CARD ── */
 .fullscreen-card{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
 .fullscreen-card.visible{display:flex;}
@@ -203,6 +214,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
     </div>
     <div class="top-bar-right">
       <span id="count-label" class="count-badge">0</span>
+      <button onclick="openProximityScreen()" style="padding:6px 10px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--muted);display:flex;align-items:center;" title="Nearby"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></button>
       <button class="add-btn" onclick="openContactModal(null)" style="font-size:22px;padding:4px 12px;line-height:1;">+</button>
     </div>
   </div>
@@ -217,6 +229,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   </div>
   <div class="main-list" id="main-list"></div>
   <div id="fullscreen-card" class="fullscreen-card"></div>
+  <div id="proximity-screen" class="proximity-screen"></div>
   <div id="modal-layer" style="position:fixed;inset:0;z-index:200;pointer-events:none;"></div>
 </div>
 
@@ -315,9 +328,160 @@ const SAMPLE=[
 function ac(n){let h=0;for(let c of(n||'X'))h=(h*31+c.charCodeAt(0))&0xffffffff;return AC[Math.abs(h)%AC.length];}
 function ini(n){return(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');}
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}
-function primaryPhone(p){return(p||'').split(/[,;\/]/)[0].trim();}
+function primaryPhone(p){return String(p??'').split(/[,;\/]/)[0].trim();}
+
+// ── PROXIMITY SEARCH ──
+const US_STATES = ['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'];
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function openProximityScreen() {
+  const scr = document.getElementById('proximity-screen');
+  scr.classList.add('visible');
+  const stateOpts = US_STATES.map(s => `<option value="${s}">${s}</option>`).join('');
+  scr.innerHTML = `
+    <div class="card-topbar">
+      <button class="card-back-btn" onclick="closeProximityScreen()">←</button>
+      <div style="flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--text)">Nearby</div>
+      <div style="width:60px"></div>
+    </div>
+    <div style="padding:16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;gap:8px;">
+        <input id="prox-city" type="text" placeholder="City…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);"/>
+        <select id="prox-state" style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);width:80px;">
+          <option value="">State</option>
+          ${stateOpts}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label style="font-size:12px;color:var(--muted);white-space:nowrap;">Within</label>
+        <select id="prox-radius" style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;background:var(--bg);color:var(--text);">
+          <option value="25">25 mi</option>
+          <option value="50" selected>50 mi</option>
+          <option value="100">100 mi</option>
+          <option value="200">200 mi</option>
+          <option value="500">500 mi</option>
+          <option value="99999">Any distance</option>
+        </select>
+        <button onclick="runProximitySearch()" style="flex:1;padding:9px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;">Search</button>
+      </div>
+      <button onclick="useMyLocation()" style="padding:9px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+        Use my location
+      </button>
+    </div>
+    <div class="prox-body" id="prox-results">
+      <div class="empty-state">Enter a city and state to find nearby contacts</div>
+    </div>`;
+
+  // Allow Enter key to trigger search
+  setTimeout(() => {
+    const cityInput = document.getElementById('prox-city');
+    if(cityInput) cityInput.addEventListener('keydown', e => { if(e.key==='Enter') runProximitySearch(); });
+  }, 50);
+}
+
+function closeProximityScreen() {
+  document.getElementById('proximity-screen').classList.remove('visible');
+}
+
+function useMyLocation() {
+  if(!navigator.geolocation){ alert('Location not available on this device.'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    renderProximityResults(pos.coords.latitude, pos.coords.longitude);
+  }, () => alert('Could not get your location.'));
+}
+
+async function runProximitySearch() {
+  const city = (document.getElementById('prox-city').value || '').trim();
+  const state = (document.getElementById('prox-state').value || '').trim();
+  if(!city){ alert('Please enter a city.'); return; }
+
+  const resultsEl = document.getElementById('prox-results');
+  resultsEl.innerHTML = '<div class="empty-state">Searching…</div>';
+
+  // Geocode the search location using Nominatim
+  try {
+    const q = encodeURIComponent(city + (state ? ', ' + state : '') + ', USA');
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+    const data = await res.json();
+    if(!data.length){ resultsEl.innerHTML = '<div class="empty-state">Location not found. Try a different city.</div>'; return; }
+    renderProximityResults(parseFloat(data[0].lat), parseFloat(data[0].lon));
+  } catch(e) {
+    resultsEl.innerHTML = '<div class="empty-state">Could not geocode location. Check your connection.</div>';
+  }
+}
+
+function renderProximityResults(lat, lng) {
+  const radius = parseFloat(document.getElementById('prox-radius').value);
+  const resultsEl = document.getElementById('prox-results');
+
+  // Calculate distances
+  const withDist = contacts
+    .filter(c => c.lat && c.lng && !isNaN(parseFloat(c.lat)) && !isNaN(parseFloat(c.lng)))
+    .map(c => ({...c, dist: haversine(lat, lng, parseFloat(c.lat), parseFloat(c.lng))}))
+    .filter(c => c.dist <= radius)
+    .sort((a,b) => a.dist - b.dist);
+
+  const noCoords = contacts.filter(c => !c.lat || !c.lng || isNaN(parseFloat(c.lat)));
+
+  if(!withDist.length){
+    resultsEl.innerHTML = `<div class="empty-state">No contacts within ${radius} miles</div>`;
+    return;
+  }
+
+  const pillMap={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['M','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
+
+  resultsEl.innerHTML = `
+    <div style="padding:10px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);">
+      ${withDist.length} contact${withDist.length!==1?'s':''} within ${radius} mi${noCoords.length?` · ${noCoords.length} without coordinates`:''}</div>
+    ${withDist.map((c,i) => {
+      const rcList = getRegionColor(c);
+      const lcall = lc(c);
+      const pillData = lcall && pillMap[lcall.outcome] ? pillMap[lcall.outcome] : null;
+      const pill = pillData ? `<span class="status-pill ${pillData[1]}">${pillData[0]}</span>` : `<span class="status-pill pill-none">—</span>`;
+      const distStr = c.dist < 10 ? c.dist.toFixed(1) : Math.round(c.dist);
+      // Find index in main contacts array for card navigation
+      const mainIdx = filteredList.indexOf(contacts.find(x=>x.id===c.id));
+      const clickIdx = contacts.indexOf(contacts.find(x=>x.id===c.id));
+      return `<div class="prox-result-row" onclick="openCardFromProximity('${c.id}')">
+        <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
+        <div class="row-cell">
+          <div class="row-name">${esc(c.pastor||'—')}</div>
+          <div class="row-sub">${esc(c.church||'')}</div>
+          <div class="row-loc">${esc([c.city,c.state].filter(Boolean).join(', '))}</div>
+        </div>
+        <div style="text-align:right;padding-right:4px;">
+          <div class="prox-distance">${distStr} mi</div>
+          ${pill}
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+function openCardFromProximity(cid) {
+  // Build a filtered list from proximity results and open card
+  const resultsEl = document.getElementById('prox-results');
+  const rows = resultsEl.querySelectorAll('.prox-result-row');
+  const ids = Array.from(rows).map(r => r.getAttribute('onclick').match(/'([^']+)'/)[1]);
+  filteredList = ids.map(id => contacts.find(c => c.id === id)).filter(Boolean);
+  const idx = filteredList.findIndex(c => c.id === cid);
+  callingIdx = idx >= 0 ? idx : 0;
+  contactMenuOpen = false;
+  infoExpanded = false;
+  renderCallingCard();
+}
+
 // ── Google Sheets Backend ──
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4GJpN5ZDqoTTFoG_B97W0GIDtmMAgb0jF8KeaWZXkOuYUR3mzpVDKOYFISjRK01gjxQ/exec';
 const SECRET = 'relay_secret_2026';
@@ -373,28 +537,32 @@ async function load() {
       });
     });
     contacts = rawContacts.map(c => ({
-      id: String(c.id),
-      pastor: c.pastor || '',
-      church: c.church || '',
-      city: c.city || '',
-      state: c.state || '',
-      region: c.region || '',
-      phone: c.phone || '',
-      email: c.email || '',
-      address: c.address || '',
-      starred: c.starred === true || c.starred === 'true',
-      lat: c.lat || '',
-      lng: c.lng || '',
+      id: String(c.id ?? ''),
+      pastor: String(c.pastor ?? ''),
+      church: String(c.church ?? ''),
+      city: String(c.city ?? ''),
+      state: String(c.state ?? ''),
+      region: String(c.region ?? ''),
+      phone: String(c.phone ?? ''),
+      email: String(c.email ?? ''),
+      address: String(c.address ?? ''),
+      starred: c.starred === true || c.starred === 'true' || c.starred === 'TRUE',
+      lat: String(c.lat ?? ''),
+      lng: String(c.lng ?? ''),
       photo: '',
       notes: [],
-      calls: callsCache[String(c.id)] || []
+      calls: callsCache[String(c.id ?? '')] || []
     }));
     sheetsReady = true;
     hideLoadingOverlay();
+    showStatus('Sheets connected ✓','ok');
+    showStatus('Sheets connected','ok');
   } catch(err) {
     hideLoadingOverlay();
     console.error('Sheets load error:', err);
     contacts = JSON.parse(localStorage.getItem('relay_v7')||'null') || SAMPLE.map(c=>({...c}));
+    showStatus('Using local backup','err');
+    showStatus('Local backup','err');
   }
 }
 
@@ -445,6 +613,14 @@ async function deleteContactEntry(contactId) {
   catch(err) { console.error('deleteContact error:', err); }
 }
 
+function showStatus(msg, type){
+  let el=document.getElementById('save-status');
+  if(!el){el=document.createElement('div');el.id='save-status';document.body.appendChild(el);}
+  const colors={ok:'background:#1a3a28;color:#4cd68a;border:1px solid #4a9e6b44',err:'background:#3a0a0a;color:#e05555;border:1px solid #5a1a1a44',info:'background:#1a1a2e;color:#F3B53A;border:1px solid #F3B53A44'};
+  el.style.cssText=(colors[type]||colors.info)+';position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 14px;border-radius:20px;z-index:300;pointer-events:none;font-family:var(--sans);transition:opacity .3s;';
+  el.textContent=msg;el.style.opacity='1';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2500);
+}
 function showLoadingOverlay(msg) {
   let el = document.getElementById('loading-overlay');
   if (!el) {
@@ -767,8 +943,9 @@ function openGCal(cid){
   window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');
   if(!c.calls)c.calls=[];
   const lbl=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  c.calls.push({id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,details:`Meeting scheduled for ${lbl}`});
-  save();closeMKeepCard();renderCallingCard();renderList();
+  const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,details:`Meeting scheduled for ${lbl}`};
+  c.calls.push(calCall);
+  save();saveCallEntry(cid,calCall);closeMKeepCard();renderCallingCard();renderList();
 }
 
 /* ── EDIT MODAL ── */
