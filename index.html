@@ -344,6 +344,9 @@ function stateDropdown(id, val){
   return `<select id="${id}" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;"><option value="">— State —</option>${opts}</select>`;
 }
 
+function splitField(val){
+  return String(val??'').split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);
+}
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 3958.8; // miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -808,7 +811,7 @@ function renderCallingCard(){
   const rc=getRegionColor(c);
   const total=filteredList.length;
   const pct=Math.round(((callingIdx+1)/total)*100);
-  const ph=primaryPhone(c.phone);
+  const ph=splitField(c.phone)[0]||'';
   const tel=ph?`tel:${ph.replace(/[^+0-9]/g,'')}`:null;
   const sms=ph?`sms:${ph.replace(/[^+0-9]/g,'')}`:null;
   const mailto=c.email?`mailto:${c.email}`:null;
@@ -853,9 +856,25 @@ function renderCallingCard(){
         <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">${ICONS.calendar}</span><span class="btn-label">Schedule</span></button>
       </div>
       <div class="contact-submenu${menuOpen?' open':''}" id="contact-submenu">
-        ${tel?`<a href="${tel}" class="contact-sub-btn call-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${ICONS.phone} Call</a>`:`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${ICONS.phone} Call</span>`}
-        ${sms?`<a href="${sms}" class="contact-sub-btn text-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;"><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg> Text</a>`:`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;"><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg> Text</span>`}
-        ${mailto?`<a href="${mailto}" class="contact-sub-btn email-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;"><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg> Email</a>`:`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;"><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg> Email</span>`}
+        ${(()=>{
+          const phones=splitField(c.phone);
+          const emails=splitField(c.email);
+          const msgSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>`;
+          const emailSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>`;
+          let out='';
+          if(phones.length){
+            phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${ICONS.phone} ${p}</a>`;});
+            phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${msgSvg} Text ${p}</a>`;});
+          } else {
+            out+=`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${ICONS.phone} No phone</span>`;
+          }
+          if(emails.length){
+            emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${emailSvg} ${e}</a>`;});
+          } else {
+            out+=`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${emailSvg} No email</span>`;
+          }
+          return out;
+        })()}
       </div>
       <div class="card-history">
         <div class="history-title">Timeline (${realCalls.length})</div>
@@ -875,8 +894,16 @@ function renderCallingCard(){
         <span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span>
       </button>
       ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--text)">${c.phone?esc(c.phone):'—'}</div></div>
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.email?esc(c.email):'—'}</div></div>
+        ${(()=>{
+          const phones=splitField(c.phone);
+          const emails=splitField(c.email);
+          let out='';
+          if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}
+          else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">—</div></div>`;}
+          if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}
+          else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">—</div></div>`;}
+          return out;
+        })()}
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'—'}</div></div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'—'}</div></div>
       </div>`:''}
