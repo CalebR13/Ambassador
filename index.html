@@ -316,7 +316,7 @@ const ICONS={
   search:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
 };
 
-let contacts=[],fState='All',logOut=null,logMtg=false,proxResults=null,proxLabel='';
+let contacts=[],fState='All',logOut=null,logMtg=false,proxResults=null,proxLabel='',filterHasPhone=false;
 let filteredList=[],callingIdx=0,contactMenuOpen=false,infoExpanded=false;
 
 const SAMPLE=[
@@ -726,6 +726,7 @@ function renderFilters(){
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+allStatesPill+statePills;
 }
 function setSF(s){fState=s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
+function togglePhoneFilter(){filterHasPhone=!filterHasPhone;renderFilters();renderList();}
 function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
 
 function buildFilteredList(){
@@ -733,17 +734,20 @@ function buildFilteredList(){
   if(proxResults){
     let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);
     if(q) f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));
+    if(filterHasPhone) f=f.filter(c=>splitField(c.phone).length>0);
     return f;
   }
   if(showingReminders){
     let f=getReminders().map(r=>r.contact);
     if(q) f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));
+    if(filterHasPhone) f=f.filter(c=>splitField(c.phone).length>0);
     return f;
   }
   let f=contacts.filter(c=>{
     const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);
     const mq=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);
-    return ms&&mq;
+    const mp=!filterHasPhone||splitField(c.phone).length>0;
+    return ms&&mq&&mp;
   });
   f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));
   return f;
