@@ -724,7 +724,9 @@ function renderFilters(){
   const statePills=(proxResults||showingReminders)?'':states.filter(s=>s!=='All'&&s!=='Starred').map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s}</button>`).join('');
   const allStatesPill=`<button class="filter-pill${fState==='All'?' active':''}" onclick="setSF('All')">All States</button>`;
   const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${filterHasPhone?'#4ec9d4':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
-  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+phonePill+allStatesPill+statePills;
+  const stateOpts2=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()].map(s=>`<option value="${s}"${fState===s?' selected':''}>${s==='All'?'All States':s+' ('+( STATE_NAMES[s]||s)+')'}</option>`).join('');
+  const stateDropPill=`<select onchange="setSF(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);color:${fState!=='All'?'var(--accent)':'var(--text)'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
+  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+phonePill+stateDropPill;
 }
 function setSF(s){fState=s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
 function togglePhoneFilter(){filterHasPhone=!filterHasPhone;renderFilters();renderList();}
