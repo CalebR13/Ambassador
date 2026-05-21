@@ -723,7 +723,8 @@ function renderFilters(){
   const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
   const statePills=(proxResults||showingReminders)?'':states.filter(s=>s!=='All'&&s!=='Starred').map(s=>`<button class="filter-pill${fState===s?' active':''}" onclick="setSF('${s}')">${s}</button>`).join('');
   const allStatesPill=`<button class="filter-pill${fState==='All'?' active':''}" onclick="setSF('All')">All States</button>`;
-  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+allStatesPill+statePills;
+  const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${filterHasPhone?'#4ec9d4':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
+  document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+phonePill+allStatesPill+statePills;
 }
 function setSF(s){fState=s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
 function togglePhoneFilter(){filterHasPhone=!filterHasPhone;renderFilters();renderList();}
@@ -1098,10 +1099,14 @@ function openContactModal(id){
         <div class="fgi"><label>State</label>${stateDropdown('fst', v('state')||'IL')}</div>
       </div>
       <div class="form-row">
-        <div class="fgi full"><label>Phone</label><input id="fph" value="${esc(v('phone'))}" placeholder="(000) 000-0000"/></div>
+        <div class="fgi full"><label>Phone Numbers <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>
+          ${(()=>{const phones=splitField(v('phone'));while(phones.length<4)phones.push('');return phones.slice(0,4).map((p,i)=>`<input id="fph${i}" value="${esc(p)}" placeholder="${i===0?'Primary number':'Additional number'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}
+        </div>
       </div>
       <div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div>
-      <div class="form-row"><div class="fgi full"><label>Email</label><input id="fe" type="email" value="${esc(v('email'))}" placeholder="pastor@church.com"/></div></div>
+      <div class="form-row"><div class="fgi full"><label>Email Addresses <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>
+          ${(()=>{const emails=splitField(v('email'));while(emails.length<4)emails.push('');return emails.slice(0,4).map((e,i)=>`<input id="fe${i}" type="email" value="${esc(e)}" placeholder="${i===0?'Primary email':'Additional email'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}
+        </div></div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
         <button class="btn-save" onclick="saveCM('${id||''}')">Save</button>
@@ -1113,7 +1118,9 @@ function saveCM(id){
   const ch=(document.getElementById('fc')||{}).value||'';
   const pa=(document.getElementById('fp')||{}).value||'';
   if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}
-  const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:(document.getElementById('fph')||{}).value?.trim()||'',address:(document.getElementById('fa')||{}).value?.trim()||'',email:(document.getElementById('fe')||{}).value?.trim()||''};
+  const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');
+  const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');
+  const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};
   let savedContact;
   if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}
   else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}
