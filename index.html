@@ -61,6 +61,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .proximity-screen.visible{display:flex;}
 .prox-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .fullscreen-card{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
+.fullscreen-card.slide-in{animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);}
+.fullscreen-card.slide-out{animation:slideOutRight .2s cubic-bezier(0.55,0,1,0.45);}
 .fullscreen-card.visible{display:flex;}
 .card-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .card-back-btn{background:none;border:1px solid var(--border);border-radius:50%;width:36px;height:36px;font-family:var(--sans);font-size:16px;font-weight:500;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;}
@@ -157,6 +159,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .bottom-nav-btn.active{color:#F3B53A;}
 .bottom-nav-btn svg{width:20px;height:20px;}
 .tides-screen{position:absolute;top:0;left:0;right:0;bottom:0;z-index:50;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
+.wing-fade{position:fixed;inset:0;background:#000;z-index:55;opacity:0;pointer-events:none;transition:opacity .15s ease;}
+.wing-fade.show{opacity:1;pointer-events:all;}
 .tides-screen.visible{display:flex;}
 .tides-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px;}
 .tides-list::-webkit-scrollbar{width:3px;}
@@ -196,7 +200,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 @keyframes fadeInBg{from{opacity:0}to{opacity:1}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeOutBg{from{opacity:1}to{opacity:0}}
-@keyframes expandDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOutRight{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+@keyframes expandDown{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes slideDownOut{from{transform:translateY(0);opacity:1}to{transform:translateY(30px);opacity:0}}
 @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .contact-row{transition:background .12s;}
@@ -229,6 +235,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   <div id="fullscreen-card" class="fullscreen-card"></div>
   <div id="proximity-screen" class="proximity-screen"></div>
   <div id="modal-layer" style="position:fixed;inset:0;z-index:200;pointer-events:none;"></div>
+  <div id="wing-fade" class="wing-fade"></div>
   <div id="tides-screen" class="tides-screen">
     <div class="card-topbar">
       <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Tides</div>
@@ -452,7 +459,7 @@ function renderCallingCard(){
   const c=filteredList[callingIdx];if(!c){closeCard();return;}
   const rc=getRegionColor(c);const total=filteredList.length;const pct=Math.round(((callingIdx+1)/total)*100);
   const calls=(c.calls||[]).slice().reverse();const realCalls=calls.filter(x=>x.outcome!=='imported');
-  const card=document.getElementById('fullscreen-card');card.classList.add('visible');
+  const card=document.getElementById('fullscreen-card');card.classList.remove('slide-out');card.classList.add('visible');requestAnimationFrame(()=>{ card.classList.add('slide-in'); setTimeout(()=>card.classList.remove('slide-in'),250); });
   card.innerHTML=`<div class="card-topbar"><button class="card-back-btn" onclick="closeCard()">\u2190</button><div class="card-topbar-center"><div class="card-progress-label">${callingIdx+1} of ${total}</div><div class="card-progress-bar-wrap"><div class="card-progress-bar-fill" style="width:${pct}%"></div></div></div><button class="card-edit-btn" onclick="openContactModal('${c.id}')" style="padding:6px 10px;display:flex;align-items:center;">${ICONS.pencil}</button></div>
     <div class="card-body">
       <div class="card-hero" style="background:linear-gradient(180deg,${rc.bg} 0%,var(--bg) 100%)">
@@ -490,12 +497,21 @@ function renderCallingCard(){
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
       <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span><span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'\u00b7 '+lastContactedStr(c):''}</span></div><span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
-      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;animation:expandDown .25s cubic-bezier(0.34,1.2,0.64,1);overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
+      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;animation:expandDown .35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
     </div>
     <div class="card-nav"><button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>\u2190</button><span class="nav-center">${esc(c.pastor||c.church||'')}</span><button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>\u2192</button></div>`;
 }
 function toggleContactMenu(){contactMenuOpen=!contactMenuOpen;renderCallingCard();}
-function closeCard(){const card=document.getElementById('fullscreen-card');card.classList.remove('visible');card.innerHTML='';contactMenuOpen=false;renderList();}
+function closeCard(){
+  const card=document.getElementById('fullscreen-card');
+  card.classList.add('slide-out');
+  setTimeout(()=>{
+    card.classList.remove('visible','slide-out');
+    card.innerHTML='';
+    contactMenuOpen=false;
+    renderList();
+  }, 190);
+}
 function navCard(dir){const next=callingIdx+dir;if(next<0||next>=filteredList.length)return;callingIdx=next;contactMenuOpen=false;infoExpanded=false;renderCallingCard();}
 
 function openLogModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;logOut=null;logMtg=false;const suggested=suggestedNext(c);if(suggested){setTimeout(()=>selOut(suggested),50);}const suggestionHTML=suggested?`<div style="background:#1a150044;border:1px solid #F3B53A33;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#F3B53A;">\ud83d\udca1 Suggested: <strong>${OM[suggested]?.label||suggested}</strong></div>`:'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2>Log a call</h2><div class="modal-sub">${esc(c.pastor||c.church||'')} \u00b7 ${esc([c.city,c.state].filter(Boolean).join(', '))}</div><div id="log-suggestion">${suggestionHTML}</div><div class="fg"><label>Outcome *</label><div class="outcome-opts"><button class="outcome-opt" id="op-pastor" onclick="selOut('pastor')" style="border-color:#4a9e6b44;"><span class="opt-icon" style="display:flex;align-items:center;color:#4cd68a;">${ICONS.personCheck}</span><span style="color:#4cd68a;">Spoke to Pastor</span></button><button class="outcome-opt" id="op-noanswer1" onclick="selOut('noanswer1')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#e8e6e1;">\u2460</span>No Answer (1st)</button><button class="outcome-opt" id="op-noanswer2" onclick="selOut('noanswer2')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#b0aea9;">\u2461</span>No Answer (2nd)</button><button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')" style="border-color:#8899ee44;"><span class="opt-icon" style="display:flex;align-items:center;color:#8899ee;">${ICONS.phoneOff}</span><span style="color:#8899ee;">Left Voicemail</span></button><button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')" style="border-color:#c9a0f044;"><span class="opt-icon" style="display:flex;align-items:center;color:#c9a0f0;">${ICONS.chair}</span><span style="color:#c9a0f0;">Spoke to Secretary</span></button><button class="outcome-opt" id="op-note" onclick="selOut('note')"><span class="opt-icon" style="display:flex;align-items:center;color:var(--muted);">${ICONS.noteSm}</span><span>Add Note</span></button></div></div><div id="mtg-sec" style="display:none"><div class="meeting-row"><label>Meeting booked?</label><div class="toggle-wrap"><button class="toggle-btn off" id="mtg-yes" onclick="setMtg(true)">Yes</button><button class="toggle-btn on" id="mtg-no" onclick="setMtg(false)">No</button></div></div><div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="date" id="mtg-d"/></div></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="call-det" placeholder="Who you spoke with, what was discussed\u2026"></textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveLog('${cid}')">Save call</button></div></div></div>`);}
@@ -510,7 +526,7 @@ function openReminderModal(cid){
   // Auto-populate with last call outcome
   const lastCall = [...(c.calls||[])].filter(x=>x.outcome&&x.outcome!=='reminder'&&x.outcome!=='note'&&x.outcome!=='imported').sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
   const autoNote = lastCall ? `Last contact: ${lastCall.outcome}${lastCall.details ? ' — ' + lastCall.details.split('\n')[0].substring(0,80) : ''}` : '';
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2><div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div><div class="fg"><label>Type</label><div style="display:flex;gap:8px;"><button id="rtype-call" class="toggle-btn on" onclick="setRType('call')" style="flex:1;">\ud83d\udcde Call</button><button id="rtype-email" class="toggle-btn off" onclick="setRType('email')" style="flex:1;">\u2709\ufe0f Email</button><button id="rtype-other" class="toggle-btn off" onclick="setRType('other')" style="flex:1;">\ud83d\udccb Other</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div><div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="rem-note" placeholder="What do you need to do?" style="height:70px">${esc(autoNote)}</textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button></div></div></div>`);
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2><div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div><div class="fg"><label>Type</label><div style="display:flex;gap:8px;"><button id="rtype-call" class="toggle-btn on" onclick="setRType('call')" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.34a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg> Call</button><button id="rtype-email" class="toggle-btn off" onclick="setRType('email')" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</button><button id="rtype-other" class="toggle-btn off" onclick="setRType('other')" style="flex:1;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Other</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div><div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="rem-note" placeholder="What do you need to do?" style="height:70px">${esc(autoNote)}</textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button></div></div></div>`);
   setTimeout(()=>{window._remType='call';},50);
 }
 function setRType(t){window._remType=t;['call','email','other'].forEach(k=>{const el=document.getElementById('rtype-'+k);if(el)el.className='toggle-btn '+(k===t?'on':'off');});}
@@ -623,22 +639,33 @@ function updateTidesBadge() {
 let currentWing = 'voyage';
 
 function switchWing(wing) {
-  currentWing = wing;
-  const tidesScreen = document.getElementById('tides-screen');
-  const voyageEls = ['state-filter-row','list-header','main-list','fullscreen-card','proximity-screen'];
+  if (currentWing === wing) return;
+  const fade = document.getElementById('wing-fade');
 
-  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('nav-' + wing)?.classList.add('active');
+  // Fade to black
+  fade.classList.add('show');
 
-  if (wing === 'tides') {
-    tidesScreen.classList.add('visible');
-    voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
-    renderTides();
-  } else {
-    tidesScreen.classList.remove('visible');
-    voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ''; });
-    renderList();
-  }
+  setTimeout(() => {
+    currentWing = wing;
+    const tidesScreen = document.getElementById('tides-screen');
+    const voyageEls = ['state-filter-row','list-header','main-list','fullscreen-card','proximity-screen'];
+
+    document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('nav-' + wing)?.classList.add('active');
+
+    if (wing === 'tides') {
+      tidesScreen.classList.add('visible');
+      voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+      renderTides();
+    } else {
+      tidesScreen.classList.remove('visible');
+      voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ''; });
+      renderList();
+    }
+
+    // Fade back in
+    setTimeout(() => { fade.classList.remove('show'); }, 20);
+  }, 150);
 }
 
 // ── TIDES WING ──
