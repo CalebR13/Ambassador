@@ -461,8 +461,9 @@ function renderCallingCard(){
           const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">\ud83d\udcc5 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
           const isCompleted=x.outcome==='note'&&x.completed;
           const detailStyle=isCompleted?'text-decoration:line-through;opacity:.45;':'';
-          const checkBtn=x.outcome==='reminder'?`<button onclick="completeReminder('${c.id}','${x.id}')" title="Mark done" style="position:absolute;top:8px;right:34px;background:none;border:1px solid #f0b42944;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#f0b429;display:flex;align-items:center;justify-content:center;padding:0;">${ICONS.checkCircle}</button>`:'';
-          return `<div class="call-entry"><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}</div>`;
+          const checkBtn=x.outcome==='reminder'?`<button onclick="event.stopPropagation();completeReminder('${c.id}','${x.id}')" title="Mark done" style="position:absolute;top:8px;right:34px;background:none;border:1px solid #f0b42944;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#f0b429;display:flex;align-items:center;justify-content:center;padding:0;">${ICONS.checkCircle}</button>`:'';
+          const remClick=x.outcome==='reminder'?`onclick="openTideDetail('${c.id}','${x.id}')" style="cursor:pointer;"`:'';
+          return `<div class="call-entry" ${remClick}><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="event.stopPropagation();delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}</div>`;
         }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
@@ -541,7 +542,7 @@ function switchWing(wing) {
 
 // ── TIDES WING ──
 function fmtDueLabel(remDate, remTime) {
-  if (!remDate) return { label: 'No date set', cls: 'upcoming' };
+  if (!remDate || !remDate.trim()) return { label: 'No date set', cls: 'upcoming' };
   const [y, m, d] = remDate.split('-').map(Number);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
