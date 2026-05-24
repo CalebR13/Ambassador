@@ -464,7 +464,7 @@ function renderCallingCard(){
           const detailStyle=isCompleted?'text-decoration:line-through;opacity:.45;':'';
           const checkBtn=x.outcome==='reminder'?`<button onclick="event.stopPropagation();completeReminder('${c.id}','${x.id}')" title="Mark done" style="position:absolute;top:8px;right:34px;background:none;border:1px solid #f0b42944;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#f0b429;display:flex;align-items:center;justify-content:center;padding:0;">${ICONS.checkCircle}</button>`:'';
           const remClick=x.outcome==='reminder'?`onclick="openTideDetail('${c.id}','${x.id}')" style="cursor:pointer;"`:'';
-          return `<div class="call-entry" ${remClick}><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="event.stopPropagation();delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}</div>`;
+          return `<div class="call-entry" ${remClick}><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${fmtCallDate(x.date)}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="event.stopPropagation();delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}</div>`;
         }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
@@ -542,6 +542,22 @@ function switchWing(wing) {
 }
 
 // ── TIDES WING ──
+function fmtCallDate(d) {
+  if (!d) return '';
+  const s = String(d).trim();
+  if (s.includes('T')) {
+    const parts = s.split('T')[0].split('-').map(Number);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[parts[1]-1] + ' ' + parts[2] + ', ' + parts[0];
+  }
+  if (s.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const parts = s.split('-').map(Number);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[parts[1]-1] + ' ' + parts[2] + ', ' + parts[0];
+  }
+  return s;
+}
+
 function parseRemDate(remDate) {
   if (!remDate || !String(remDate).trim()) return null;
   const s = String(remDate).trim();
@@ -627,21 +643,21 @@ function renderTides() {
     return `<div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}" onclick="openTideDetail('${c.id}','${call.id}')">
       <div class="tide-avatar" style="background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border}">${ini(c.pastor || c.church || '?')}</div>
       <div class="tide-content">
-        <div class="tide-pastor">${esc(c.pastor || '—')}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div class="tide-pastor" style="flex:1;min-width:0;">${esc(c.pastor || '—')}</div>
+          <div class="tide-actions" onclick="event.stopPropagation()" style="display:flex;gap:4px;flex-shrink:0;">
+            <button class="tide-btn" onclick="openCallingCardFromTides('${c.id}')" title="Go to contact" style="border-color:#5b9fd444;color:#5b9fd4;width:24px;height:24px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </button>
+            <button class="tide-btn complete" onclick="completeTideReminder('${c.id}','${call.id}')" title="Mark done" style="width:24px;height:24px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+            </button>
+
+          </div>
+        </div>
         <div class="tide-church">${esc(c.church || '')}${c.city ? ' · ' + esc(c.city) + ', ' + esc(c.state) : ''}</div>
         ${detailLine ? `<div class="tide-details">${esc(detailLine)}</div>` : ''}
         <div class="tide-due ${cls}">${label}</div>
-      </div>
-      <div class="tide-actions" onclick="event.stopPropagation()">
-        <button class="tide-btn" onclick="openCallingCardFromTides('${c.id}')" title="Go to contact" style="border-color:#5b9fd444;color:#5b9fd4;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        </button>
-        <button class="tide-btn complete" onclick="completeTideReminder('${c.id}','${call.id}')" title="Mark done">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
-        </button>
-        <button class="tide-btn" onclick="openSnoozeModal('${c.id}','${call.id}')" title="Snooze">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </button>
       </div>
     </div>`;
   }
@@ -719,7 +735,7 @@ function openTideDetail(cid, xid) {
       <div style="display:flex;gap:8px;margin-top:18px;">
         <button onclick="closeMKeepCard();openCallingCardFromTides('${cid}')" style="flex:1;padding:12px;background:#1a2d4a;border:1px solid #5b9fd444;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;color:#5b9fd4;cursor:pointer;">Go to Contact</button>
         <button onclick="closeMKeepCard();completeTideReminder('${cid}','${xid}')" style="flex:1;padding:12px;background:#2e1f00;border:1px solid #f0b42944;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;color:#f0b429;cursor:pointer;">Complete</button>
-        <button onclick="closeMKeepCard();openSnoozeModal('${cid}','${xid}')" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Snooze</button>
+        <button onclick="closeMKeepCard();openEditReminderModal('${cid}','${xid}')" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Edit</button>
       </div>
     </div>
   </div>`);
@@ -777,6 +793,88 @@ function snoozeToDate(cid, xid) {
   const typeLabel = call.remType === 'call' ? 'Call' : call.remType === 'email' ? 'Email' : 'Other';
   call.details = `${typeLabel} reminder · ${months[m-1]} ${day}`;
   save(); saveCallEntry(cid, call); closeMKeepCard(); renderTides();
+}
+
+function openEditReminderModal(cid, xid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+
+  // Extract existing note (everything after the first line)
+  const existingNote = (call.details || '').split('\n').slice(1).join('\n').trim();
+  const existingType = call.remType || 'call';
+  const existingDate = (()=>{
+    const parts = parseRemDate(call.remDate);
+    if (!parts) return '';
+    const [y,m,d] = parts;
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  })();
+  const existingTime = call.remTime || '';
+
+  window._editRemCid = cid;
+  window._editRemXid = xid;
+  window._remType = existingType;
+
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Reminder</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Type</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button id="et-call" onclick="setEditRemType('call')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${existingType==='call'?'#F3B53A':'var(--border)'};background:${existingType==='call'?'#2e1f00':'var(--surface2)'};color:${existingType==='call'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Call</button>
+        <button id="et-email" onclick="setEditRemType('email')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${existingType==='email'?'#F3B53A':'var(--border)'};background:${existingType==='email'?'#2e1f00':'var(--surface2)'};color:${existingType==='email'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Email</button>
+        <button id="et-other" onclick="setEditRemType('other')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${existingType==='other'?'#F3B53A':'var(--border)'};background:${existingType==='other'?'#2e1f00':'var(--surface2)'};color:${existingType==='other'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Other</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Date</div>
+      <input type="date" id="edit-rem-date" value="${existingDate}" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);margin-bottom:12px;box-sizing:border-box;"/>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Time <span style="opacity:.5;">(optional)</span></div>
+      <input type="time" id="edit-rem-time" value="${existingTime}" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);margin-bottom:12px;box-sizing:border-box;"/>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Notes</div>
+      <textarea id="edit-rem-note" placeholder="Add a note…" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${existingNote}</textarea>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()" style="flex:1;">Cancel</button>
+        <button onclick="saveEditReminder()" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save Changes</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function setEditRemType(t) {
+  window._remType = t;
+  ['call','email','other'].forEach(type => {
+    const btn = document.getElementById('et-' + type);
+    if (!btn) return;
+    const active = type === t;
+    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
+    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
+    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+  });
+}
+
+function saveEditReminder() {
+  const cid = window._editRemCid;
+  const xid = window._editRemXid;
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+
+  const d = document.getElementById('edit-rem-date')?.value;
+  const t = document.getElementById('edit-rem-time')?.value || '';
+  const note = (document.getElementById('edit-rem-note')?.value || '').trim();
+  const rtype = window._remType || 'call';
+
+  if (!d) { alert('Please pick a date.'); return; }
+
+  const dateLabel = fmtRemDate(d, t);
+  const typeLabel = rtype === 'call' ? 'Call' : rtype === 'email' ? 'Email' : 'Other';
+  call.remDate  = d;
+  call.remTime  = t;
+  call.remType  = rtype;
+  call.details  = `${typeLabel} reminder · ${dateLabel}${note ? '\n' + note : ''}`;
+
+  save();
+  saveCallEntry(cid, call);
+  closeMKeepCard();
+  renderTides();
+  renderCallingCard();
 }
 
 function openTidesReminderModal() {
