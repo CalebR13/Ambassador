@@ -294,7 +294,8 @@ function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'nume
 // ── KEY FIX: parse remDate safely as local date, no UTC shift ──
 function fmtRemDate(remDate,remTime){
   if(!remDate)return '';
-  const [y,m,d]=remDate.split('-').map(Number);
+  const datePart2=remDate.includes('T')?remDate.split('T')[0]:remDate;
+  const [y,m,d]=datePart2.split('-').map(Number);
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let str=`${months[m-1]} ${d}`;
   if(remTime){
@@ -543,7 +544,9 @@ function switchWing(wing) {
 // ── TIDES WING ──
 function fmtDueLabel(remDate, remTime) {
   if (!remDate || !remDate.trim()) return { label: 'No date set', cls: 'upcoming' };
-  const [y, m, d] = remDate.split('-').map(Number);
+  // Handle full ISO timestamps like 2026-05-23T05:00:00.000Z
+  const datePart = remDate.includes('T') ? remDate.split('T')[0] : remDate;
+  const [y, m, d] = datePart.split('-').map(Number);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const due = new Date(y, m - 1, d);
@@ -578,7 +581,7 @@ function renderTides() {
     (c.calls || []).forEach(call => {
       if (call.outcome !== 'reminder') return;
       if (call.completed) return;
-      const due = call.remDate ? new Date(call.remDate + 'T' + (call.remTime || '12:00') + ':00') : null;
+      const rdClean = call.remDate ? (call.remDate.includes('T') ? call.remDate.split('T')[0] : call.remDate) : null; const due = rdClean ? new Date(rdClean + 'T' + (call.remTime || '12:00') + ':00') : null;
       allItems.push({ contact: c, call, due });
     });
   });
