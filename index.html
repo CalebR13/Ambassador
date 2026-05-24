@@ -179,6 +179,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .tide-btn:active{background:var(--surface2);}
 .tide-btn.complete{border-color:#f0b42944;color:#f0b429;}
 .tide-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:var(--muted);}
+.tide-entry-wrap{position:relative;overflow:hidden;}
+.tide-swipe-bg{position:absolute;right:0;top:0;bottom:0;width:80px;background:#2a6b3a;display:flex;align-items:center;justify-content:center;color:#4cd68a;font-size:11px;font-weight:600;gap:4px;transform:translateX(100%);transition:transform .2s;}
 .snooze-modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom));border:1px solid var(--border);}
 @media(min-width:600px){
   .top-bar{flex-wrap:nowrap;padding:8px 20px;}
@@ -221,7 +223,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   <div id="tides-screen" class="tides-screen">
     <div class="card-topbar">
       <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Tides</div>
-      <button onclick="openTidesReminderModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Reminder</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="tides-sort" onchange="renderTides()" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:11px;background:var(--surface);color:var(--muted);cursor:pointer;">
+          <option value="date">By Date</option>
+          <option value="region">By Region</option>
+        </select>
+        <button onclick="openTidesReminderModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Reminder</button>
+      </div>
     </div>
     <div id="tides-list" class="tides-list"></div>
   </div>
@@ -230,8 +238,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 10"/><path d="M3 21h18"/></svg>
       Voyage
     </button>
-    <button class="bottom-nav-btn" id="nav-tides" onclick="switchWing('tides')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 18c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 6c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/></svg>
+    <button class="bottom-nav-btn" id="nav-tides" onclick="switchWing('tides')" style="position:relative;">
+      <div style="position:relative;display:inline-block;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 18c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 6c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/></svg>
+        <span id="tides-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#e05555;color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 4px;min-width:14px;text-align:center;line-height:14px;"></span>
+      </div>
       Tides
     </button>
   </div>
@@ -487,7 +498,10 @@ function completeReminder(cid,xid){const c=contacts.find(x=>x.id===cid);if(!c)re
 
 function openReminderModal(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2><div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div><div class="fg"><label>Type</label><div style="display:flex;gap:8px;"><button id="rtype-call" class="toggle-btn on" onclick="setRType('call')" style="flex:1;">\ud83d\udcde Call</button><button id="rtype-email" class="toggle-btn off" onclick="setRType('email')" style="flex:1;">\u2709\ufe0f Email</button><button id="rtype-other" class="toggle-btn off" onclick="setRType('other')" style="flex:1;">\ud83d\udccb Other</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div><div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="rem-note" placeholder="What do you need to do?" style="height:70px"></textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button></div></div></div>`);
+  // Auto-populate with last call outcome
+  const lastCall = [...(c.calls||[])].filter(x=>x.outcome&&x.outcome!=='reminder'&&x.outcome!=='note'&&x.outcome!=='imported').sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  const autoNote = lastCall ? `Last contact: ${lastCall.outcome}${lastCall.details ? ' — ' + lastCall.details.split('\n')[0].substring(0,80) : ''}` : '';
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2><div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div><div class="fg"><label>Type</label><div style="display:flex;gap:8px;"><button id="rtype-call" class="toggle-btn on" onclick="setRType('call')" style="flex:1;">\ud83d\udcde Call</button><button id="rtype-email" class="toggle-btn off" onclick="setRType('email')" style="flex:1;">\u2709\ufe0f Email</button><button id="rtype-other" class="toggle-btn off" onclick="setRType('other')" style="flex:1;">\ud83d\udccb Other</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div><div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="rem-note" placeholder="What do you need to do?" style="height:70px">${esc(autoNote)}</textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button></div></div></div>`);
   setTimeout(()=>{window._remType='call';},50);
 }
 function setRType(t){window._remType=t;['call','email','other'].forEach(k=>{const el=document.getElementById('rtype-'+k);if(el)el.className='toggle-btn '+(k===t?'on':'off');});}
@@ -518,6 +532,70 @@ function deleteContact(id){if(!confirm('Delete this contact? This cannot be undo
 function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
 function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
 
+
+// ── SWIPE TO COMPLETE ──
+function initTidesSwipe() {
+  document.querySelectorAll('.tide-entry[data-cid]').forEach(el => {
+    let startX = 0, startY = 0, dx = 0, swiping = false;
+    const cid = el.dataset.cid;
+    const xid = el.dataset.xid;
+    const bg = document.getElementById('swipebg-' + xid);
+
+    el.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx = 0; swiping = false;
+    }, {passive:true});
+
+    el.addEventListener('touchmove', e => {
+      dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!swiping && Math.abs(dy) > Math.abs(dx)) return;
+      swiping = true;
+      if (dx < 0) {
+        el.style.transform = `translateX(${dx}px)`;
+        if (bg) bg.style.transform = `translateX(${Math.max(dx + 80, 0)}px)`;
+        e.preventDefault();
+      }
+    }, {passive:false});
+
+    el.addEventListener('touchend', () => {
+      if (dx < -60) {
+        el.style.transform = 'translateX(-100%)';
+        el.style.transition = 'transform .25s';
+        setTimeout(() => completeTideReminder(cid, xid), 250);
+      } else {
+        el.style.transform = '';
+        if (bg) bg.style.transform = '';
+      }
+      swiping = false;
+    });
+  });
+}
+
+// ── TIDES BADGE ──
+function updateTidesBadge() {
+  const now = new Date();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  let count = 0;
+  contacts.forEach(c => {
+    (c.calls || []).forEach(call => {
+      if (call.outcome !== 'reminder' || call.completed) return;
+      const parts = parseRemDate(call.remDate);
+      if (!parts) return;
+      const due = new Date(parts[0], parts[1]-1, parts[2], 23, 59, 59);
+      if (due < todayEnd) count++;
+    });
+  });
+  const badge = document.getElementById('tides-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
 
 // ── WING NAVIGATION ──
 let currentWing = 'voyage';
@@ -626,7 +704,14 @@ function renderTides() {
   const upcoming = allItems.filter(i => i.due && i.due >= todayEnd);
 
   // Sort each group
+  const sortMode = document.getElementById('tides-sort')?.value || 'date';
+  const regionOrder = {'Northeast':1,'North':2,'Central East':3,'Central':4,'Central West':5,'East':6,'West':7,'South':8,'Southeast':9,'Southwest':10,'Northwest':11,'NonCon':12};
   const sortItems = (items) => items.sort((a, b) => {
+    if (sortMode === 'region') {
+      const ra = regionOrder[a.contact.region] || 99;
+      const rb = regionOrder[b.contact.region] || 99;
+      if (ra !== rb) return ra - rb;
+    }
     if (!a.due && !b.due) return 0;
     if (!a.due) return 1;
     if (!b.due) return -1;
@@ -641,7 +726,7 @@ function renderTides() {
     const isOverdue = cls === 'overdue';
     const detailLine = call.details ? call.details.split('\n').slice(1).join(' ').trim() : '';
     const churchCity = [c.church, c.city && c.state ? c.city+', '+c.state : c.city].filter(Boolean).join(' · ');
-    return `<div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}" onclick="openTideDetail('${c.id}','${call.id}')">
+    return `<div class="tide-entry-wrap" id="wrap-${call.id}"><div class="tide-swipe-bg" id="swipebg-${call.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Done</div><div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}" onclick="openTideDetail('${c.id}','${call.id}')" data-cid="${c.id}" data-xid="${call.id}">
       <div class="tide-avatar" style="background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border}">${ini(c.pastor || c.church || '?')}</div>
       <div class="tide-content" style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
@@ -661,7 +746,7 @@ function renderTides() {
           </div>
         </div>
       </div>
-    </div>`;
+    </div></div>`;
   }
 
   let html = '';
@@ -683,6 +768,7 @@ function renderTides() {
   }
 
   list.innerHTML = html;
+  setTimeout(initTidesSwipe, 50);
 }
 
 function openCallingCardFromTides(cid) {
@@ -747,7 +833,7 @@ function completeTideReminder(cid, xid) {
   const c = contacts.find(x => x.id === cid); if (!c) return;
   const call = c.calls.find(x => x.id === xid); if (!call) return;
   call.outcome = 'note'; call.completed = true;
-  save(); saveCallEntry(cid, call); renderTides(); renderList();
+  save(); saveCallEntry(cid, call); renderTides(); renderList(); updateTidesBadge();
 }
 
 function openSnoozeModal(cid, xid) {
@@ -913,7 +999,7 @@ function openReminderFromTides(cid) {
   openReminderModal(cid);
 }
 
-load().then(()=>{renderFilters();renderList();});
+load().then(()=>{renderFilters();renderList();updateTidesBadge();});
 window.addEventListener('resize',renderList);
 </script>
 </body>
