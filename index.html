@@ -32,7 +32,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .add-btn{padding:8px 14px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .list-header{display:grid;grid-template-columns:44px 1fr 48px 48px;padding:0 14px;height:34px;align-items:center;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10;}
 .list-header-cell{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500;padding:0 4px;}
-.main-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.main-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px;}
 .main-list::-webkit-scrollbar{width:3px;}
 .main-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 .contact-row{display:grid;grid-template-columns:44px 1fr 48px 48px;padding:0 14px;min-height:64px;align-items:center;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
@@ -152,6 +152,34 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .fgi input,.fgi select{padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;}
 .fgi input:focus,.fgi select:focus{outline:none;border-color:var(--accent);}
 .fgi select option{background:var(--surface);}
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:max(0px,env(safe-area-inset-bottom));position:fixed;bottom:0;left:0;right:0;z-index:60;}
+.bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;background:none;border:none;cursor:pointer;font-family:var(--sans);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:500;transition:color .15s;}
+.bottom-nav-btn.active{color:#F3B53A;}
+.bottom-nav-btn svg{width:20px;height:20px;}
+.tides-screen{position:absolute;top:0;left:0;right:0;bottom:0;z-index:50;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
+.tides-screen.visible{display:flex;}
+.tides-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:60px;}
+.tides-list::-webkit-scrollbar{width:3px;}
+.tides-list::-webkit-scrollbar-thumb{background:var(--border);}
+.tide-entry{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;gap:12px;transition:background .1s;}
+.tide-entry:active{background:var(--surface);}
+.tide-entry.overdue{border-left:3px solid #e05555;}
+.tide-entry.upcoming{border-left:3px solid #f0b429;}
+.tide-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+.tide-content{flex:1;min-width:0;}
+.tide-pastor{font-size:14px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tide-church{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.tide-details{font-size:12px;color:var(--text);margin-top:4px;line-height:1.4;}
+.tide-due{font-size:11px;font-weight:600;margin-top:4px;}
+.tide-due.overdue{color:#e05555;}
+.tide-due.upcoming{color:#f0b429;}
+.tide-due.today{color:#4cd68a;}
+.tide-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.tide-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.tide-btn:active{background:var(--surface2);}
+.tide-btn.complete{border-color:#f0b42944;color:#f0b429;}
+.tide-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:var(--muted);}
+.snooze-modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom));border:1px solid var(--border);}
 @media(min-width:600px){
   .top-bar{flex-wrap:nowrap;padding:8px 20px;}
   .list-header{grid-template-columns:44px 1.5fr 1fr 60px 48px;}
@@ -190,6 +218,23 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   <div id="fullscreen-card" class="fullscreen-card"></div>
   <div id="proximity-screen" class="proximity-screen"></div>
   <div id="modal-layer" style="position:fixed;inset:0;z-index:200;pointer-events:none;"></div>
+  <div id="tides-screen" class="tides-screen">
+    <div class="card-topbar">
+      <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Tides</div>
+      <button onclick="openTidesReminderModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Reminder</button>
+    </div>
+    <div id="tides-list" class="tides-list"></div>
+  </div>
+  <div class="bottom-nav" id="bottom-nav">
+    <button class="bottom-nav-btn active" id="nav-voyage" onclick="switchWing('voyage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 10"/><path d="M3 21h18"/></svg>
+      Voyage
+    </button>
+    <button class="bottom-nav-btn" id="nav-tides" onclick="switchWing('tides')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 18c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 6c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/></svg>
+      Tides
+    </button>
+  </div>
 </div>
 <script>
 const STATE_REGION={AL:'south',AK:'noncont',AZ:'west',AR:'south',CA:'west',CO:'west',CT:'northeast',DE:'northeast',FL:'south',GA:'south',HI:'noncont',ID:'west',IL:'midwest',IN:'midwest',IA:'midwest',KS:'midwest',KY:'south',LA:'south',ME:'northeast',MD:'northeast',MA:'northeast',MI:'midwest',MN:'midwest',MS:'south',MO:'midwest',MT:'west',NE:'midwest',NV:'west',NH:'northeast',NJ:'northeast',NM:'west',NY:'northeast',NC:'south',ND:'midwest',OH:'midwest',OK:'south',OR:'west',PA:'northeast',RI:'northeast',SC:'south',SD:'midwest',TN:'south',TX:'south',UT:'west',VT:'northeast',VA:'south',WA:'west',WV:'south',WI:'midwest',WY:'west',DC:'northeast'};
@@ -345,7 +390,7 @@ function renderFilters(){
   const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
   const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${filterHasPhone?'#4ec9d4':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
   const stateOpts2=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()].map(s=>`<option value="${s}"${fState===s?' selected':''}>${s==='All'?'All States':s+' ('+(STATE_NAMES[s]||s)+')'}</option>`).join('');
-  const stateDropPill=`<div style="position:relative;display:inline-block;flex-shrink:0;"><select onchange="setSF(this.value)" style="padding:5px 28px 5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);color:${fState!=='All'?'var(--accent)':'var(--text)'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};appearance:none;-webkit-appearance:none;">${stateOpts2}</select><span style="pointer-events:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#F3B53A;font-size:10px;line-height:1;">▾</span></div>`;
+  const stateDropPill=`<select onchange="setSF(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);color:${fState!=='All'?'var(--accent)':'var(--text)'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+phonePill+stateDropPill;
 }
 function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
@@ -470,6 +515,240 @@ function saveCM(id){const ch=(document.getElementById('fc')||{}).value||'';const
 function deleteContact(id){if(!confirm('Delete this contact? This cannot be undone.'))return;contacts=contacts.filter(c=>c.id!==id);save();deleteContactEntry(id);closeMKeepCard();closeCard();renderFilters();renderList();}
 function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
 function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
+
+
+// ── WING NAVIGATION ──
+let currentWing = 'voyage';
+
+function switchWing(wing) {
+  currentWing = wing;
+  const tidesScreen = document.getElementById('tides-screen');
+  const voyageEls = ['state-filter-row','list-header','main-list','fullscreen-card','proximity-screen'];
+
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + wing)?.classList.add('active');
+
+  if (wing === 'tides') {
+    tidesScreen.classList.add('visible');
+    voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+    renderTides();
+  } else {
+    tidesScreen.classList.remove('visible');
+    voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ''; });
+    renderList();
+  }
+}
+
+// ── TIDES WING ──
+function fmtDueLabel(remDate, remTime) {
+  if (!remDate) return { label: 'No date set', cls: 'upcoming' };
+  const [y, m, d] = remDate.split('-').map(Number);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const due = new Date(y, m - 1, d);
+  const diff = Math.round((due - today) / (1000 * 60 * 60 * 24));
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let dateStr = `${months[m-1]} ${d}`;
+  if (remTime) {
+    const [hh, mm] = remTime.split(':').map(Number);
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    const h12 = hh % 12 || 12;
+    dateStr += ` at ${h12}:${String(mm).padStart(2,'0')} ${ampm}`;
+  }
+
+  if (diff < 0) return { label: `Overdue · ${dateStr}`, cls: 'overdue' };
+  if (diff === 0) return { label: `Today · ${dateStr}`, cls: 'today' };
+  if (diff === 1) return { label: `Tomorrow · ${dateStr}`, cls: 'upcoming' };
+  return { label: dateStr, cls: 'upcoming' };
+}
+
+function renderTides() {
+  const list = document.getElementById('tides-list');
+  if (!list) return;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayEnd = new Date(todayStart.getTime() + 86400000);
+
+  // Gather all active (non-completed) reminders
+  const allItems = [];
+  contacts.forEach(c => {
+    (c.calls || []).forEach(call => {
+      if (call.outcome !== 'reminder') return;
+      if (call.completed) return;
+      const due = call.remDate ? new Date(call.remDate + 'T' + (call.remTime || '12:00') + ':00') : null;
+      allItems.push({ contact: c, call, due });
+    });
+  });
+
+  if (!allItems.length) {
+    list.innerHTML = `<div class="tide-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 18c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/></svg><div style="font-size:14px">No active reminders</div><div style="font-size:12px;color:var(--muted)">All clear — smooth sailing</div></div>`;
+    return;
+  }
+
+  // Split into due today/overdue vs upcoming
+  const dueToday = allItems.filter(i => !i.due || i.due < todayEnd);
+  const upcoming = allItems.filter(i => i.due && i.due >= todayEnd);
+
+  // Sort each group
+  const sortItems = (items) => items.sort((a, b) => {
+    if (!a.due && !b.due) return 0;
+    if (!a.due) return 1;
+    if (!b.due) return -1;
+    return a.due - b.due;
+  });
+  sortItems(dueToday);
+  sortItems(upcoming);
+
+  function renderItem({ contact: c, call }) {
+    const rc = getRegionColor(c);
+    const { label, cls } = fmtDueLabel(call.remDate, call.remTime);
+    const isOverdue = cls === 'overdue';
+    const detailLine = call.details ? call.details.split('\n').slice(1).join(' ').trim() : '';
+    return `<div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}">
+      <div class="tide-avatar" style="background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border}">${ini(c.pastor || c.church || '?')}</div>
+      <div class="tide-content">
+        <div class="tide-pastor">${esc(c.pastor || '—')}</div>
+        <div class="tide-church">${esc(c.church || '')}${c.city ? ' · ' + esc(c.city) + ', ' + esc(c.state) : ''}</div>
+        ${detailLine ? `<div class="tide-details">${esc(detailLine)}</div>` : ''}
+        <div class="tide-due ${cls}">${label}</div>
+      </div>
+      <div class="tide-actions" onclick="event.stopPropagation()">
+        <button class="tide-btn" onclick="openCallingCardFromTides('${c.id}')" title="Go to contact" style="border-color:#5b9fd444;color:#5b9fd4;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+        <button class="tide-btn complete" onclick="completeTideReminder('${c.id}','${call.id}')" title="Mark done">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+        </button>
+        <button class="tide-btn" onclick="openSnoozeModal('${c.id}','${call.id}')" title="Snooze">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }
+
+  let html = '';
+
+  if (dueToday.length) {
+    html += `<div style="padding:10px 16px 6px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;">Due Today</span>
+      <span style="background:#e05555;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;">${dueToday.length}</span>
+    </div>`;
+    html += dueToday.map(renderItem).join('');
+  }
+
+  if (upcoming.length) {
+    html += `<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;">Upcoming</span>
+      <span style="background:#2e1f00;color:#f0b429;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;">${upcoming.length}</span>
+    </div>`;
+    html += upcoming.map(renderItem).join('');
+  }
+
+  list.innerHTML = html;
+}
+
+function openCallingCardFromTides(cid) {
+  const idx = filteredList.findIndex(c => c.id === cid);
+  if (idx >= 0) {
+    callingIdx = idx;
+  } else {
+    filteredList = buildFilteredList();
+    const idx2 = filteredList.findIndex(c => c.id === cid);
+    callingIdx = idx2 >= 0 ? idx2 : 0;
+  }
+  contactMenuOpen = false; infoExpanded = false;
+  renderCallingCard();
+}
+
+function completeTideReminder(cid, xid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+  call.outcome = 'note'; call.completed = true;
+  save(); saveCallEntry(cid, call); renderTides(); renderList();
+}
+
+function openSnoozeModal(cid, xid) {
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()">
+      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Snooze reminder</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button onclick="snoozeBy('${cid}','${xid}',1)" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--text);">Tomorrow</button>
+        <button onclick="snoozeBy('${cid}','${xid}',3)" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--text);">3 days</button>
+        <button onclick="snoozeBy('${cid}','${xid}',7)" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--text);">1 week</button>
+        <button onclick="snoozeBy('${cid}','${xid}',14)" style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--text);">2 weeks</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="date" id="snooze-custom-date" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);"/>
+        <button onclick="snoozeToDate('${cid}','${xid}')" style="padding:10px 16px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;">Set</button>
+      </div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function snoozeBy(cid, xid, days) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+  const base = call.remDate ? new Date(call.remDate + 'T12:00:00') : new Date();
+  base.setDate(base.getDate() + days);
+  call.remDate = base.toISOString().split('T')[0];
+  const [y,m,d] = call.remDate.split('-').map(Number);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const typeLabel = call.remType === 'call' ? 'Call' : call.remType === 'email' ? 'Email' : 'Other';
+  call.details = `${typeLabel} reminder · ${months[m-1]} ${d}`;
+  save(); saveCallEntry(cid, call); closeMKeepCard(); renderTides();
+}
+
+function snoozeToDate(cid, xid) {
+  const d = document.getElementById('snooze-custom-date')?.value;
+  if (!d) { alert('Pick a date.'); return; }
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+  call.remDate = d;
+  const [y,m,day] = d.split('-').map(Number);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const typeLabel = call.remType === 'call' ? 'Call' : call.remType === 'email' ? 'Email' : 'Other';
+  call.details = `${typeLabel} reminder · ${months[m-1]} ${day}`;
+  save(); saveCallEntry(cid, call); closeMKeepCard(); renderTides();
+}
+
+function openTidesReminderModal() {
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()">
+      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:6px;">New Reminder</h2>
+      <div class="modal-sub" style="font-size:13px;color:var(--muted);margin-bottom:14px;">Search for a contact to add a reminder</div>
+      <input type="text" id="tides-search" placeholder="Search pastor or church…" oninput="renderTidesSearch()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);margin-bottom:10px;box-sizing:border-box;"/>
+      <div id="tides-search-results" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);"></div>
+      <div class="modal-actions" style="margin-top:12px;"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div>
+    </div>
+  </div>`);
+}
+
+function renderTidesSearch() {
+  const q = (document.getElementById('tides-search')?.value || '').trim().toLowerCase();
+  const results = document.getElementById('tides-search-results');
+  if (!results) return;
+  if (!q) { results.innerHTML = ''; return; }
+  const matches = contacts.filter(c =>
+    (c.pastor || '').toLowerCase().includes(q) ||
+    (c.church || '').toLowerCase().includes(q)
+  ).slice(0, 8);
+  if (!matches.length) { results.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px;">No contacts found</div>'; return; }
+  results.innerHTML = matches.map(c => `
+    <div onclick="openReminderFromTides('${c.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-family:var(--sans);">
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${esc(c.pastor || '—')}</div>
+      <div style="font-size:11px;color:var(--muted)">${esc(c.church || '')} · ${esc(c.city || '')}, ${esc(c.state || '')}</div>
+    </div>`).join('');
+}
+
+function openReminderFromTides(cid) {
+  closeMKeepCard();
+  openReminderModal(cid);
+}
 
 load().then(()=>{renderFilters();renderList();});
 window.addEventListener('resize',renderList);
