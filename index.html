@@ -60,7 +60,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .proximity-screen{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
 .proximity-screen.visible{display:flex;}
 .prox-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.save-status{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 12px;border-radius:20px;z-index:300;pointer-events:none;opacity:0;transition:opacity .3s;font-family:var(--sans);}
 .fullscreen-card{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
 .fullscreen-card.visible{display:flex;}
 .card-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
@@ -115,7 +114,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .call-details-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-top:5px;}
 .call-del{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:4px 6px;border-radius:4px;line-height:1;}
 .call-del:hover{color:var(--danger);}
-.call-del:active{color:var(--danger);}
 .no-calls{font-size:13px;color:var(--muted);font-style:italic;}
 .card-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom));}
 .nav-btn{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);font-family:var(--sans);font-size:18px;font-weight:600;cursor:pointer;color:var(--text);}
@@ -210,14 +208,7 @@ function outcomeIcon(key){
   if(key==='na2')return '<span style="width:16px;height:16px;background:transparent;border:1.5px solid #888;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#b0aea9">2</span>';
   return '';
 }
-function suggestedNext(c){
-  const calls=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');
-  if(!calls.length)return null;
-  const last=calls[calls.length-1].outcome;
-  if(last==='noanswer1')return 'noanswer2';
-  if(last==='noanswer2')return 'voicemail';
-  return null;
-}
+function suggestedNext(c){const calls=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');if(!calls.length)return null;const last=calls[calls.length-1].outcome;if(last==='noanswer1')return 'noanswer2';if(last==='noanswer2')return 'voicemail';return null;}
 const ICONS={
   person:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   phone:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><polyline points="9 11 11 13 15 9"/></svg>`,
@@ -225,7 +216,7 @@ const ICONS={
   calendar:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
   pencil:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
   trash:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-  pin:`<svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10,2 4,0 3,5 9,4" fill="currentColor" opacity="0.5"/><rect x="10" y="1" width="4" height="3" rx="0.5" fill="none" stroke="currentColor" stroke-width="1.4"/><polygon points="9,4 15,4 17,21 7,21" fill="currentColor"/><rect x="9" y="8.5" width="6" height="1.5" fill="white" opacity="0.3"/><rect x="9" y="13" width="6" height="1.5" fill="white" opacity="0.3"/><line x1="6" y1="21" x2="18" y2="21" stroke="currentColor" stroke-width="2.5"/></svg>`,
+  pin:`<svg width="20" height="26" viewBox="0 0 22 28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8,0 Q11,-3 14,0 L15,5 H7 Z"/><rect x="6" y="5" width="10" height="4"/><rect x="4" y="9" width="5" height="2"/><rect x="13" y="9" width="5" height="2"/><polygon points="5,11 17,11 19,26 3,26"/><rect x="8" y="17" width="6" height="6"/><rect x="2" y="26" width="18" height="2" rx="1"/></svg>`,
   starEmpty:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b5a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   starFilled:`<svg width="18" height="18" viewBox="0 0 24 24" fill="#f0b429" stroke="#f0b429" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   personCheck:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>`,
@@ -254,6 +245,22 @@ function ini(n){return(n||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}
+
+// ── KEY FIX: parse remDate safely as local date, no UTC shift ──
+function fmtRemDate(remDate,remTime){
+  if(!remDate)return '';
+  const [y,m,d]=remDate.split('-').map(Number);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let str=`${months[m-1]} ${d}`;
+  if(remTime){
+    const [hh,mm]=remTime.split(':').map(Number);
+    const ampm=hh>=12?'PM':'AM';
+    const h12=hh%12||12;
+    str+=` at ${h12}:${String(mm).padStart(2,'0')} ${ampm}`;
+  }
+  return str;
+}
+
 const US_STATES=['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC'];
 const STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia'};
 function stateDropdown(id,val){const opts=US_STATES.map(s=>`<option value="${s}"${val===s?' selected':''}>${s} (${STATE_NAMES[s]||s})</option>`).join('');return `<select id="${id}" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;"><option value="">— State —</option>${opts}</select>`;}
@@ -261,135 +268,65 @@ function splitField(val){return String(val??'').split(/[,;\/]+/).map(s=>s.trim()
 function haversine(lat1,lon1,lat2,lon2){const R=3958.8;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
 function openProximityScreen(){
-  const scr=document.getElementById('proximity-screen');
-  scr.classList.add('visible');
+  const scr=document.getElementById('proximity-screen');scr.classList.add('visible');
   const stateOpts=US_STATES.map(s=>`<option value="${s}">${s} (${STATE_NAMES[s]||s})</option>`).join('');
-  scr.innerHTML=`
-    <div class="card-topbar">
-      <button class="card-back-btn" onclick="closeProximityScreen()">←</button>
-      <div style="flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--text)">Nearby</div>
-      <div style="width:60px"></div>
-    </div>
-    <div style="padding:16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:10px;">
-      <div style="display:flex;gap:8px;">
-        <input id="prox-city" type="text" placeholder="City…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);"/>
-        <select id="prox-state" style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);width:80px;"><option value="">State</option>${stateOpts}</select>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <label style="font-size:12px;color:var(--muted);white-space:nowrap;">Within</label>
-        <select id="prox-radius" style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;background:var(--bg);color:var(--text);">
-          <option value="25">25 mi</option><option value="50" selected>50 mi</option><option value="100">100 mi</option><option value="200">200 mi</option><option value="500">500 mi</option><option value="99999">Any distance</option>
-        </select>
-        <button onclick="runProximitySearch()" style="flex:1;padding:9px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;">Search</button>
-      </div>
-      <button onclick="useMyLocation()" style="padding:9px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
-        Use my location
-      </button>
-    </div>
-    <div class="prox-body" id="prox-results"><div class="empty-state">Enter a city and state to find nearby contacts</div></div>`;
+  scr.innerHTML=`<div class="card-topbar"><button class="card-back-btn" onclick="closeProximityScreen()">←</button><div style="flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--text)">Nearby</div><div style="width:60px"></div></div><div style="padding:16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:10px;"><div style="display:flex;gap:8px;"><input id="prox-city" type="text" placeholder="City…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);"/><select id="prox-state" style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);width:80px;"><option value="">State</option>${stateOpts}</select></div><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:12px;color:var(--muted);white-space:nowrap;">Within</label><select id="prox-radius" style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;background:var(--bg);color:var(--text);"><option value="25">25 mi</option><option value="50" selected>50 mi</option><option value="100">100 mi</option><option value="200">200 mi</option><option value="500">500 mi</option><option value="99999">Any distance</option></select><button onclick="runProximitySearch()" style="flex:1;padding:9px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;">Search</button></div><button onclick="useMyLocation()" style="padding:9px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>Use my location</button></div><div class="prox-body" id="prox-results"><div class="empty-state">Enter a city and state to find nearby contacts</div></div>`;
   setTimeout(()=>{const ci=document.getElementById('prox-city');if(ci)ci.addEventListener('keydown',e=>{if(e.key==='Enter')runProximitySearch();});},50);
 }
 function closeProximityScreen(){document.getElementById('proximity-screen').classList.remove('visible');}
 function useMyLocation(){if(!navigator.geolocation){alert('Location not available.');return;}navigator.geolocation.getCurrentPosition(pos=>{renderProximityResults(pos.coords.latitude,pos.coords.longitude);},()=>alert('Could not get your location.'));}
 async function runProximitySearch(){
-  const city=(document.getElementById('prox-city').value||'').trim();
-  const state=(document.getElementById('prox-state').value||'').trim();
+  const city=(document.getElementById('prox-city').value||'').trim();const state=(document.getElementById('prox-state').value||'').trim();
   if(!city){alert('Please enter a city.');return;}
-  const resultsEl=document.getElementById('prox-results');
-  resultsEl.innerHTML='<div class="empty-state">Searching…</div>';
-  try{
-    const q=encodeURIComponent(city+(state?', '+state:'')+', USA');
-    const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
-    const data=await res.json();
-    if(!data.length){resultsEl.innerHTML='<div class="empty-state">Location not found.</div>';return;}
-    renderProximityResults(parseFloat(data[0].lat),parseFloat(data[0].lon));
-  }catch(e){resultsEl.innerHTML='<div class="empty-state">Could not geocode location.</div>';}
+  const resultsEl=document.getElementById('prox-results');resultsEl.innerHTML='<div class="empty-state">Searching…</div>';
+  try{const q=encodeURIComponent(city+(state?', '+state:'')+', USA');const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);const data=await res.json();if(!data.length){resultsEl.innerHTML='<div class="empty-state">Location not found.</div>';return;}renderProximityResults(parseFloat(data[0].lat),parseFloat(data[0].lon));}
+  catch(e){resultsEl.innerHTML='<div class="empty-state">Could not geocode location.</div>';}
 }
 function renderProximityResults(lat,lng){
   const radius=parseFloat(document.getElementById('prox-radius').value);
   const withDist=contacts.filter(c=>c.lat&&c.lng&&!isNaN(parseFloat(c.lat))&&!isNaN(parseFloat(c.lng))).map(c=>({...c,dist:haversine(lat,lng,parseFloat(c.lat),parseFloat(c.lng))})).filter(c=>c.dist<=radius).sort((a,b)=>a.dist-b.dist);
   if(!withDist.length){document.getElementById('prox-results').innerHTML=`<div class="empty-state">No contacts within ${radius} miles</div>`;return;}
-  const city2=(document.getElementById('prox-city')||{}).value||'';
-  const state2=(document.getElementById('prox-state')||{}).value||'';
-  proxResults=withDist;proxLabel=[city2,state2].filter(Boolean).join(', ');
-  closeProximityScreen();renderFilters();renderList();
+  const city2=(document.getElementById('prox-city')||{}).value||'';const state2=(document.getElementById('prox-state')||{}).value||'';
+  proxResults=withDist;proxLabel=[city2,state2].filter(Boolean).join(', ');closeProximityScreen();renderFilters();renderList();
 }
 
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx4GJpN5ZDqoTTFoG_B97W0GIDtmMAgb0jF8KeaWZXkOuYUR3mzpVDKOYFISjRK01gjxQ/exec';
 const SECRET='relay_secret_2026';
-function api(params){
-  return new Promise((resolve,reject)=>{
-    const cbName='relay_cb_'+Date.now();
-    const url=SCRIPT_URL+'?'+new URLSearchParams({...params,secret:SECRET,callback:cbName});
-    const script=document.createElement('script');
-    window[cbName]=function(data){delete window[cbName];if(document.body.contains(script))document.body.removeChild(script);resolve(data);};
-    script.src=url;document.body.appendChild(script);
-    setTimeout(()=>{if(window[cbName]){delete window[cbName];if(document.body.contains(script))document.body.removeChild(script);reject(new Error('Timeout'));}},30000);
-  });
-}
+function api(params){return new Promise((resolve,reject)=>{const cbName='relay_cb_'+Date.now();const url=SCRIPT_URL+'?'+new URLSearchParams({...params,secret:SECRET,callback:cbName});const script=document.createElement('script');window[cbName]=function(data){delete window[cbName];if(document.body.contains(script))document.body.removeChild(script);resolve(data);};script.src=url;document.body.appendChild(script);setTimeout(()=>{if(window[cbName]){delete window[cbName];if(document.body.contains(script))document.body.removeChild(script);reject(new Error('Timeout'));}},30000);});}
 let sheetsReady=false,callsCache={};
 async function load(){
   try{
     showLoadingOverlay('Loading contacts…');
     const rawContacts=await api({action:'getContacts'});
-    let rawCalls=[];
-    try{rawCalls=await api({action:'getCalls'});}catch(e){rawCalls=[];}
+    let rawCalls=[];try{rawCalls=await api({action:'getCalls'});}catch(e){rawCalls=[];}
     callsCache={};
-    rawCalls.forEach(call=>{
-      if(!callsCache[call.contactId])callsCache[call.contactId]=[];
-      callsCache[call.contactId].push({id:String(call.id),date:call.date,outcome:call.outcome,meetingBooked:call.meetingBooked===true||call.meetingBooked==='true',meetingDate:call.meetingDate||'',details:call.details||'',remDate:call.remDate||'',remTime:call.remTime||'',remType:call.remType||'',completed:call.completed===true||call.completed==='true'});
-    });
+    rawCalls.forEach(call=>{if(!callsCache[call.contactId])callsCache[call.contactId]=[];callsCache[call.contactId].push({id:String(call.id),date:call.date,outcome:call.outcome,meetingBooked:call.meetingBooked===true||call.meetingBooked==='true',meetingDate:call.meetingDate||'',details:call.details||'',remDate:call.remDate||'',remTime:call.remTime||'',remType:call.remType||'',completed:call.completed===true||call.completed==='true'});});
     contacts=rawContacts.map(c=>({id:String(c.id??''),pastor:String(c.pastor??''),church:String(c.church??''),city:String(c.city??''),state:String(c.state??''),region:String(c.region??''),phone:String(c.phone??''),email:String(c.email??''),address:String(c.address??''),starred:c.starred===true||c.starred==='true'||c.starred==='TRUE',lat:String(c.lat??''),lng:String(c.lng??''),photo:'',notes:[],calls:callsCache[String(c.id??'')]||[]}));
     sheetsReady=true;hideLoadingOverlay();showStatus('Sheets connected','ok');
-  }catch(err){
-    hideLoadingOverlay();console.error('Sheets load error:',err);
-    contacts=JSON.parse(localStorage.getItem('relay_v7')||'null')||SAMPLE.map(c=>({...c}));
-    showStatus('Local backup','err');
-  }
+  }catch(err){hideLoadingOverlay();console.error('Sheets load error:',err);contacts=JSON.parse(localStorage.getItem('relay_v7')||'null')||SAMPLE.map(c=>({...c}));showStatus('Local backup','err');}
 }
 async function save(){localStorage.setItem('relay_v7',JSON.stringify(contacts));}
-async function saveContact(c){
-  save();if(!sheetsReady)return;
-  try{await api({action:'saveContact',data:JSON.stringify({id:c.id,pastor:c.pastor,church:c.church,city:c.city,state:c.state,region:c.region,phone:c.phone,email:c.email,address:c.address,starred:c.starred?'true':'false',lat:c.lat||'',lng:c.lng||''})});}
-  catch(err){console.error('saveContact error:',err);}
-}
-async function saveCallEntry(contactId,call){
-  save();if(!sheetsReady)return;
-  try{await api({action:'saveCall',data:JSON.stringify({id:call.id,contactId:contactId,date:call.date,outcome:call.outcome,meetingBooked:call.meetingBooked?'true':'false',meetingDate:call.meetingDate||'',details:call.details||'',completed:call.completed?'true':'false'})});}
-  catch(err){console.error('saveCall error:',err);}
-}
+async function saveContact(c){save();if(!sheetsReady)return;try{await api({action:'saveContact',data:JSON.stringify({id:c.id,pastor:c.pastor,church:c.church,city:c.city,state:c.state,region:c.region,phone:c.phone,email:c.email,address:c.address,starred:c.starred?'true':'false',lat:c.lat||'',lng:c.lng||''})});}catch(err){console.error('saveContact error:',err);}}
+async function saveCallEntry(contactId,call){save();if(!sheetsReady)return;try{await api({action:'saveCall',data:JSON.stringify({id:call.id,contactId:contactId,date:call.date,outcome:call.outcome,meetingBooked:call.meetingBooked?'true':'false',meetingDate:call.meetingDate||'',details:call.details||'',remDate:call.remDate||'',remTime:call.remTime||'',remType:call.remType||'',completed:call.completed?'true':'false'})});}catch(err){console.error('saveCall error:',err);}}
 async function deleteCallEntry(callId){save();if(!sheetsReady)return;try{await api({action:'deleteCall',id:callId});}catch(err){console.error('deleteCall error:',err);}}
 async function deleteContactEntry(contactId){save();if(!sheetsReady)return;try{await api({action:'deleteContact',id:contactId});}catch(err){console.error('deleteContact error:',err);}}
-function showStatus(msg,type){
-  let el=document.getElementById('save-status');
-  if(!el){el=document.createElement('div');el.id='save-status';document.body.appendChild(el);}
-  const colors={ok:'background:#1a3a28;color:#4cd68a;border:1px solid #4a9e6b44',err:'background:#3a0a0a;color:#e05555;border:1px solid #5a1a1a44',info:'background:#1a1a2e;color:#F3B53A;border:1px solid #F3B53A44'};
-  el.style.cssText=(colors[type]||colors.info)+';position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 14px;border-radius:20px;z-index:300;pointer-events:none;font-family:var(--sans);transition:opacity .3s;';
-  el.textContent=msg;el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2500);
-}
-function showLoadingOverlay(msg){
-  let el=document.getElementById('loading-overlay');
-  if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';el.innerHTML='<div style="font-size:28px">⚓</div><div id="loading-msg" style="font-size:14px;color:var(--muted)"></div>';document.body.appendChild(el);}
-  document.getElementById('loading-msg').textContent=msg;el.style.display='flex';
-}
+function showStatus(msg,type){let el=document.getElementById('save-status');if(!el){el=document.createElement('div');el.id='save-status';document.body.appendChild(el);}const colors={ok:'background:#1a3a28;color:#4cd68a;border:1px solid #4a9e6b44',err:'background:#3a0a0a;color:#e05555;border:1px solid #5a1a1a44',info:'background:#1a1a2e;color:#F3B53A;border:1px solid #F3B53A44'};el.style.cssText=(colors[type]||colors.info)+';position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 14px;border-radius:20px;z-index:300;pointer-events:none;font-family:var(--sans);transition:opacity .3s;';el.textContent=msg;el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2500);}
+function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay');if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';el.innerHTML='<div style="font-size:28px">\u2693</div><div id="loading-msg" style="font-size:14px;color:var(--muted)"></div>';document.body.appendChild(el);}document.getElementById('loading-msg').textContent=msg;el.style.display='flex';}
 function hideLoadingOverlay(){const el=document.getElementById('loading-overlay');if(el)el.style.display='none';}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
-function lastContactedStr(c){
-  const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');
-  if(!r.length)return null;
-  const last=r[r.length-1];
-  return `${last.date} · ${OM[last.outcome]?.label||last.outcome}`;
-}
+function lastContactedStr(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');if(!r.length)return null;const last=r[r.length-1];return `${last.date} \u00b7 ${OM[last.outcome]?.label||last.outcome}`;}
 function toggleInfo(){infoExpanded=!infoExpanded;renderCallingCard();}
 function toggleStar(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;c.starred=!c.starred;save();saveContact(c);renderList();renderCallingCard();}
 
 function getReminders(){
   const now=new Date();const result=[];
   contacts.forEach(c=>{
-    const rems=(c.calls||[]).filter(x=>x.outcome==='reminder');
-    if(!rems.length)return;
-    const sorted=rems.slice().sort((a,b)=>{const da=a.remDate?new Date(a.remDate+'T'+(a.remTime||'12:00')+':00'):new Date(0);const db=b.remDate?new Date(b.remDate+'T'+(b.remTime||'12:00')+':00'):new Date(0);return da-db;});
+    const rems=(c.calls||[]).filter(x=>x.outcome==='reminder');if(!rems.length)return;
+    const sorted=rems.slice().sort((a,b)=>{
+      const da=a.remDate?new Date(a.remDate+'T'+(a.remTime||'12:00')+':00'):new Date(0);
+      const db=b.remDate?new Date(b.remDate+'T'+(b.remTime||'12:00')+':00'):new Date(0);
+      return da-db;
+    });
     const soonest=sorted[0];
     const due=soonest.remDate?new Date(soonest.remDate+'T'+(soonest.remTime||'12:00')+':00'):null;
     result.push({contact:c,reminder:soonest,due,overdue:due&&due<now});
@@ -401,11 +338,10 @@ let showingReminders=false;
 function toggleRemindersView(){showingReminders=!showingReminders;renderFilters();renderList();}
 
 function renderFilters(){
-  const remCount=getReminders().length;
-  const overdueCount=getReminders().filter(r=>r.overdue).length;
+  const remCount=getReminders().length;const overdueCount=getReminders().filter(r=>r.overdue).length;
   const nearbyPill=`<button class="filter-pill${proxResults?' active':''}" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;" title="Nearby"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ec9d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>${proxResults?' ('+proxResults.length+')':''}</button>`;
-  const clearPill=proxResults?`<button class="filter-pill" onclick="clearProximity()" style="color:var(--danger);border-color:var(--danger)44;">✕ Clear</button>`:'';
-  const starredPill=`<button class="filter-pill${fState==='Starred'?' active':''}" onclick="setSF('Starred')" style="display:flex;align-items:center;" title="Starred"><span style="color:#f0b429;font-size:14px;">★</span></button>`;
+  const clearPill=proxResults?`<button class="filter-pill" onclick="clearProximity()" style="color:var(--danger);border-color:var(--danger)44;">\u2715 Clear</button>`:'';
+  const starredPill=`<button class="filter-pill${fState==='Starred'?' active':''}" onclick="setSF('Starred')" style="display:flex;align-items:center;" title="Starred"><span style="color:#f0b429;font-size:14px;">\u2605</span></button>`;
   const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
   const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${filterHasPhone?'#4ec9d4':'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
   const stateOpts2=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()].map(s=>`<option value="${s}"${fState===s?' selected':''}>${s==='All'?'All States':s+' ('+(STATE_NAMES[s]||s)+')'}</option>`).join('');
@@ -421,242 +357,94 @@ function buildFilteredList(){
   if(proxResults){let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);if(q)f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
   if(showingReminders){let f=getReminders().map(r=>r.contact);if(q)f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
   let f=contacts.filter(c=>{const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);const mq=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);const mp=!filterHasPhone||splitField(c.phone).length>0;return ms&&mq&&mp;});
-  f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));
-  return f;
+  f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));return f;
 }
 
 function renderList(){
   filteredList=buildFilteredList();
   document.getElementById('count-label').textContent=filteredList.length+'/'+contacts.length;
-  const list=document.getElementById('main-list');
-  const isDesktop=window.innerWidth>=600;
-  const lhLoc=document.getElementById('lh-loc');
-  if(lhLoc)lhLoc.style.display=isDesktop?'block':'none';
+  const list=document.getElementById('main-list');const isDesktop=window.innerWidth>=600;
+  const lhLoc=document.getElementById('lh-loc');if(lhLoc)lhLoc.style.display=isDesktop?'block':'none';
   if(!filteredList.length){list.innerHTML='<div class="empty-state">No contacts found</div>';return;}
   const pillMap={pastor:['P','pill-pastor'],noanswer1:['1','pill-noanswer1'],noanswer2:['2','pill-noanswer2'],voicemail:['M','pill-voicemail'],secretary:['S','pill-secretary'],reminder:['R','pill-reminder']};
   list.innerHTML=filteredList.map((c,i)=>{
-    const lcall=lc(c);
-    const statusCls=lcall?('status-'+(lcall.outcome==='imported'?'none':lcall.outcome)):'status-none';
-    const pillData=lcall&&pillMap[lcall.outcome]?pillMap[lcall.outcome]:null;
-    const pill=pillData?`<span class="status-pill ${pillData[1]}">${pillData[0]}</span>`:`<span class="status-pill pill-none">—</span>`;
-    const loc=[c.city,c.state].filter(Boolean).join(', ');
-    const hasReminder=(c.calls||[]).some(x=>x.outcome==='reminder');
+    const lcall=lc(c);const pillData=lcall&&pillMap[lcall.outcome]?pillMap[lcall.outcome]:null;
+    const pill=pillData?`<span class="status-pill ${pillData[1]}">${pillData[0]}</span>`:`<span class="status-pill pill-none">\u2014</span>`;
+    const loc=[c.city,c.state].filter(Boolean).join(', ');const hasReminder=(c.calls||[]).some(x=>x.outcome==='reminder');
     const rcList=getRegionColor(c);
     const proxItem=proxResults?proxResults.find(r=>r.id===c.id):null;
     const remItem=showingReminders?getReminders().find(r=>r.contact.id===c.id):null;
-    const remBadge=remItem?`<span style="font-size:9px;font-weight:500;color:${remItem.overdue?'#e05555':'#f0b429'};margin-left:4px;">${remItem.reminder.remDate?new Date(remItem.reminder.remDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):'Reminder'}</span>`:'';
+    const remBadge=remItem?`<span style="font-size:9px;font-weight:500;color:${remItem.overdue?'#e05555':'#f0b429'};margin-left:4px;">${remItem.reminder.remDate?fmtRemDate(remItem.reminder.remDate,''):'Reminder'}</span>`:'';
     const distBadge=proxItem?`<span style="font-size:10px;font-weight:600;color:var(--accent);margin-left:4px;">${proxItem.dist<10?proxItem.dist.toFixed(1):Math.round(proxItem.dist)} mi</span>`:'';
-    if(isDesktop){
-      return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
-        <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
-        <div class="row-cell"><div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}</div><div class="row-sub">${esc(c.church||'')}</div></div>
-        <div class="row-cell"><div class="row-loc">${esc(loc)||'—'}</div></div>
-        <div class="row-pill-cell">${pill}</div>
-        <div class="row-actions" onclick="event.stopPropagation()"><button class="log-btn" onclick="openLogModal('${c.id}')" style="display:flex;align-items:center;justify-content:center;">${ICONS.phone}</button></div>
-      </div>`;
-    }
-    return `<div class="contact-row ${statusCls}" onclick="openCallingCard(${i})">
-      <div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div>
-      <div class="row-cell">
-        <div class="row-name">${esc(c.pastor||'—')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}${remBadge}</div>
-        <div class="row-sub">${esc(c.church||'')}</div>
-        <div class="row-loc">${esc(loc)||''}</div>
-      </div>
-      <div class="row-pill-cell">${pill}</div>
-      <div class="row-actions" onclick="event.stopPropagation()"><button class="log-btn" onclick="openLogModal('${c.id}')" style="display:flex;align-items:center;justify-content:center;">${ICONS.phone}</button></div>
-    </div>`;
+    if(isDesktop){return `<div class="contact-row" onclick="openCallingCard(${i})"><div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div><div class="row-cell"><div class="row-name">${esc(c.pastor||'\u2014')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}</div><div class="row-sub">${esc(c.church||'')}</div></div><div class="row-cell"><div class="row-loc">${esc(loc)||'\u2014'}</div></div><div class="row-pill-cell">${pill}</div><div class="row-actions" onclick="event.stopPropagation()"><button class="log-btn" onclick="openLogModal('${c.id}')">${ICONS.phone}</button></div></div>`;}
+    return `<div class="contact-row" onclick="openCallingCard(${i})"><div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div><div class="row-cell"><div class="row-name">${esc(c.pastor||'\u2014')}${hasReminder?'<span class="reminder-dot"></span>':''}${distBadge}${remBadge}</div><div class="row-sub">${esc(c.church||'')}</div><div class="row-loc">${esc(loc)||''}</div></div><div class="row-pill-cell">${pill}</div><div class="row-actions" onclick="event.stopPropagation()"><button class="log-btn" onclick="openLogModal('${c.id}')">${ICONS.phone}</button></div></div>`;
   }).join('');
 }
 
 function openCallingCard(idx){filteredList=buildFilteredList();callingIdx=idx;contactMenuOpen=false;infoExpanded=false;renderCallingCard();}
 function renderCallingCard(){
-  const c=filteredList[callingIdx];
-  if(!c){closeCard();return;}
-  const rc=getRegionColor(c);
-  const total=filteredList.length;
-  const pct=Math.round(((callingIdx+1)/total)*100);
-  const calls=(c.calls||[]).slice().reverse();
-  const realCalls=calls.filter(x=>x.outcome!=='imported');
-  const menuOpen=contactMenuOpen;
-  const card=document.getElementById('fullscreen-card');
-  card.classList.add('visible');
-  card.innerHTML=`
-    <div class="card-topbar">
-      <button class="card-back-btn" onclick="closeCard()">←</button>
-      <div class="card-topbar-center">
-        <div class="card-progress-label">${callingIdx+1} of ${total}</div>
-        <div class="card-progress-bar-wrap"><div class="card-progress-bar-fill" style="width:${pct}%"></div></div>
-      </div>
-      <button class="card-edit-btn" onclick="openContactModal('${c.id}')" style="padding:6px 10px;display:flex;align-items:center;">${ICONS.pencil}</button>
-    </div>
+  const c=filteredList[callingIdx];if(!c){closeCard();return;}
+  const rc=getRegionColor(c);const total=filteredList.length;const pct=Math.round(((callingIdx+1)/total)*100);
+  const calls=(c.calls||[]).slice().reverse();const realCalls=calls.filter(x=>x.outcome!=='imported');
+  const card=document.getElementById('fullscreen-card');card.classList.add('visible');
+  card.innerHTML=`<div class="card-topbar"><button class="card-back-btn" onclick="closeCard()">\u2190</button><div class="card-topbar-center"><div class="card-progress-label">${callingIdx+1} of ${total}</div><div class="card-progress-bar-wrap"><div class="card-progress-bar-fill" style="width:${pct}%"></div></div></div><button class="card-edit-btn" onclick="openContactModal('${c.id}')" style="padding:6px 10px;display:flex;align-items:center;">${ICONS.pencil}</button></div>
     <div class="card-body">
       <div class="card-hero" style="background:linear-gradient(180deg,${rc.bg} 0%,var(--bg) 100%)">
         <div class="card-hero-avatar" style="background:${rc.bg};color:${rc.text};border:2px solid ${rc.border}">${ini(c.pastor||c.church||'?')}</div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-            <div style="min-width:0;flex:1">
-              <div class="card-hero-name" style="display:flex;align-items:center;gap:8px">
-                ${esc(c.pastor||'Unknown Pastor')}
-                <button onclick="toggleStar('${c.id}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;flex-shrink:0;display:flex;align-items:center;">${starIcon(c.starred)}</button>
-              </div>
-              <div class="card-hero-church" style="color:${rc.text}">${esc(c.church||'—')}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:15px;font-weight:600;color:var(--text);line-height:1.1;display:flex;align-items:center;gap:4px;"><span style="color:${rc.text}">${ICONS.pin}</span> ${esc(c.city||'—')}</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(c.state||'')}</div>
-              ${(c.lat&&c.lng&&c.lat!=='Unkown')?`<div style="font-size:9px;color:var(--muted);margin-top:3px;opacity:.7">${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng).toFixed(4)}</div>`:''}
-            </div>
+        <div style="flex:1;min-width:0"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="min-width:0;flex:1">
+            <div class="card-hero-name" style="display:flex;align-items:center;gap:8px">${esc(c.pastor||'Unknown Pastor')}<button onclick="toggleStar('${c.id}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;flex-shrink:0;display:flex;align-items:center;">${starIcon(c.starred)}</button></div>
+            <div class="card-hero-church" style="color:${rc.text}">${esc(c.church||'\u2014')}</div>
           </div>
-        </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:15px;line-height:1.1;display:flex;align-items:center;gap:5px;"><span style="color:${rc.text};display:flex;align-items:center;">${ICONS.pin}</span><span style="font-family:var(--serif);font-weight:600;color:${rc.text}">${esc(c.city||'\u2014')}</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(c.state||'')}</div>
+            ${(c.lat&&c.lng&&c.lat!=='Unkown')?`<div style="font-size:9px;color:var(--muted);margin-top:3px;opacity:.7">${parseFloat(c.lat).toFixed(4)}, ${parseFloat(c.lng).toFixed(4)}</div>`:''}
+          </div>
+        </div></div>
       </div>
       <div class="card-actions">
-        <button class="card-action-btn green${menuOpen?' active':''}" onclick="toggleContactMenu()"><span class="btn-icon">${ICONS.person}</span><span class="btn-label">Contact</span></button>
+        <button class="card-action-btn green${contactMenuOpen?' active':''}" onclick="toggleContactMenu()"><span class="btn-icon">${ICONS.person}</span><span class="btn-label">Contact</span></button>
         <button class="card-action-btn blue" onclick="openLogModal('${c.id}')"><span class="btn-icon">${ICONS.phone}</span><span class="btn-label">Log</span></button>
         <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')"><span class="btn-icon">${ICONS.bell}</span><span class="btn-label">Remind</span></button>
         <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">${ICONS.calendar}</span><span class="btn-label">Schedule</span></button>
       </div>
-      <div class="contact-submenu${menuOpen?' open':''}" id="contact-submenu">
-        ${(()=>{
-          const phones=splitField(c.phone);const emails=splitField(c.email);
-          const msgSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>`;
-          const emailSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>`;
-          let out='';
-          if(phones.length){phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${ICONS.cellPhone} ${phones.length>1?p:'Call'}</a>`;});phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${msgSvg} ${phones.length>1?'Text '+p:'Text'}</a>`;});}
-          else{out+=`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${ICONS.phone} No phone</span>`;}
-          if(emails.length){emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="display:flex;align-items:center;gap:8px;text-decoration:none;">${emailSvg} ${emails.length>1?e:'Email'}</a>`;});}
-          else{out+=`<span class="contact-sub-btn" style="opacity:.3;display:flex;align-items:center;gap:8px;">${emailSvg} No email</span>`;}
-          return out;
-        })()}
-      </div>
-      <div class="card-history">
-        <div class="history-title">Timeline (${realCalls.length})</div>
+      <div class="contact-submenu${contactMenuOpen?' open':''}">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);const msgSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>`;const emailSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>`;let out='';if(phones.length){phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="text-decoration:none;">${ICONS.cellPhone} ${phones.length>1?p:'Call'}</a>`;});phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="text-decoration:none;">${msgSvg} ${phones.length>1?'Text '+p:'Text'}</a>`;});}else{out+=`<span class="contact-sub-btn" style="opacity:.3;">${ICONS.phone} No phone</span>`;}if(emails.length){emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="text-decoration:none;">${emailSvg} ${emails.length>1?e:'Email'}</a>`;});}else{out+=`<span class="contact-sub-btn" style="opacity:.3;">${emailSvg} No email</span>`;}return out;})()}</div>
+      <div class="card-history"><div class="history-title">Timeline (${realCalls.length})</div>
         ${calls.length?calls.map(x=>{
           const m=OM[x.outcome]||OM.imported;
-          const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">📅 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
+          const mb=x.meetingBooked?`<span style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;background:#1a2e22;color:#4a9e6b;margin-left:4px">\ud83d\udcc5 ${x.meetingDate?esc(x.meetingDate):'Booked'}</span>`:'';
           const isCompleted=x.outcome==='note'&&x.completed;
           const detailStyle=isCompleted?'text-decoration:line-through;opacity:.45;':'';
           const checkBtn=x.outcome==='reminder'?`<button onclick="completeReminder('${c.id}','${x.id}')" title="Mark done" style="position:absolute;top:8px;right:34px;background:none;border:1px solid #f0b42944;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#f0b429;display:flex;align-items:center;justify-content:center;padding:0;">${ICONS.checkCircle}</button>`:'';
-          return `<div class="call-entry"><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">×</button>${checkBtn}</div>`;
+          return `<div class="call-entry"><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${x.date}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}</div>`;
         }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
-      <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span>
-          <span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'· '+lastContactedStr(c):''}</span>
-        </div>
-        <span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span>
-      </button>
-      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
-        ${(()=>{
-          const phones=splitField(c.phone);const emails=splitField(c.email);let out='';
-          if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}
-          else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">—</div></div>`;}
-          if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}
-          else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">—</div></div>`;}
-          out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'—'}</div></div>`;
-          out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'—'}</div></div>`;
-          return out;
-        })()}
-      </div>`:''}
+      <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span><span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'\u00b7 '+lastContactedStr(c):''}</span></div><span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
+      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
     </div>
-    <div class="card-nav">
-      <button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>←</button>
-      <span class="nav-center">${esc(c.pastor||c.church||'')}</span>
-      <button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>→</button>
-    </div>`;
+    <div class="card-nav"><button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>\u2190</button><span class="nav-center">${esc(c.pastor||c.church||'')}</span><button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>\u2192</button></div>`;
 }
 function toggleContactMenu(){contactMenuOpen=!contactMenuOpen;renderCallingCard();}
 function closeCard(){const card=document.getElementById('fullscreen-card');card.classList.remove('visible');card.innerHTML='';contactMenuOpen=false;renderList();}
 function navCard(dir){const next=callingIdx+dir;if(next<0||next>=filteredList.length)return;callingIdx=next;contactMenuOpen=false;infoExpanded=false;renderCallingCard();}
 
-function openLogModal(cid){
-  const c=contacts.find(x=>x.id===cid);if(!c)return;
-  logOut=null;logMtg=false;
-  const suggested=suggestedNext(c);
-  if(suggested){setTimeout(()=>selOut(suggested),50);}
-  const suggestionHTML=suggested?`<div style="background:#1a150044;border:1px solid #F3B53A33;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#F3B53A;">💡 Suggested: <strong>${OM[suggested]?.label||suggested}</strong></div>`:'';
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h2>Log a call</h2>
-      <div class="modal-sub">${esc(c.pastor||c.church||'')} · ${esc([c.city,c.state].filter(Boolean).join(', '))}</div>
-      <div id="log-suggestion">${suggestionHTML}</div>
-      <div class="fg"><label>Outcome *</label>
-        <div class="outcome-opts">
-          <button class="outcome-opt" id="op-pastor" onclick="selOut('pastor')" style="border-color:#4a9e6b44;"><span class="opt-icon" style="display:flex;align-items:center;color:#4cd68a;">${ICONS.personCheck}</span><span style="color:#4cd68a;">Spoke to Pastor</span></button>
-          <button class="outcome-opt" id="op-noanswer1" onclick="selOut('noanswer1')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#e8e6e1;">①</span>No Answer (1st)</button>
-          <button class="outcome-opt" id="op-noanswer2" onclick="selOut('noanswer2')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#b0aea9;">②</span>No Answer (2nd)</button>
-          <button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')" style="border-color:#8899ee44;"><span class="opt-icon" style="display:flex;align-items:center;color:#8899ee;">${ICONS.phoneOff}</span><span style="color:#8899ee;">Left Voicemail</span></button>
-          <button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')" style="border-color:#c9a0f044;"><span class="opt-icon" style="display:flex;align-items:center;color:#c9a0f0;">${ICONS.chair}</span><span style="color:#c9a0f0;">Spoke to Secretary</span></button>
-          <button class="outcome-opt" id="op-note" onclick="selOut('note')"><span class="opt-icon" style="display:flex;align-items:center;color:var(--muted);">${ICONS.noteSm}</span><span>Add Note</span></button>
-        </div>
-      </div>
-      <div id="mtg-sec" style="display:none">
-        <div class="meeting-row"><label>Meeting booked?</label>
-          <div class="toggle-wrap">
-            <button class="toggle-btn off" id="mtg-yes" onclick="setMtg(true)">Yes</button>
-            <button class="toggle-btn on" id="mtg-no" onclick="setMtg(false)">No</button>
-          </div>
-        </div>
-        <div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="date" id="mtg-d"/></div></div>
-      </div>
-      <div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
-        <textarea id="call-det" placeholder="Who you spoke with, what was discussed…"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
-        <button class="btn-save" onclick="saveLog('${cid}')">Save call</button>
-      </div>
-    </div>
-  </div>`);
-}
+function openLogModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;logOut=null;logMtg=false;const suggested=suggestedNext(c);if(suggested){setTimeout(()=>selOut(suggested),50);}const suggestionHTML=suggested?`<div style="background:#1a150044;border:1px solid #F3B53A33;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#F3B53A;">\ud83d\udca1 Suggested: <strong>${OM[suggested]?.label||suggested}</strong></div>`:'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2>Log a call</h2><div class="modal-sub">${esc(c.pastor||c.church||'')} \u00b7 ${esc([c.city,c.state].filter(Boolean).join(', '))}</div><div id="log-suggestion">${suggestionHTML}</div><div class="fg"><label>Outcome *</label><div class="outcome-opts"><button class="outcome-opt" id="op-pastor" onclick="selOut('pastor')" style="border-color:#4a9e6b44;"><span class="opt-icon" style="display:flex;align-items:center;color:#4cd68a;">${ICONS.personCheck}</span><span style="color:#4cd68a;">Spoke to Pastor</span></button><button class="outcome-opt" id="op-noanswer1" onclick="selOut('noanswer1')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#e8e6e1;">\u2460</span>No Answer (1st)</button><button class="outcome-opt" id="op-noanswer2" onclick="selOut('noanswer2')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#b0aea9;">\u2461</span>No Answer (2nd)</button><button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')" style="border-color:#8899ee44;"><span class="opt-icon" style="display:flex;align-items:center;color:#8899ee;">${ICONS.phoneOff}</span><span style="color:#8899ee;">Left Voicemail</span></button><button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')" style="border-color:#c9a0f044;"><span class="opt-icon" style="display:flex;align-items:center;color:#c9a0f0;">${ICONS.chair}</span><span style="color:#c9a0f0;">Spoke to Secretary</span></button><button class="outcome-opt" id="op-note" onclick="selOut('note')"><span class="opt-icon" style="display:flex;align-items:center;color:var(--muted);">${ICONS.noteSm}</span><span>Add Note</span></button></div></div><div id="mtg-sec" style="display:none"><div class="meeting-row"><label>Meeting booked?</label><div class="toggle-wrap"><button class="toggle-btn off" id="mtg-yes" onclick="setMtg(true)">Yes</button><button class="toggle-btn on" id="mtg-no" onclick="setMtg(false)">No</button></div></div><div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="date" id="mtg-d"/></div></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="call-det" placeholder="Who you spoke with, what was discussed\u2026"></textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveLog('${cid}')">Save call</button></div></div></div>`);}
 function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary','note'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');if(ms)ms.style.display=(o==='pastor'||o==='secretary')?'block':'none';if(o!=='pastor'&&o!=='secretary')logMtg=false;}
 function setMtg(v){logMtg=v;const y=document.getElementById('mtg-yes');if(y)y.className='toggle-btn '+(v?'on':'off');const n=document.getElementById('mtg-no');if(n)n.className='toggle-btn '+(v?'off':'on');const d=document.getElementById('mtg-date');if(d)d.style.display=v?'block':'none';}
-function saveLog(cid){
-  if(!logOut){alert('Please select an outcome.');return;}
-  const c=contacts.find(x=>x.id===cid);if(!c)return;
-  if(!c.calls)c.calls=[];
-  const md=(document.getElementById('mtg-d')||{}).value||'';
-  const newCall={id:uid(),date:fmtDate(new Date()),outcome:logOut,meetingBooked:logMtg,meetingDate:md.trim(),details:(document.getElementById('call-det').value||'').trim()};
-  c.calls.push(newCall);
-  save();saveCallEntry(cid,newCall);closeMKeepCard();renderCallingCard();renderList();
-}
-function delCall(cid,xid){
-  const c=contacts.find(x=>x.id===cid);if(!c)return;
-  c.calls=(c.calls||[]).filter(x=>x.id!==xid);
-  save();deleteCallEntry(xid);renderCallingCard();renderList();
-}
-function completeReminder(cid,xid){
-  const c=contacts.find(x=>x.id===cid);if(!c)return;
-  const call=c.calls.find(x=>x.id===xid);if(!call)return;
-  call.outcome='note';
-  call.completed=true;
-  save();saveCallEntry(cid,call);renderCallingCard();renderList();
-}
+function saveLog(cid){if(!logOut){alert('Please select an outcome.');return;}const c=contacts.find(x=>x.id===cid);if(!c)return;if(!c.calls)c.calls=[];const md=(document.getElementById('mtg-d')||{}).value||'';const newCall={id:uid(),date:fmtDate(new Date()),outcome:logOut,meetingBooked:logMtg,meetingDate:md.trim(),details:(document.getElementById('call-det').value||'').trim()};c.calls.push(newCall);save();saveCallEntry(cid,newCall);closeMKeepCard();renderCallingCard();renderList();}
+function delCall(cid,xid){const c=contacts.find(x=>x.id===cid);if(!c)return;c.calls=(c.calls||[]).filter(x=>x.id!==xid);save();deleteCallEntry(xid);renderCallingCard();renderList();}
+function completeReminder(cid,xid){const c=contacts.find(x=>x.id===cid);if(!c)return;const call=c.calls.find(x=>x.id===xid);if(!call)return;call.outcome='note';call.completed=true;save();saveCallEntry(cid,call);renderCallingCard();renderList();}
 
 function openReminderModal(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2>
-      <div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div>
-      <div class="fg"><labe      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div>
-        <div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div>
-      </div>
-      <div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label>
-        <textarea id="rem-note" placeholder="What do you need to do?" style="height:70px"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
-        <button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button>
-      </div>
-    </div>
-  </div>`);
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.bell} Set Reminder</h2><div class="modal-sub">${esc(c.pastor||c.church||'this contact')}</div><div class="fg"><label>Type</label><div style="display:flex;gap:8px;"><button id="rtype-call" class="toggle-btn on" onclick="setRType('call')" style="flex:1;">\ud83d\udcde Call</button><button id="rtype-email" class="toggle-btn off" onclick="setRType('email')" style="flex:1;">\u2709\ufe0f Email</button><button id="rtype-other" class="toggle-btn off" onclick="setRType('other')" style="flex:1;">\ud83d\udccb Other</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div class="fg" style="margin-bottom:0"><label>Date</label><input type="date" id="rem-date"/></div><div class="fg" style="margin-bottom:0"><label>Time</label><input type="time" id="rem-time"/></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="rem-note" placeholder="What do you need to do?" style="height:70px"></textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveReminder('${cid}')">Save reminder</button></div></div></div>`);
   setTimeout(()=>{window._remType='call';},50);
 }
 function setRType(t){window._remType=t;['call','email','other'].forEach(k=>{const el=document.getElementById('rtype-'+k);if(el)el.className='toggle-btn '+(k===t?'on':'off');});}
+
 function saveReminder(cid){
   const c=contacts.find(x=>x.id===cid);if(!c)return;
   const d=document.getElementById('rem-date').value;
@@ -664,101 +452,22 @@ function saveReminder(cid){
   const note=(document.getElementById('rem-note').value||'').trim();
   const rtype=window._remType||'call';
   if(!d){alert('Please pick a date.');return;}
-  const dateObj=new Date(d+'T'+(t||'12:00')+':00');
-  const dateLabel=dateObj.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
-  const timeLabel=t?dateObj.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
+  // ── FIX: parse date parts directly, no UTC shift ──
+  const dateLabel=fmtRemDate(d,t);
   const typeLabel=rtype==='call'?'Call':rtype==='email'?'Email':'Other';
-  const details=`${typeLabel} reminder · ${dateLabel}${timeLabel?' at '+timeLabel:''}${note?'\n'+note:''}`;
+  const details=`${typeLabel} reminder \u00b7 ${dateLabel}${note?'\n'+note:''}`;
   if(!c.calls)c.calls=[];
   const remCall={id:uid(),date:fmtDate(new Date()),outcome:'reminder',meetingBooked:false,meetingDate:'',details,remDate:d,remTime:t,remType:rtype};
   c.calls.push(remCall);
   save();saveCallEntry(cid,remCall);closeMKeepCard();renderCallingCard();renderList();
 }
 
-function openCalendarModal(cid){
-  const c=contacts.find(x=>x.id===cid);if(!c)return;
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <h2 style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Add to Calendar</h2>
-      <div class="modal-sub">Pick a date and we'll open Google Calendar with the event pre-filled.</div>
-      <div class="fg"><label>Meeting date</label><input type="date" id="cal-date"/></div>
-      <div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div>
-      <button class="cal-open-btn" onclick="openGCal('${cid}')" style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Open Google Calendar</button>
-      <div class="modal-actions" style="margin-top:10px"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div>
-    </div>
-  </div>`);
-}
-function openGCal(cid){
-  const c=contacts.find(x=>x.id===cid);if(!c)return;
-  const d=document.getElementById('cal-date').value;const t=document.getElementById('cal-time').value;
-  if(!d){alert('Please pick a date.');return;}
-  const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');
-  const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));
-  const details=encodeURIComponent(`Pastor: ${c.pastor||''}
-Church: ${c.church||''}
-Phone: ${c.phone||''}
-Email: ${c.email||''}`);
-  let dates='';
-  if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=d.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}
-  else{const day=d.replace(/-/g,'');dates=`${day}/${day}`;}
-  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');
-  if(!c.calls)c.calls=[];
-  const lbl=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,details:`Meeting scheduled for ${lbl}`};
-  c.calls.push(calCall);
-  save();saveCallEntry(cid,calCall);closeMKeepCard();renderCallingCard();renderList();
-}
+function openCalendarModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Add to Calendar</h2><div class="modal-sub">Pick a date and we'll open Google Calendar with the event pre-filled.</div><div class="fg"><label>Meeting date</label><input type="date" id="cal-date"/></div><div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div><button class="cal-open-btn" onclick="openGCal('${cid}')">${ICONS.calendar} Open Google Calendar</button><div class="modal-actions" style="margin-top:10px"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div></div></div>`);}
+function openGCal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;const d=document.getElementById('cal-date').value;const t=document.getElementById('cal-time').value;if(!d){alert('Please pick a date.');return;}const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);let dates='';if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=d.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}else{const day=d.replace(/-/g,'');dates=`${day}/${day}`;}window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');if(!c.calls)c.calls=[];const [y,m,dy]=d.split('-').map(Number);const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const lbl=`${months[m-1]} ${dy}, ${y}`;const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,details:`Meeting scheduled for ${lbl}`};c.calls.push(calCall);save();saveCallEntry(cid,calCall);closeMKeepCard();renderCallingCard();renderList();}
 
-function openContactModal(id){
-  const c=id?contacts.find(x=>x.id===id):null;
-  const v=f=>c?(c[f]||''):'';
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
-    <div class="modal-box" onclick="event.stopPropagation()">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <h2 style="margin-bottom:0">${c?'Edit contact':'New contact'}</h2>
-        ${id?`<button onclick="deleteContact('${id}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>`:''}
-      </div>
-      <div class="form-row">
-        <div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div>
-        <div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div>
-      </div>
-      <div class="form-row">
-        <div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div>
-        <div class="fgi"><label>State</label>${stateDropdown('fst',v('state')||'IL')}</div>
-      </div>
-      <div class="form-row">
-        <div class="fgi full"><label>Phone Numbers <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>
-          ${(()=>{const phones=splitField(v('phone'));while(phones.length<4)phones.push('');return phones.slice(0,4).map((p,i)=>`<input id="fph${i}" value="${esc(p)}" placeholder="${i===0?'Primary number':'Additional number'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}
-        </div>
-      </div>
-      <div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div>
-      <div class="form-row"><div class="fgi full"><label>Email Addresses <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>
-          ${(()=>{const emails=splitField(v('email'));while(emails.length<4)emails.push('');return emails.slice(0,4).map((e,i)=>`<input id="fe${i}" type="email" value="${esc(e)}" placeholder="${i===0?'Primary email':'Additional email'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}
-        </div></div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
-        <button class="btn-save" onclick="saveCM('${id||''}')">Save</button>
-      </div>
-    </div>
-  </div>`);
-}
-function saveCM(id){
-  const ch=(document.getElementById('fc')||{}).value||'';const pa=(document.getElementById('fp')||{}).value||'';
-  if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}
-  const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');
-  const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');
-  const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};
-  let savedContact;
-  if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}
-  else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}
-  save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();
-  if(id)renderCallingCard();
-}
-function deleteContact(id){
-  if(!confirm('Delete this contact? This cannot be undone.'))return;
-  contacts=contacts.filter(c=>c.id!==id);
-  save();deleteContactEntry(id);closeMKeepCard();closeCard();renderFilters();renderList();
-}
+function openContactModal(id){const c=id?contacts.find(x=>x.id===id):null;const v=f=>c?(c[f]||''):'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h2 style="margin-bottom:0">${c?'Edit contact':'New contact'}</h2>${id?`<button onclick="deleteContact('${id}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>`:''}</div><div class="form-row"><div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div><div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div></div><div class="form-row"><div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div><div class="fgi"><label>State</label>${stateDropdown('fst',v('state')||'IL')}</div></div><div class="form-row"><div class="fgi full"><label>Phone Numbers <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const phones=splitField(v('phone'));while(phones.length<4)phones.push('');return phones.slice(0,4).map((p,i)=>`<input id="fph${i}" value="${esc(p)}" placeholder="${i===0?'Primary number':'Additional number'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div><div class="form-row"><div class="fgi full"><label>Email Addresses <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const emails=splitField(v('email'));while(emails.length<4)emails.push('');return emails.slice(0,4).map((e,i)=>`<input id="fe${i}" type="email" value="${esc(e)}" placeholder="${i===0?'Primary email':'Additional email'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveCM('${id||''}')">Save</button></div></div></div>`);}
+function saveCM(id){const ch=(document.getElementById('fc')||{}).value||'';const pa=(document.getElementById('fp')||{}).value||'';if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};let savedContact;if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();if(id)renderCallingCard();}
+function deleteContact(id){if(!confirm('Delete this contact? This cannot be undone.'))return;contacts=contacts.filter(c=>c.id!==id);save();deleteContactEntry(id);closeMKeepCard();closeCard();renderFilters();renderList();}
 function showM(h){const l=document.getElementById('modal-layer');l.innerHTML=h;l.style.pointerEvents='all';}
 function closeMKeepCard(e){if(e&&e.target!==e.currentTarget)return;logOut=null;logMtg=false;const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}
 
