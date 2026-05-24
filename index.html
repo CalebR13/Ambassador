@@ -892,47 +892,116 @@ function openTideDetail(cid, xid) {
   const c = contacts.find(x => x.id === cid); if (!c) return;
   const call = c.calls.find(x => x.id === xid); if (!call) return;
 
-  // Last real call log (not the reminder itself)
   const lastLog = [...(c.calls || [])]
     .filter(x => x.id !== xid && x.outcome && x.outcome !== 'reminder')
     .sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
 
-  const { label, cls } = fmtDueLabel(call.remDate, call.remTime);
-  const typeLabel = call.remType === 'call' ? 'Call' : call.remType === 'email' ? 'Email' : 'Other';
   const rc = getRegionColor(c);
+  const existingNote = (call.details || '').split('\n').slice(1).join('\n').trim();
+  const existingType = call.remType || 'call';
+  const existingDate = (()=>{
+    const parts = parseRemDate(call.remDate);
+    if (!parts) return '';
+    const [y,m,d] = parts;
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  })();
+  const existingTime = call.remTime || '';
 
-  const notes = (call.details || '').split('\n').slice(1).join('\n').trim();
+  window._editRemCid = cid;
+  window._editRemXid = xid;
+  window._remType = existingType;
 
   const lastLogHtml = lastLog ? `
-    <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;">Last Log</div>
-      <div style="font-size:12px;color:var(--muted);">${lastLog.date || ''} · ${lastLog.outcome || ''}</div>
-      ${lastLog.details ? `<div style="font-size:13px;color:var(--text);margin-top:4px;line-height:1.5;">${esc(lastLog.details)}</div>` : ''}
+    <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;">Last Contact</div>
+      <div style="font-size:11px;color:var(--muted);">${fmtCallDate(lastLog.date||'')} · ${lastLog.outcome||''}</div>
+      ${lastLog.details ? `<div style="font-size:12px;color:var(--text);margin-top:3px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(lastLog.details.split('\n')[0])}</div>` : ''}
     </div>` : '';
 
+  function typeBtn(t, label, icon) {
+    const active = existingType === t;
+    return `<button id="td-${t}" onclick="setTideDetailType('${t}')" style="flex:1;padding:9px 4px;border-radius:var(--radius-sm);border:1px solid ${active?'#F3B53A':'var(--border)'};background:${active?'#2e1f00':'var(--surface2)'};color:${active?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">${icon}${label}</button>`;
+  }
+
+  const callIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.34a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  const emailIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+  const otherIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`;
+
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
-    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
-      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <div class="tide-avatar" style="width:44px;height:44px;font-size:15px;background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border};border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;">${ini(c.pastor || c.church || '?')}</div>
-        <div>
-          <div style="font-size:16px;font-weight:600;color:var(--text);">${esc(c.pastor || '—')}</div>
-          <div style="font-size:12px;color:var(--muted);">${esc(c.church || '')}${c.city ? ' · ' + esc(c.city) + ', ' + esc(c.state) : ''}</div>
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:16px 16px 24px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">${ini(c.pastor||c.church||'?')}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.pastor||'—')}</div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.church||'')}${c.city?' · '+esc(c.city)+', '+esc(c.state):''}</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-        <span style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--muted);">${typeLabel}</span>
-        <span style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;" class="tide-due ${cls}">${label}</span>
-      </div>
-      ${notes ? `<div style="font-size:13px;color:var(--text);line-height:1.6;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">${esc(notes)}</div>` : ''}
       ${lastLogHtml}
-      <div style="display:flex;gap:8px;margin-top:18px;">
-        <button onclick="closeMKeepCard();openCallingCardFromTides('${cid}')" style="flex:1;padding:12px;background:#1a2d4a;border:1px solid #5b9fd444;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;color:#5b9fd4;cursor:pointer;">Go to Contact</button>
-        <button onclick="closeMKeepCard();completeTideReminder('${cid}','${xid}')" style="flex:1;padding:12px;background:#2e1f00;border:1px solid #f0b42944;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;color:#f0b429;cursor:pointer;">Complete</button>
-        <button onclick="closeMKeepCard();openEditReminderModal('${cid}','${xid}')" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Edit</button>
+      <div style="display:flex;gap:6px;margin-bottom:12px;">
+        ${typeBtn('call','Call',callIcon)}
+        ${typeBtn('email','Email',emailIcon)}
+        ${typeBtn('other','Other',otherIcon)}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Date</div>
+          <input type="date" id="td-date" value="${existingDate}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Time <span style="opacity:.5;">(opt)</span></div>
+          <input type="time" id="td-time" value="${existingTime}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>
+      </div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
+      <textarea id="td-note" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:64px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${esc(existingNote)}</textarea>
+      <div style="display:flex;gap:8px;">
+        <button onclick="closeMKeepCard();openCallingCardFromTides('${cid}')" style="flex:1;padding:11px;background:#1a2d4a;border:1px solid #5b9fd444;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;font-weight:600;color:#5b9fd4;cursor:pointer;">Go to Contact</button>
+        <button onclick="saveTideDetail()" style="flex:2;padding:11px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;">Save</button>
+        <button onclick="closeMKeepCard();completeTideReminder('${cid}','${xid}')" style="flex:1;padding:11px;background:#2e1f00;border:1px solid #f0b42944;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;font-weight:600;color:#f0b429;cursor:pointer;">Done</button>
       </div>
     </div>
   </div>`);
+}
+
+function setTideDetailType(t) {
+  window._remType = t;
+  ['call','email','other'].forEach(type => {
+    const btn = document.getElementById('td-' + type);
+    if (!btn) return;
+    const active = type === t;
+    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
+    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
+    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+  });
+}
+
+function saveTideDetail() {
+  const cid = window._editRemCid;
+  const xid = window._editRemXid;
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+
+  const d = document.getElementById('td-date')?.value;
+  const t = document.getElementById('td-time')?.value || '';
+  const note = (document.getElementById('td-note')?.value || '').trim();
+  const rtype = window._remType || 'call';
+
+  if (!d) { alert('Please pick a date.'); return; }
+
+  const dateLabel = fmtRemDate(d, t);
+  const typeLabel = rtype === 'call' ? 'Call' : rtype === 'email' ? 'Email' : 'Other';
+  call.remDate = d;
+  call.remTime = t;
+  call.remType = rtype;
+  call.details = `${typeLabel} reminder · ${dateLabel}${note ? '\n' + note : ''}`;
+
+  haptic(10);
+  save();
+  saveCallEntry(cid, call);
+  closeMKeepCard();
+  renderTides();
+  renderCallingCard();
 }
 
 function haptic(ms=10) { try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
@@ -992,87 +1061,6 @@ function snoozeToDate(cid, xid) {
   save(); saveCallEntry(cid, call); closeMKeepCard(); renderTides();
 }
 
-function openEditReminderModal(cid, xid) {
-  const c = contacts.find(x => x.id === cid); if (!c) return;
-  const call = c.calls.find(x => x.id === xid); if (!call) return;
-
-  // Extract existing note (everything after the first line)
-  const existingNote = (call.details || '').split('\n').slice(1).join('\n').trim();
-  const existingType = call.remType || 'call';
-  const existingDate = (()=>{
-    const parts = parseRemDate(call.remDate);
-    if (!parts) return '';
-    const [y,m,d] = parts;
-    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  })();
-  const existingTime = call.remTime || '';
-
-  window._editRemCid = cid;
-  window._editRemXid = xid;
-  window._remType = existingType;
-
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
-    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
-      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
-      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Reminder</h2>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Type</div>
-      <div style="display:flex;gap:8px;margin-bottom:14px;">
-        <button id="et-call" onclick="setEditRemType('call')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${existingType==='call'?'#F3B53A':'var(--border)'};background:${existingType==='call'?'#2e1f00':'var(--surface2)'};color:${existingType==='call'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Call</button>
-        <button id="et-email" onclick="setEditRemType('email')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${existingType==='email'?'#F3B53A':'var(--border)'};background:${existingType==='email'?'#2e1f00':'var(--surface2)'};color:${existingType==='email'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Email</button>
-        <button id="et-other" onclick="setEditRemType('other')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${existingType==='other'?'#F3B53A':'var(--border)'};background:${existingType==='other'?'#2e1f00':'var(--surface2)'};color:${existingType==='other'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Other</button>
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Date</div>
-      <input type="date" id="edit-rem-date" value="${existingDate}" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);margin-bottom:12px;box-sizing:border-box;"/>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Time <span style="opacity:.5;">(optional)</span></div>
-      <input type="time" id="edit-rem-time" value="${existingTime}" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);margin-bottom:12px;box-sizing:border-box;"/>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Notes</div>
-      <textarea id="edit-rem-note" placeholder="Add a note…" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${existingNote}</textarea>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-cancel" onclick="closeMKeepCard()" style="flex:1;">Cancel</button>
-        <button onclick="saveEditReminder()" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save Changes</button>
-      </div>
-    </div>
-  </div>`);
-}
-
-function setEditRemType(t) {
-  window._remType = t;
-  ['call','email','other'].forEach(type => {
-    const btn = document.getElementById('et-' + type);
-    if (!btn) return;
-    const active = type === t;
-    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
-    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
-    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
-  });
-}
-
-function saveEditReminder() {
-  const cid = window._editRemCid;
-  const xid = window._editRemXid;
-  const c = contacts.find(x => x.id === cid); if (!c) return;
-  const call = c.calls.find(x => x.id === xid); if (!call) return;
-
-  const d = document.getElementById('edit-rem-date')?.value;
-  const t = document.getElementById('edit-rem-time')?.value || '';
-  const note = (document.getElementById('edit-rem-note')?.value || '').trim();
-  const rtype = window._remType || 'call';
-
-  if (!d) { alert('Please pick a date.'); return; }
-
-  const dateLabel = fmtRemDate(d, t);
-  const typeLabel = rtype === 'call' ? 'Call' : rtype === 'email' ? 'Email' : 'Other';
-  call.remDate  = d;
-  call.remTime  = t;
-  call.remType  = rtype;
-  call.details  = `${typeLabel} reminder · ${dateLabel}${note ? '\n' + note : ''}`;
-
-  save();
-  saveCallEntry(cid, call);
-  closeMKeepCard();
-  renderTides();
-  renderCallingCard();
-}
 
 function openTidesReminderModal() {
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
