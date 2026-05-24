@@ -338,6 +338,7 @@ const US_STATES=['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL
 const STATE_NAMES={AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',DC:'District of Columbia'};
 function stateDropdown(id,val){const opts=US_STATES.map(s=>`<option value="${s}"${val===s?' selected':''}>${s} (${STATE_NAMES[s]||s})</option>`).join('');return `<select id="${id}" style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;"><option value="">— State —</option>${opts}</select>`;}
 function splitField(val){return String(val??'').split(/[,;\/]+/).map(s=>s.trim()).filter(Boolean);}
+function fmtPhone(raw){var d=String(raw||"").replace(/[^0-9]/g,"");if(d.length===10)return "("+d.slice(0,3)+") "+d.slice(3,6)+"-"+d.slice(6);if(d.length===11&&d[0]==="1")return "("+d.slice(1,4)+") "+d.slice(4,7)+"-"+d.slice(7);return raw;}
 function haversine(lat1,lon1,lat2,lon2){const R=3958.8;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
 function openProximityScreen(){
@@ -425,11 +426,32 @@ function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLa
 function togglePhoneFilter(){filterHasPhone=!filterHasPhone;renderFilters();renderList();}
 function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
 
+function fuzzyMatch(str, q) {
+  if (!q) return true;
+  str = (str||'').toLowerCase();
+  q = q.toLowerCase();
+  if (str.includes(q)) return true;
+  // Check if all chars of q appear in order in str
+  let si = 0;
+  for (let i = 0; i < q.length; i++) {
+    si = str.indexOf(q[i], si);
+    if (si === -1) return false;
+    si++;
+  }
+  return true;
+}
+
+function contactMatchesQuery(c, q) {
+  if (!q) return true;
+  return fuzzyMatch(c.pastor, q) || fuzzyMatch(c.church, q) || 
+         fuzzyMatch(c.city, q) || fuzzyMatch(c.phone, q) || fuzzyMatch(c.state, q);
+}
+
 function buildFilteredList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
-  if(proxResults){let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);if(q)f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
-  if(showingReminders){let f=getReminders().map(r=>r.contact);if(q)f=f.filter(c=>(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
-  let f=contacts.filter(c=>{const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);const mq=!q||(c.pastor||'').toLowerCase().includes(q)||(c.church||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.phone||'').toLowerCase().includes(q);const mp=!filterHasPhone||splitField(c.phone).length>0;return ms&&mq&&mp;});
+  if(proxResults){let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);if(q)f=f.filter(c=>contactMatchesQuery(c,q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
+  if(showingReminders){let f=getReminders().map(r=>r.contact);if(q)f=f.filter(c=>contactMatchesQuery(c,q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
+  let f=contacts.filter(c=>{const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);const mq=!q||contactMatchesQuery(c,q);const mp=!filterHasPhone||splitField(c.phone).length>0;return ms&&mq&&mp;});
   f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));return f;
 }
 
@@ -497,7 +519,7 @@ function renderCallingCard(){
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
       <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span><span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'\u00b7 '+lastContactedStr(c):''}</span></div><span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
-      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;animation:expandDown .35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
+      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;animation:expandDown .35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(fmtPhone(p))}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
     </div>
     <div class="card-nav"><button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>\u2190</button><span class="nav-center">${esc(c.pastor||c.church||'')}</span><button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>\u2192</button></div>`;
 }
@@ -743,8 +765,21 @@ function renderTides() {
     });
   });
 
+  // Gather completed reminders for history
+  const completedItems = [];
+  contacts.forEach(c => {
+    (c.calls || []).forEach(call => {
+      if (call.outcome !== 'reminder') return;
+      if (!call.completed) return;
+      completedItems.push({ contact: c, call });
+    });
+  });
+  completedItems.sort((a,b) => (b.call.date||'').localeCompare(a.call.date||''));
+
   if (!allItems.length) {
-    list.innerHTML = `<div class="tide-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 18c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/></svg><div style="font-size:14px">No active reminders</div><div style="font-size:12px;color:var(--muted)">All clear — smooth sailing</div></div>`;
+    let emptyHtml = `<div class="tide-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/><path d="M2 18c1.5-3 3.5-4 6-4s4.5 1 6 4 3.5 4 6 4"/></svg><div style="font-size:14px">No active reminders</div><div style="font-size:12px;color:var(--muted)">All clear — smooth sailing</div></div>`;
+    if (completedItems.length) emptyHtml += renderCompletedSection(completedItems);
+    list.innerHTML = emptyHtml;
     return;
   }
 
@@ -816,9 +851,30 @@ function renderTides() {
     html += upcoming.map(renderItem).join('');
   }
 
+  if (completedItems.length) html += renderCompletedSection(completedItems);
   list.innerHTML = html;
   setTimeout(initTidesSwipe, 50);
   reInitScrollHaptics();
+}
+
+function renderCompletedSection(items) {
+  const shown = items.slice(0, 10);
+  const rows = shown.map(({contact: c, call}) => {
+    const rc = getRegionColor(c);
+    const dateLabel = call.date ? fmtCallDate(call.date) : '';
+    return `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;opacity:0.5;">
+      <div class="tide-avatar" style="width:28px;height:28px;font-size:10px;background:${rc.bg};color:${rc.text};border:1px solid ${rc.border};border-radius:50%;display:flex;align-items:center;justify-content:center;">${ini(c.pastor||c.church||'?')}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.pastor||'—')}</div>
+        <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.church||'')}${c.city?' · '+esc(c.city):''}${dateLabel?' · '+dateLabel:''}</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4cd68a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>`;
+  }).join('');
+  return `<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:8px;">
+    <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;">Completed</span>
+    <span style="background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;border-radius:20px;padding:1px 7px;border:1px solid var(--border);">${items.length}</span>
+  </div>${rows}`;
 }
 
 function openCallingCardFromTides(cid) {
