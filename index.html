@@ -194,6 +194,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   .outcome-opts{display:grid;grid-template-columns:1fr 1fr 1fr;}
 }
 @keyframes fadeInBg{from{opacity:0}to{opacity:1}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .contact-row{transition:background .12s;}
 .contact-row:active{background:rgba(243,181,58,.06);}
@@ -377,7 +378,7 @@ function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay
 function hideLoadingOverlay(){const el=document.getElementById('loading-overlay');if(el)el.style.display='none';}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 function lastContactedStr(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');if(!r.length)return null;const last=r[r.length-1];return `${last.date} \u00b7 ${OM[last.outcome]?.label||last.outcome}`;}
-function toggleInfo(){infoExpanded=!infoExpanded;renderCallingCard();}
+function toggleInfo(){haptic(8);infoExpanded=!infoExpanded;renderCallingCard();}
 function toggleStar(cid){haptic(8);const c=contacts.find(x=>x.id===cid);if(!c)return;c.starred=!c.starred;save();saveContact(c);renderList();renderCallingCard();}
 
 function getReminders(){
@@ -486,7 +487,7 @@ function renderCallingCard(){
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
       <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span><span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'\u00b7 '+lastContactedStr(c):''}</span></div><span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
-      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
+      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;animation:slideDown .25s cubic-bezier(0.34,1.2,0.64,1);overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(p)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
     </div>
     <div class="card-nav"><button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>\u2190</button><span class="nav-center">${esc(c.pastor||c.church||'')}</span><button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>\u2192</button></div>`;
 }
@@ -774,6 +775,7 @@ function renderTides() {
 
   list.innerHTML = html;
   setTimeout(initTidesSwipe, 50);
+  reInitScrollHaptics();
 }
 
 function openCallingCardFromTides(cid) {
@@ -1009,6 +1011,34 @@ function openReminderFromTides(cid) {
 
 
 // ── PULL TO REFRESH ──
+// ── SCROLL HAPTICS ──
+function initScrollHaptics() {
+  if (!navigator.vibrate) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+        navigator.vibrate(3);
+      }
+    });
+  }, { threshold: 0.5, rootMargin: '0px' });
+
+  // Observe all contact rows and tide entries
+  document.querySelectorAll('.contact-row, .tide-entry-wrap').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Re-observe when list re-renders
+  window._scrollHapticObserver = observer;
+}
+
+function reInitScrollHaptics() {
+  if (!navigator.vibrate) return;
+  if (window._scrollHapticObserver) {
+    window._scrollHapticObserver.disconnect();
+  }
+  setTimeout(initScrollHaptics, 100);
+}
+
 function initPullToRefresh() {
   const app = document.getElementById('app');
   const ptr = document.getElementById('ptr-area');
@@ -1087,8 +1117,10 @@ function showLongPressMenu(cid, x, y) {
   </div>`);
 }
 
-load().then(()=>{renderFilters();renderList();updateTidesBadge();initPullToRefresh();initLongPress();});
+load().then(()=>{renderFilters();renderList();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);});
 window.addEventListener('resize',renderList);
+const _origRenderList = renderList;
+renderList = function(...a) { _origRenderList(...a); reInitScrollHaptics(); };
 </script>
 </body>
 </html>
