@@ -1030,42 +1030,40 @@ function openReminderFromTides(cid) {
 // ── SCROLL HAPTICS ──
 function initScrollHaptics() {
   if (!navigator.vibrate) return;
+  let lastTick = 0;
 
-  function attachScroll(el) {
-    if (!el || el._hapticBound) return;
-    el._hapticBound = true;
-    let lastTick = 0;
-    el.addEventListener('scroll', () => {
-      const rows = el.querySelectorAll('.contact-row, .tide-entry-wrap');
-      const midY = el.getBoundingClientRect().top + el.clientHeight / 2;
-      rows.forEach(row => {
-        const rect = row.getBoundingClientRect();
-        const rowMid = rect.top + rect.height / 2;
-        const dist = Math.abs(rowMid - midY);
-        if (dist < rect.height * 0.5) {
-          const now = Date.now();
-          if (now - lastTick > 40) {
-            navigator.vibrate(3);
-            lastTick = now;
-          }
-        }
-      });
-    }, {passive:true});
+  function onScroll() {
+    const now = Date.now();
+    if (now - lastTick < 40) return;
+    const rows = document.querySelectorAll('.contact-row, .tide-entry-wrap');
+    const midY = window.innerHeight / 2;
+    rows.forEach(row => {
+      const rect = row.getBoundingClientRect();
+      const rowMid = rect.top + rect.height / 2;
+      if (Math.abs(rowMid - midY) < rect.height * 0.5) {
+        navigator.vibrate(3);
+        lastTick = now;
+      }
+    });
   }
 
-  attachScroll(document.querySelector('.main-list'));
-  attachScroll(document.getElementById('tides-list'));
-  window._attachScrollHaptic = attachScroll;
+  // Attach to every scrollable container and window
+  ['main-list','tides-list','app','fullscreen-card'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el._hapticBound) {
+      el._hapticBound = true;
+      el.addEventListener('scroll', onScroll, {passive:true});
+    }
+  });
+  if (!window._hapticWindowBound) {
+    window._hapticWindowBound = true;
+    window.addEventListener('scroll', onScroll, {passive:true});
+  }
 }
 
 function reInitScrollHaptics() {
   if (!navigator.vibrate) return;
-  setTimeout(() => {
-    if (window._attachScrollHaptic) {
-      window._attachScrollHaptic(document.querySelector('.main-list'));
-      window._attachScrollHaptic(document.getElementById('tides-list'));
-    }
-  }, 150);
+  setTimeout(initScrollHaptics, 150);
 }
 
 function initPullToRefresh() {
