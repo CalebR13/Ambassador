@@ -348,7 +348,7 @@ function renderFilters(){
   const stateDropPill=`<select onchange="setSF(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);color:${fState!=='All'?'var(--accent)':'var(--text)'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+remPill+phonePill+stateDropPill;
 }
-function setSF(s){fState=s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
+function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
 function togglePhoneFilter(){filterHasPhone=!filterHasPhone;renderFilters();renderList();}
 function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
 
