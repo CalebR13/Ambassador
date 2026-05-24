@@ -606,7 +606,7 @@ function renderTides() {
     const { label, cls } = fmtDueLabel(call.remDate, call.remTime);
     const isOverdue = cls === 'overdue';
     const detailLine = call.details ? call.details.split('\n').slice(1).join(' ').trim() : '';
-    return `<div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}">
+    return `<div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}" onclick="openTideDetail('${c.id}','${call.id}')">
       <div class="tide-avatar" style="background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border}">${ini(c.pastor || c.church || '?')}</div>
       <div class="tide-content">
         <div class="tide-pastor">${esc(c.pastor || '—')}</div>
@@ -650,16 +650,61 @@ function renderTides() {
 }
 
 function openCallingCardFromTides(cid) {
-  const idx = filteredList.findIndex(c => c.id === cid);
-  if (idx >= 0) {
-    callingIdx = idx;
-  } else {
+  switchWing('voyage');
+  setTimeout(() => {
     filteredList = buildFilteredList();
-    const idx2 = filteredList.findIndex(c => c.id === cid);
-    callingIdx = idx2 >= 0 ? idx2 : 0;
-  }
-  contactMenuOpen = false; infoExpanded = false;
-  renderCallingCard();
+    const idx = filteredList.findIndex(c => c.id === cid);
+    callingIdx = idx >= 0 ? idx : 0;
+    contactMenuOpen = false; infoExpanded = false;
+    renderCallingCard();
+  }, 50);
+}
+
+function openTideDetail(cid, xid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+
+  // Last real call log (not the reminder itself)
+  const lastLog = [...(c.calls || [])]
+    .filter(x => x.id !== xid && x.outcome && x.outcome !== 'reminder')
+    .sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
+
+  const { label, cls } = fmtDueLabel(call.remDate, call.remTime);
+  const typeLabel = call.remType === 'call' ? 'Call' : call.remType === 'email' ? 'Email' : 'Other';
+  const rc = getRegionColor(c);
+
+  const notes = (call.details || '').split('\n').slice(1).join('\n').trim();
+
+  const lastLogHtml = lastLog ? `
+    <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;">Last Log</div>
+      <div style="font-size:12px;color:var(--muted);">${lastLog.date || ''} · ${lastLog.outcome || ''}</div>
+      ${lastLog.details ? `<div style="font-size:13px;color:var(--text);margin-top:4px;line-height:1.5;">${esc(lastLog.details)}</div>` : ''}
+    </div>` : '';
+
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div class="tide-avatar" style="width:44px;height:44px;font-size:15px;background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border};border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;">${ini(c.pastor || c.church || '?')}</div>
+        <div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);">${esc(c.pastor || '—')}</div>
+          <div style="font-size:12px;color:var(--muted);">${esc(c.church || '')}${c.city ? ' · ' + esc(c.city) + ', ' + esc(c.state) : ''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <span style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;color:var(--muted);">${typeLabel}</span>
+        <span style="padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:12px;" class="tide-due ${cls}">${label}</span>
+      </div>
+      ${notes ? `<div style="font-size:13px;color:var(--text);line-height:1.6;padding:12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);">${esc(notes)}</div>` : ''}
+      ${lastLogHtml}
+      <div style="display:flex;gap:8px;margin-top:18px;">
+        <button onclick="closeMKeepCard();openCallingCardFromTides('${cid}')" style="flex:1;padding:12px;background:#1a2d4a;border:1px solid #5b9fd444;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;color:#5b9fd4;cursor:pointer;">Go to Contact</button>
+        <button onclick="closeMKeepCard();completeTideReminder('${cid}','${xid}')" style="flex:1;padding:12px;background:#2e1f00;border:1px solid #f0b42944;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:600;color:#f0b429;cursor:pointer;">Complete</button>
+        <button onclick="closeMKeepCard();openSnoozeModal('${cid}','${xid}')" style="flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Snooze</button>
+      </div>
+    </div>
+  </div>`);
 }
 
 function completeTideReminder(cid, xid) {
