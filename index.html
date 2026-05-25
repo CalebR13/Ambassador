@@ -57,8 +57,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .log-btn:active{background:#1e2244;}
 .reminder-dot{width:7px;height:7px;border-radius:50%;background:#f0b429;display:inline-block;margin-left:5px;vertical-align:middle;}
 .empty-state{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:14px;}
-.proximity-screen{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
-.proximity-screen.visible{display:flex;}
+.proximity-screen{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;opacity:0;transform:translateY(12px);transition:opacity .22s ease,transform .22s cubic-bezier(0.25,0.46,0.45,0.94);}
+.proximity-screen.visible{display:flex;opacity:1;transform:translateY(0);}
+.proximity-screen.hiding{opacity:0;transform:translateY(12px);}
 .prox-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .fullscreen-card{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
 .fullscreen-card.slide-in{animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);}
@@ -118,7 +119,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .call-del{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:4px 6px;border-radius:4px;line-height:1;}
 .call-del:hover{color:var(--danger);}
 .no-calls{font-size:13px;color:var(--muted);font-style:italic;}
-.card-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom));}
+.card-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom));}
 .nav-btn{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);font-family:var(--sans);font-size:18px;font-weight:600;cursor:pointer;color:var(--text);}
 .nav-btn:active:not(:disabled){background:var(--surface);}
 .nav-btn:disabled{opacity:.25;cursor:default;}
@@ -208,6 +209,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 #manifest-card-screen.visible{animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);}
 #manifest-card-screen.slide-out{animation:slideOutRight .2s cubic-bezier(0.55,0,1,0.45);}
 @keyframes expandDown{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes collapseUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}
+@keyframes slideUpFade{0%{opacity:0;transform:translateX(-50%) translateY(8px)}100%{opacity:1;transform:translateX(-50%) translateY(0)}}
 @keyframes slideDownOut{from{transform:translateY(0);opacity:1}to{transform:translateY(30px);opacity:0}}
 @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
 .contact-row{transition:background .12s;}
@@ -370,12 +373,22 @@ function fmtPhone(raw){var d=String(raw||"").replace(/[^0-9]/g,"");if(d.length==
 function haversine(lat1,lon1,lat2,lon2){const R=3958.8;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 
 function openProximityScreen(){
-  const scr=document.getElementById('proximity-screen');scr.classList.add('visible');
+  const scr=document.getElementById('proximity-screen');
+  scr.style.display='flex';
+  // Force reflow so transition fires
+  scr.getBoundingClientRect();
+  scr.classList.add('visible');
+  scr.classList.remove('hiding');
   const stateOpts=US_STATES.map(s=>`<option value="${s}">${s} (${STATE_NAMES[s]||s})</option>`).join('');
   scr.innerHTML=`<div class="card-topbar"><button class="card-back-btn" onclick="closeProximityScreen()">←</button><div style="flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--text)">Nearby</div><div style="width:60px"></div></div><div style="padding:16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:10px;"><div style="display:flex;gap:8px;"><input id="prox-city" type="text" placeholder="City…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);"/><select id="prox-state" style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);width:80px;"><option value="">State</option>${stateOpts}</select></div><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:12px;color:var(--muted);white-space:nowrap;">Within</label><select id="prox-radius" style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;background:var(--bg);color:var(--text);"><option value="25">25 mi</option><option value="50" selected>50 mi</option><option value="100">100 mi</option><option value="200">200 mi</option><option value="500">500 mi</option><option value="99999">Any distance</option></select><button onclick="runProximitySearch()" style="flex:1;padding:9px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;">Search</button></div><button onclick="useMyLocation()" style="padding:9px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>Use my location</button></div><div class="prox-body" id="prox-results"><div class="empty-state">Enter a city and state to find nearby contacts</div></div>`;
   setTimeout(()=>{const ci=document.getElementById('prox-city');if(ci)ci.addEventListener('keydown',e=>{if(e.key==='Enter')runProximitySearch();});},50);
 }
-function closeProximityScreen(){document.getElementById('proximity-screen').classList.remove('visible');}
+function closeProximityScreen(){
+  const scr=document.getElementById('proximity-screen');
+  scr.classList.add('hiding');
+  scr.classList.remove('visible');
+  setTimeout(()=>{ scr.style.display='none'; scr.classList.remove('hiding'); },220);
+}
 function useMyLocation(){if(!navigator.geolocation){alert('Location not available.');return;}navigator.geolocation.getCurrentPosition(pos=>{renderProximityResults(pos.coords.latitude,pos.coords.longitude);},()=>alert('Could not get your location.'));}
 async function runProximitySearch(){
   const city=(document.getElementById('prox-city').value||'').trim();const state=(document.getElementById('prox-state').value||'').trim();
@@ -417,7 +430,22 @@ function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay
 function hideLoadingOverlay(){const el=document.getElementById('loading-overlay');if(el)el.style.display='none';}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 function lastContactedStr(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');if(!r.length)return null;const last=r[r.length-1];return `${last.date} \u00b7 ${OM[last.outcome]?.label||last.outcome}`;}
-function toggleInfo(){haptic(8);infoExpanded=!infoExpanded;renderCallingCard();}
+function toggleInfo(){
+  haptic(8);
+  infoExpanded=!infoExpanded;
+  const infoDiv=document.getElementById('more-info-body');
+  const chevron=document.getElementById('more-info-chevron');
+  if(infoDiv){
+    if(infoExpanded){
+      infoDiv.style.display='grid';
+      infoDiv.style.animation='expandDown .28s cubic-bezier(0.4,0,0.2,1)';
+    } else {
+      infoDiv.style.animation='collapseUp .22s cubic-bezier(0.4,0,0.2,1)';
+      setTimeout(()=>{ if(!infoExpanded) infoDiv.style.display='none'; },200);
+    }
+  }
+  if(chevron) chevron.style.transform=infoExpanded?'rotate(180deg)':'rotate(0deg)';
+}
 function toggleStar(cid){haptic(8);const c=contacts.find(x=>x.id===cid);if(!c)return;c.starred=!c.starred;save();saveContact(c);renderList();renderCallingCard();}
 
 function getReminders(){
@@ -540,14 +568,15 @@ function renderCallingCard(){
           const isCompleted=x.outcome==='note'&&x.completed;
           const detailStyle=isCompleted?'text-decoration:line-through;opacity:.45;':'';
           const checkBtn=x.outcome==='reminder'?`<button onclick="event.stopPropagation();completeReminder('${c.id}','${x.id}')" title="Mark done" style="position:absolute;top:8px;right:34px;background:none;border:1px solid #f0b42944;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#f0b429;display:flex;align-items:center;justify-content:center;padding:0;">${ICONS.checkCircle}</button>`:'';
-          const remClick=x.outcome==='reminder'?`onclick="openTideDetail('${c.id}','${x.id}')" style="cursor:pointer;"`:'';
-          return `<div class="call-entry" ${remClick}><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${fmtCallDate(x.date)}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="event.stopPropagation();delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}</div>`;
+          const remClick=x.outcome==='reminder'?`onclick="openTideDetail('${c.id}','${x.id}')" style="cursor:pointer;"`:x.outcome!=='imported'?`onclick="openEditCallModal('${c.id}','${x.id}')" style="cursor:pointer;"`:'';
+          const editPad=x.outcome!=='reminder'&&x.outcome!=='imported'?'padding-right:28px':'';
+          return `<div class="call-entry" ${remClick}><div class="call-top" style="padding-right:${x.outcome==='reminder'?'60px':'28px'}">${x.outcome==='note'?`<span style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;">${outcomeIcon('noteSm')} Note</span>`:`<span class="outcome-badge ${m.cls}" style="display:inline-flex;align-items:center;gap:5px;">${outcomeIcon(m.icon)} ${m.label}</span>`}${mb}<span class="call-date">${fmtCallDate(x.date)}</span></div>${x.details?`<div class="call-details-text" style="${detailStyle}">${esc(x.details)}</div>`:''}<button class="call-del" onclick="event.stopPropagation();delCall('${c.id}','${x.id}')">\u00d7</button>${checkBtn}${x.outcome!=='reminder'&&x.outcome!=='imported'?`<span style="position:absolute;bottom:8px;right:10px;opacity:.25;pointer-events:none;display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>`:''}</div>`;
         }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
-      <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span><span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'\u00b7 '+lastContactedStr(c):''}</span></div><span style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
-      ${infoExpanded?`<div style="padding:0 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;animation:expandDown .35s cubic-bezier(0.4,0,0.2,1);overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(fmtPhone(p))}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>`:''}
+      <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);">More Info</span><span style="font-size:11px;color:var(--muted);">${lastContactedStr(c)?'\u00b7 '+lastContactedStr(c):''}</span></div><span id="more-info-chevron" style="color:var(--muted);display:flex;align-items:center;transition:transform .22s;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
+      <div id="more-info-body" style="display:${infoExpanded?'grid':'none'};padding:0 16px 12px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;${infoExpanded?'animation:expandDown .28s cubic-bezier(0.4,0,0.2,1);':''}">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(fmtPhone(p))}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent(c.address+' '+c.city+' '+c.state)}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>
     </div>
     <div class="card-nav"><button class="nav-btn" onclick="navCard(-1)" ${callingIdx===0?'disabled':''}>\u2190</button><span class="nav-center">${esc(c.pastor||c.church||'')}</span><button class="nav-btn next" onclick="navCard(1)" ${callingIdx===total-1?'disabled':''}>\u2192</button></div>`;
 }
@@ -583,6 +612,32 @@ function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secre
 function setMtg(v){logMtg=v;const y=document.getElementById('mtg-yes');if(y)y.className='toggle-btn '+(v?'on':'off');const n=document.getElementById('mtg-no');if(n)n.className='toggle-btn '+(v?'off':'on');const d=document.getElementById('mtg-date');if(d)d.style.display=v?'block':'none';}
 function saveLog(cid){haptic(10);if(!logOut){alert('Please select an outcome.');return;}const c=contacts.find(x=>x.id===cid);if(!c)return;if(!c.calls)c.calls=[];const md=(document.getElementById('mtg-d')||{}).value||'';const newCall={id:uid(),date:fmtDate(new Date()),outcome:logOut,meetingBooked:logMtg,meetingDate:md.trim(),details:(document.getElementById('call-det').value||'').trim()};c.calls.push(newCall);save();saveCallEntry(cid,newCall);closeMKeepCard();renderCallingCard();renderList();}
 function delCall(cid,xid){const c=contacts.find(x=>x.id===cid);if(!c)return;c.calls=(c.calls||[]).filter(x=>x.id!==xid);save();deleteCallEntry(xid);renderCallingCard();renderList();}
+function openEditCallModal(cid,xid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  const call=c.calls.find(x=>x.id===xid);if(!call)return;
+  logOut=call.outcome||null;
+  logMtg=call.meetingBooked||false;
+  const outcomesHTML=Object.entries(OM).filter(([k])=>k!=='imported'&&k!=='reminder').map(([k,v])=>{
+    const isNote=k==='note';
+    const style=k==='pastor'?'border-color:#4a9e6b44;':k==='voicemail'?'border-color:#8899ee44;':k==='secretary'?'border-color:#c9a0f044;':'';
+    const labelColor=k==='pastor'?'color:#4cd68a;':k==='voicemail'?'color:#8899ee;':k==='secretary'?'color:#c9a0f0;':'';
+    const iconColor=k==='pastor'?'color:#4cd68a;':k==='voicemail'?'color:#8899ee;':k==='secretary'?'color:#c9a0f0;':'color:var(--muted);';
+    return `<button class="outcome-opt${call.outcome===k?' selected':''}" id="op-${k}" onclick="selOut('${k}')" style="${style}"><span class="opt-icon" style="display:flex;align-items:center;${iconColor}">${outcomeIcon(v.icon)}</span><span style="${labelColor}">${v.label}</span></button>`;
+  }).join('');
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2>Edit entry</h2><div class="modal-sub">${esc(c.pastor||c.church||'')} · ${esc(fmtCallDate(call.date))}</div><div class="fg"><label>Outcome *</label><div class="outcome-opts">${outcomesHTML}</div></div><div id="mtg-sec" style="${call.outcome==='pastor'?'':'display:none'}"><div class="meeting-row"><label>Meeting booked?</label><div class="toggle-wrap"><button class="toggle-btn${logMtg?' off':' on'}" id="mtg-yes" onclick="setMtg(true)">Yes</button><button class="toggle-btn${logMtg?'':' on'}" id="mtg-no" onclick="setMtg(false)">No</button></div></div><div id="mtg-date" style="${call.meetingBooked?'':'display:none'}"><div class="fg"><label>Meeting date</label><input type="date" id="mtg-d" value="${call.meetingDate&&call.meetingDate.match(/\d{4}-\d{2}-\d{2}/)?call.meetingDate:''}"/></div></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="call-det" placeholder="Who you spoke with, what was discussed…">${esc(call.details||'')}</textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveEditCall('${cid}','${xid}')">Save changes</button></div></div></div>`);
+}
+function saveEditCall(cid,xid){
+  haptic(10);
+  if(!logOut){alert('Please select an outcome.');return;}
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  const call=c.calls.find(x=>x.id===xid);if(!call)return;
+  const md=(document.getElementById('mtg-d')||{}).value||'';
+  call.outcome=logOut;
+  call.meetingBooked=logMtg;
+  call.meetingDate=md.trim();
+  call.details=(document.getElementById('call-det').value||'').trim();
+  save();saveCallEntry(cid,call);closeMKeepCard();renderCallingCard();renderList();
+}
 function completeReminder(cid,xid){const c=contacts.find(x=>x.id===cid);if(!c)return;const call=c.calls.find(x=>x.id===xid);if(!call)return;call.outcome='note';call.completed=true;save();saveCallEntry(cid,call);renderCallingCard();renderList();}
 
 function openReminderModal(cid){
@@ -642,8 +697,13 @@ function closeMKeepCard(e){
   }
 }
 
-// Hard reset modal layer - call if anything freezes
-function resetModalLayer(){
+// Safe modal close for Manifest — clears layer immediately, then fires callback
+function closeManifestModal(callback) {
+  const l = document.getElementById('modal-layer');
+  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
+  if (callback) setTimeout(callback, 30);
+}
+
   const l=document.getElementById('modal-layer');
   if(l){ l.innerHTML=''; l.style.pointerEvents='none'; }
 }
@@ -1081,8 +1141,30 @@ function completeTideReminder(cid, xid) {
   haptic(15);
   const c = contacts.find(x => x.id === cid); if (!c) return;
   const call = c.calls.find(x => x.id === xid); if (!call) return;
+  // Store for undo
+  const prevOutcome = call.outcome;
+  const prevCompleted = call.completed;
   call.outcome = 'note'; call.completed = true;
   save(); saveCallEntry(cid, call); renderTides(); renderList(); updateTidesBadge();
+  // Show undo toast
+  showUndoToast('Reminder completed', () => {
+    call.outcome = prevOutcome; call.completed = prevCompleted || false;
+    save(); saveCallEntry(cid, call); renderTides(); renderList(); updateTidesBadge();
+  });
+}
+
+function showUndoToast(msg, undoFn) {
+  let toast = document.getElementById('undo-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'undo-toast';
+    document.body.appendChild(toast);
+  }
+  if (toast._timer) clearTimeout(toast._timer);
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid #F3B53A44;border-radius:20px;padding:8px 6px 8px 16px;font-family:var(--sans);font-size:13px;color:var(--text);z-index:500;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px #0008;animation:slideUpFade .2s ease;white-space:nowrap;';
+  toast.innerHTML = `<span>${msg}</span><button onclick="(function(){window._undoFn&&window._undoFn();document.getElementById('undo-toast').style.display='none';})()" style="background:#F3B53A;border:none;border-radius:12px;padding:5px 12px;font-family:var(--sans);font-size:12px;font-weight:700;color:#000;cursor:pointer;">Undo</button>`;
+  window._undoFn = undoFn;
+  toast._timer = setTimeout(() => { toast.style.display = 'none'; window._undoFn = null; }, 5000);
 }
 
 function openSnoozeModal(cid, xid) {
@@ -1163,8 +1245,9 @@ function renderTidesSearch() {
 }
 
 function openReminderFromTides(cid) {
-  closeMKeepCard();
-  openReminderModal(cid);
+  const l = document.getElementById('modal-layer');
+  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
+  setTimeout(() => openReminderModal(cid), 30);
 }
 
 
@@ -1371,8 +1454,8 @@ function renderManifest() {
     const visits = manifestVisits.filter(v => v.manifestId === m.id);
     const lastVisit = visits.sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
     const lastVisitStr = lastVisit ? fmtCallDate(lastVisit.date) : 'No visits yet';
-    const prophecyIcon = m.prophet_chamber === 'Yes' ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F3B53A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Prophet's Chamber"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` : '';
-    const rvIcon = m.rv_hookup === 'Yes' ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5b9fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="RV Hookup"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>` : '';
+    const prophecyIcon = '';
+    const rvIcon = '';
 
     return `<div class="tide-entry-wrap manifest-list-row" onclick="openManifestCard('${m.id}')">
       <div class="tide-entry upcoming" style="border-left:none;">
@@ -1380,7 +1463,6 @@ function renderManifest() {
         <div class="tide-content" style="flex:1;min-width:0;">
           <div style="display:flex;align-items:center;gap:6px;">
             <div class="tide-pastor" style="flex:1;min-width:0;">${esc(m.pastor||'—')}</div>
-            <div style="font-size:11px;color:var(--muted);flex-shrink:0;display:flex;align-items:center;gap:3px;">${prophecyIcon}${rvIcon}<span>${esc(m.city||'')}${m.state?', '+esc(m.state):''}</span></div>
           </div>
           <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px;">Last visit: ${lastVisitStr}</div>
@@ -1472,7 +1554,7 @@ function openManifestCard(mid) {
         <button onclick="closeManifestCard()" style="background:none;border:none;color:${rcCard.text};opacity:0.8;font-size:22px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;gap:6px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <button onclick="openManifestEditModal('${mid}')" style="background:none;border:1px solid ${rcCard.border};border-radius:20px;padding:5px 14px;font-family:var(--sans);font-size:12px;color:${rcCard.text};opacity:0.8;cursor:pointer;">Edit</button>
+        <button onclick="openManifestEditModal('${mid}')" style="background:none;border:1px solid ${rcCard.border};border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.8;" title="Edit contact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${rcCard.text}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
         ${avatarHtml}
@@ -1490,7 +1572,6 @@ function openManifestCard(mid) {
         ${m.phone||m.cell ? `<a href="tel:${m.cell||m.phone}" style="flex:1;padding:9px 4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--accent);text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.34a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Call</a>` : ''}
         ${m.cell||m.phone ? `<a href="sms:${m.cell||m.phone}" style="flex:1;padding:9px 4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--accent);text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Text</a>` : ''}
         ${m.email ? `<a href="mailto:${m.email}" style="flex:1;padding:9px 4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--accent);text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email</a>` : ''}
-        <button onclick="openReminderFromManifest('${mid}')" style="flex:1;padding:9px 4px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Remind</button>
       </div>
     </div>
 
@@ -1573,10 +1654,10 @@ function openManifestCard(mid) {
 
     <!-- PERSONAL / CHURCH INFO (collapsible) -->
     <div style="margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
-      <button onclick="const d=document.getElementById('mc-info-${mid}');d.style.display=d.style.display==='none'?'block':'none';this.querySelector('svg').style.transform=d.style.display==='none'?'rotate(0deg)':'rotate(180deg)';" style="width:100%;padding:12px;background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--sans);">
+      <button onclick="(function(btn){const d=document.getElementById('mc-info-${mid}');const open=d.style.display==='none'||!d.style.display;if(open){d.style.display='block';d.style.animation='expandDown .25s cubic-bezier(0.4,0,0.2,1)';}else{d.style.animation='collapseUp .2s cubic-bezier(0.4,0,0.2,1)';setTimeout(()=>d.style.display='none',180);}btn.querySelector('.info-chevron').style.transform=open?'rotate(180deg)':'rotate(0deg)';})(this)" style="width:100%;padding:12px;background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--sans);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span style="font-size:12px;font-weight:600;color:var(--text);flex:1;text-align:left;">Personal / Church Info</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        <svg class="info-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .22s;"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div id="mc-info-${mid}" style="display:none;border-top:1px solid var(--border);padding:0 16px;">
         ${infoFields||'<div style="padding:12px 0;font-size:13px;color:var(--muted);">No contact info</div>'}
@@ -1619,7 +1700,7 @@ function openManifestLog(mid) {
     </div>`;
   }).join('') : '<div style="padding:14px 16px;font-size:13px;color:var(--muted);">No logs yet</div>';
 
-  showM(`<div class="modal-backdrop" onclick="if(event.target===this){const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}">
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this)closeManifestModal(()=>openManifestCard('${mid}'))">
     <div class="modal-box" onclick="event.stopPropagation()" style="max-height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
       <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <span style="font-family:var(--serif);font-size:18px;color:var(--text);">Contact Log</span>
@@ -1627,7 +1708,7 @@ function openManifestLog(mid) {
       </div>
       <div style="overflow-y:auto;flex:1;">${logRows}</div>
       <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;">
-        <button onclick="const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';" style="width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Close</button>
+        <button onclick="closeManifestModal(()=>openManifestCard('${mid}'))" style="width:100%;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Close</button>
       </div>
     </div>
   </div>`);
@@ -1637,7 +1718,7 @@ function openManifestLogEntry(mid) {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   
-  showM(`<div class="modal-backdrop" onclick="if(event.target===this){const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}">
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this)closeManifestModal(()=>openManifestCard('${mid}'))">
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
       <h2 style="font-family:var(--serif);font-size:18px;margin-bottom:14px;">Log Contact</h2>
@@ -1648,7 +1729,7 @@ function openManifestLogEntry(mid) {
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
       <textarea id="mlog-details" placeholder="What happened?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:8px;">
-        <button onclick="const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Cancel</button>
+        <button onclick="closeManifestModal(()=>openManifestCard('${mid}'))" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Cancel</button>
         <button onclick="saveManifestLogEntry('${mid}')" style="flex:2;padding:11px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
       </div>
     </div>
@@ -1688,10 +1769,7 @@ function saveManifestLogEntry(mid) {
   save();
   saveCallEntry(mid, entry);
   haptic(10);
-
-  const l = document.getElementById('modal-layer');
-  l.innerHTML=''; l.style.pointerEvents='none';
-  openManifestCard(mid);
+  closeManifestModal(() => openManifestCard(mid));
 }
 
 function openPhotoEdit(mid) {
@@ -1806,7 +1884,7 @@ function openVisitDetail(mid, vid) {
 }
 
 function openAddVisitModal(mid) {
-  showM(`<div class="modal-backdrop" onclick="if(event.target===this){const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}">
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this)closeManifestModal(()=>openManifestCard(''${mid}'))">
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
       <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Log a Visit</h2>
@@ -1836,7 +1914,7 @@ function openAddVisitModal(mid) {
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
       <textarea id="v-notes" placeholder="Anything else to remember..." style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:60px;resize:vertical;margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:8px;">
-        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="closeManifestModal(()=>openManifestCard('${mid}'))" style="flex:1;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Cancel</button>
         <button onclick="saveVisit('${mid}')" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save Visit</button>
       </div>
     </div>
@@ -1872,12 +1950,7 @@ function saveVisit(mid) {
   manifestVisits.push(visit);
   saveVisitEntry(visit);
   haptic(10);
-  // Close modal and wait for it to fully clear before re-rendering
-  const l = document.getElementById('modal-layer');
-  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
-  const screen2 = document.getElementById('manifest-card-screen');
-  if (screen2) screen2.classList.remove('slide-out');
-  setTimeout(() => openManifestCard(mid), 50);
+  closeManifestModal(() => openManifestCard(mid));
 }
 
 function openManifestEditModal(mid) {
@@ -1916,7 +1989,7 @@ function openManifestEditModal(mid) {
         <textarea id="me-notes" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;box-sizing:border-box;">${esc(m.notes||'')}</textarea>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="cancelManifestEdit('${mid}')" class="btn-cancel">Cancel</button>
         <button onclick="saveManifestEdit('${mid}')" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
       </div>
     </div>
@@ -1952,12 +2025,8 @@ function saveManifestEdit(mid) {
   }
   saveManifestContact(m);
   haptic(10);
-  closeMKeepCard();
-  // Refresh card immediately without slide animation
-  const screen = document.getElementById('manifest-card-screen');
-  if (screen) { screen.classList.remove('slide-out'); }
   renderManifest();
-  openManifestCard(mid);
+  closeManifestModal(() => openManifestCard(mid));
 }
 
 function openManifestAddModal() {
@@ -1967,7 +2036,18 @@ function openManifestAddModal() {
   openManifestEditModal(newId);
 }
 
-function openReminderFromManifest(mid) {
+function cancelManifestEdit(mid) {
+  // If this was a new contact (empty pastor + church), remove it
+  const m = manifestContacts.find(x => x.id === mid);
+  const isNew = m && !m.pastor && !m.church;
+  if (isNew) {
+    manifestContacts = manifestContacts.filter(x => x.id !== mid);
+    closeManifestModal(() => renderManifest());
+  } else {
+    closeManifestModal(() => openManifestCard(mid));
+  }
+}
+
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   
   // Ensure a pseudo contact exists in the contacts array for this manifest contact
