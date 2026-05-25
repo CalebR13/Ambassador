@@ -1477,14 +1477,13 @@ function openManifestCard(mid) {
 
     <!-- 2 COL: LAST COMM + VISIT HISTORY -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;" onclick="openManifestLog('${mid}')">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;" onclick="document.getElementById('mc-log-${mid}').style.display=document.getElementById('mc-log-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Contact Log</span>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         ${lastCall ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${fmtCallDate(lastCall.date||'')}</div><div style="font-size:12px;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc((lastCall.details||'').split('\n')[0]||lastCall.outcome||'—')}</div>` : `<div style="font-size:12px;color:var(--muted);">No logs yet</div>`}
-        <div style="margin-top:6px;font-size:10px;color:var(--accent);">Tap to view &amp; add →</div>
+        <button onclick="event.stopPropagation();openManifestLogEntry('${mid}')" style="margin-top:8px;width:100%;padding:6px;background:none;border:1px solid var(--accent);border-radius:var(--radius-sm);font-family:var(--sans);font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;">+ Log</button>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;" onclick="document.getElementById('mc-visits-${mid}').style.display=document.getElementById('mc-visits-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
@@ -1495,6 +1494,21 @@ function openManifestCard(mid) {
         ${lastVisit?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Last ${fmtCallDate(lastVisit.date)||lastVisit.date}</div>`:'<div style="font-size:11px;color:var(--muted);">No visits yet</div>'}
         <button onclick="event.stopPropagation();openAddVisitModal('${mid}')" style="margin-top:8px;width:100%;padding:6px;background:none;border:1px solid var(--accent);border-radius:var(--radius-sm);font-family:var(--sans);font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;">+ Add Visit</button>
       </div>
+    </div>
+
+    <!-- LOG ROWS (collapsible) -->
+    <div id="mc-log-${mid}" style="display:none;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:10px;">
+      ${manifestCallLog.length ? manifestCallLog.map(x => {
+        const outcomeLabels = {call:'Call',text:'Text',email:'Email',note:'Note',pastor:'Pastor',secretary:'Secretary',voicemail:'Voicemail'};
+        const label = outcomeLabels[x.outcome] || x.outcome || 'Note';
+        return `<div style="padding:10px 16px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+            <span style="font-size:11px;font-weight:600;color:var(--accent);">${label}</span>
+            <span style="font-size:11px;color:var(--muted);">${fmtCallDate(x.date||'')}</span>
+          </div>
+          ${x.details?`<div style="font-size:12px;color:var(--text);line-height:1.4;white-space:pre-wrap;">${esc(x.details)}</div>`:''}
+        </div>`;
+      }).join('') : '<div style="padding:12px 16px;font-size:13px;color:var(--muted);">No logs yet</div>'}
     </div>
 
     <!-- VISIT ROWS (collapsible) -->
@@ -1615,7 +1629,7 @@ function openManifestLogEntry(mid) {
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
       <textarea id="mlog-details" placeholder="What happened?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:8px;">
-        <button onclick="const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';openManifestLog('${mid}');" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Cancel</button>
+        <button onclick="const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';" style="flex:1;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;">Cancel</button>
         <button onclick="saveManifestLogEntry('${mid}')" style="flex:2;padding:11px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
       </div>
     </div>
@@ -1658,7 +1672,6 @@ function saveManifestLogEntry(mid) {
 
   const l = document.getElementById('modal-layer');
   l.innerHTML=''; l.style.pointerEvents='none';
-  openManifestLog(mid);
   openManifestCard(mid);
 }
 
