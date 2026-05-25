@@ -1590,7 +1590,13 @@ function openManifestCard(mid) {
     </div>` : ''}
   `;
 
+  const alreadyOpen = screen.classList.contains('visible');
   screen.classList.add('visible');
+  if (alreadyOpen) {
+    // Card already showing — just refresh content, no animation
+    screen.style.animation = 'none';
+    setTimeout(() => { screen.style.animation = ''; }, 50);
+  }
   screen.scrollTop = 0;
   window._currentManifestId = mid;
 }
