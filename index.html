@@ -616,14 +616,16 @@ function closeMKeepCard(e){
   if(e&&e.target!==e.currentTarget)return;
   logOut=null;logMtg=false;
   const l=document.getElementById('modal-layer');
+  // Always restore pointer-events immediately so nothing freezes
+  l.style.pointerEvents='none';
   const backdrop=l.querySelector('.modal-backdrop');
   const box=l.querySelector('.modal-box, .snooze-modal');
   if(backdrop&&box){
     backdrop.style.animation='fadeOutBg .18s ease forwards';
     box.style.animation='slideDown .18s ease forwards';
-    setTimeout(()=>{l.innerHTML='';l.style.pointerEvents='none';},170);
+    setTimeout(()=>{l.innerHTML='';},170);
   } else {
-    l.innerHTML='';l.style.pointerEvents='none';
+    l.innerHTML='';
   }
 }
 
