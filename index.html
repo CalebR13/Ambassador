@@ -629,17 +629,23 @@ function closeMKeepCard(e){
   if(e&&e.target!==e.currentTarget)return;
   logOut=null;logMtg=false;
   const l=document.getElementById('modal-layer');
-  // Always restore pointer-events immediately so nothing freezes
   l.style.pointerEvents='none';
   const backdrop=l.querySelector('.modal-backdrop');
   const box=l.querySelector('.modal-box, .snooze-modal');
   if(backdrop&&box){
     backdrop.style.animation='fadeOutBg .18s ease forwards';
     box.style.animation='slideDown .18s ease forwards';
-    setTimeout(()=>{l.innerHTML='';},170);
+    setTimeout(()=>{ l.innerHTML=''; l.style.pointerEvents='none'; },170);
   } else {
     l.innerHTML='';
+    l.style.pointerEvents='none';
   }
+}
+
+// Hard reset modal layer - call if anything freezes
+function resetModalLayer(){
+  const l=document.getElementById('modal-layer');
+  if(l){ l.innerHTML=''; l.style.pointerEvents='none'; }
 }
 
 
@@ -1659,7 +1665,7 @@ function openVisitDetail(mid, vid) {
 }
 
 function openAddVisitModal(mid) {
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this){const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';}">
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
       <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Log a Visit</h2>
@@ -1725,10 +1731,12 @@ function saveVisit(mid) {
   manifestVisits.push(visit);
   saveVisitEntry(visit);
   haptic(10);
-  closeMKeepCard();
+  // Close modal and wait for it to fully clear before re-rendering
+  const l = document.getElementById('modal-layer');
+  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
   const screen2 = document.getElementById('manifest-card-screen');
-  if (screen2) { screen2.classList.remove('slide-out'); }
-  openManifestCard(mid);
+  if (screen2) screen2.classList.remove('slide-out');
+  setTimeout(() => openManifestCard(mid), 50);
 }
 
 function openManifestEditModal(mid) {
