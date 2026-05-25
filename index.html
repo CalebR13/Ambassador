@@ -203,6 +203,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 @keyframes fadeOutBg{from{opacity:1}to{opacity:0}}
 @keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes slideOutRight{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+.manifest-list-row{transition:background .12s;}
+.manifest-list-row:active{background:rgba(243,181,58,.06);}
+#manifest-card-screen.visible{animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);}
+#manifest-card-screen.slide-out{animation:slideOutRight .2s cubic-bezier(0.55,0,1,0.45);}
 @keyframes expandDown{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes slideDownOut{from{transform:translateY(0);opacity:1}to{transform:translateY(30px);opacity:0}}
 @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -275,7 +279,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
       Voyage
     </button>
     <button class="bottom-nav-btn" id="nav-manifest" onclick="switchWing('manifest')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" opacity="0.3"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
       Manifest
     </button>
     <button class="bottom-nav-btn" id="nav-tides" onclick="switchWing('tides')" style="position:relative;">
@@ -723,6 +727,11 @@ function switchWing(wing) {
     // Always close any open calling card cleanly without animation
     const card = document.getElementById('fullscreen-card');
     if (card) { card.classList.remove('visible','slide-out','slide-in'); card.innerHTML=''; contactMenuOpen=false; }
+
+    // Always close manifest card screen too
+    const manifestCardScreen = document.getElementById('manifest-card-screen');
+    if (manifestCardScreen) { manifestCardScreen.classList.remove('visible','slide-out'); }
+    window._currentManifestId = null;
 
     // Hide all
     tidesScreen.classList.remove('visible');
@@ -1339,7 +1348,7 @@ function renderManifest() {
     const prophecyIcon = m.prophet_chamber === 'Yes' ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F3B53A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Prophet's Chamber"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` : '';
     const rvIcon = m.rv_hookup === 'Yes' ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5b9fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="RV Hookup"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>` : '';
 
-    return `<div class="tide-entry-wrap" onclick="openManifestCard('${m.id}')">
+    return `<div class="tide-entry-wrap manifest-list-row" onclick="openManifestCard('${m.id}')">
       <div class="tide-entry upcoming" style="border-left:none;">
         <div class="tide-avatar" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border);flex-shrink:0;">${initials}</div>
         <div class="tide-content" style="flex:1;min-width:0;">
@@ -1364,6 +1373,7 @@ function openManifestCard(mid) {
   const screen = document.getElementById('manifest-card-screen');
   const cardContent = document.getElementById('manifest-card-content');
   if (!screen || !cardContent) return;
+  haptic(8);
 
   const visits = manifestVisits.filter(v => v.manifestId === mid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const lastVisit = visits[0];
@@ -1567,8 +1577,12 @@ function saveManifestPhoto(mid) {
 
 function closeManifestCard() {
   const screen = document.getElementById('manifest-card-screen');
-  if (screen) screen.classList.remove('visible');
-  window._currentManifestId = null;
+  if (!screen) return;
+  screen.classList.add('slide-out');
+  setTimeout(() => {
+    screen.classList.remove('visible', 'slide-out');
+    window._currentManifestId = null;
+  }, 190);
 }
 
 function _openManifestCard_old(mid) {
@@ -1712,7 +1726,8 @@ function saveVisit(mid) {
   saveVisitEntry(visit);
   haptic(10);
   closeMKeepCard();
-  closeManifestCard();
+  const screen2 = document.getElementById('manifest-card-screen');
+  if (screen2) { screen2.classList.remove('slide-out'); }
   openManifestCard(mid);
 }
 
@@ -1789,10 +1804,11 @@ function saveManifestEdit(mid) {
   saveManifestContact(m);
   haptic(10);
   closeMKeepCard();
-  // Refresh the manifest card screen in place
-  closeManifestCard();
-  openManifestCard(mid);
+  // Refresh card immediately without slide animation
+  const screen = document.getElementById('manifest-card-screen');
+  if (screen) { screen.classList.remove('slide-out'); }
   renderManifest();
+  openManifestCard(mid);
 }
 
 function openManifestAddModal() {
