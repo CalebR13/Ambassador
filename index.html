@@ -1876,7 +1876,7 @@ function saveVisit(mid) {
 
 function openManifestEditModal(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
-  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this){closeMKeepCard();setTimeout(()=>openManifestCard('${mid}'),220);}">
     <div class="modal-box" onclick="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;">
       <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Contact</h2>
       ${['pastor','church','city','state','phone','cell','email','church_email','address','website'].map(f=>`
@@ -1910,7 +1910,7 @@ function openManifestEditModal(mid) {
         <textarea id="me-notes" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;box-sizing:border-box;">${esc(m.notes||'')}</textarea>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button class="btn-cancel" onclick="closeMKeepCard();setTimeout(()=>openManifestCard('${mid}'),220)">Cancel</button>
         <button onclick="saveManifestEdit('${mid}')" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
       </div>
     </div>
