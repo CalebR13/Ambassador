@@ -1881,10 +1881,9 @@ function saveVisit(mid) {
 }
 
 function closeManifestEditModal() {
-  const mid = window._editModalMid;
   const l = document.getElementById('modal-layer');
   if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
-  // Card is already open behind the modal - no need to reopen it
+  showStatus('modal cleared', 'ok');
 }
 
 function openManifestEditModal(mid) {
