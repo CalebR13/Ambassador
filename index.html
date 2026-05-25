@@ -1870,12 +1870,8 @@ function saveVisit(mid) {
   manifestVisits.push(visit);
   saveVisitEntry(visit);
   haptic(10);
-  // Close modal and wait for it to fully clear before re-rendering
-  const l = document.getElementById('modal-layer');
-  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
-  const screen2 = document.getElementById('manifest-card-screen');
-  if (screen2) screen2.classList.remove('slide-out');
-  setTimeout(() => openManifestCard(mid), 50);
+  closeMKeepCard();
+  setTimeout(() => openManifestCard(mid), 220);
 }
 
 function openManifestEditModal(mid) {
