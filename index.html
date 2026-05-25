@@ -1343,11 +1343,13 @@ function renderManifest() {
 
   list.innerHTML = items.map(m => {
     const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
-    const supportBadge = m.support_status === 'Supporting'
-      ? `<span style="font-size:10px;font-weight:600;color:#4cd68a;background:#0a2a1a;border:1px solid #4cd68a44;border-radius:20px;padding:1px 7px;">Supporting</span>`
-      : m.support_status === 'Non-supporting'
-      ? `<span style="font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:1px 7px;">Non-supporting</span>`
-      : '';
+    // Use region color like Voyage, falling back to state-based region
+    const mRegion = m.groups ? (m.groups.toLowerCase().includes('illinois')||m.state==='IL' ? 'central' : STATE_REGION[m.state] || 'noncont') : (STATE_REGION[m.state] || 'noncont');
+    const mFakeContact = {region: mRegion, state: m.state};
+    const rcM = getRegionColor(mFakeContact);
+    const ringColor = m.support_status==='Supporting' ? '#2d7a4a' : m.support_status==='Non-supporting' ? '#6b2020' : 'transparent';
+    const ringWidth = m.support_status ? '2px' : '1.5px';
+
     const visits = manifestVisits.filter(v => v.manifestId === m.id);
     const lastVisit = visits.sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
     const lastVisitStr = lastVisit ? fmtCallDate(lastVisit.date) : 'No visits yet';
@@ -1356,17 +1358,14 @@ function renderManifest() {
 
     return `<div class="tide-entry-wrap manifest-list-row" onclick="openManifestCard('${m.id}')">
       <div class="tide-entry upcoming" style="border-left:none;">
-        <div class="tide-avatar" style="background:var(--surface2);color:var(--text);border:2px solid ${m.support_status==='Supporting'?'#2d7a4a':m.support_status==='Non-supporting'?'#6b2020':'var(--border)'};flex-shrink:0;">${initials}</div>
+        <div class="tide-avatar" style="background:${rcM.bg};color:${rcM.text};border:${ringWidth} solid ${ringColor||rcM.border};flex-shrink:0;">${initials}</div>
         <div class="tide-content" style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <div class="tide-pastor">${esc(m.pastor||'—')}</div>
-            ${prophecyIcon}${rvIcon}
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="tide-pastor" style="flex:1;min-width:0;">${esc(m.pastor||'—')}</div>
+            <div style="font-size:11px;color:var(--muted);flex-shrink:0;display:flex;align-items:center;gap:3px;">${prophecyIcon}${rvIcon}<span>${esc(m.city||'')}${m.state?', '+esc(m.state):''}</span></div>
           </div>
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}${m.city?' · '+esc(m.city)+', '+esc(m.state):''}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
-            ${supportBadge}
-            <span style="font-size:10px;color:var(--muted);">Last visit: ${lastVisitStr}</span>
-          </div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">Last visit: ${lastVisitStr}</div>
         </div>
       </div>
     </div>`;
@@ -1409,6 +1408,8 @@ function openManifestCard(mid) {
   const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
   const ringColor = m.support_status==='Supporting' ? '#2d7a4a' : m.support_status==='Non-supporting' ? '#6b2020' : 'var(--border)';
   const ringStyle = `border:2px solid ${ringColor};`;
+  const cardRegion = STATE_REGION[m.state] || 'noncont';
+  const rcCard = getRegionColor({region: cardRegion, state: m.state});
   const avatarHtml = m.photo
     ? `<img src="${esc(m.photo)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;${ringStyle}flex-shrink:0;" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/><div onclick="openPhotoEdit('${mid}')" style="display:none;width:72px;height:72px;border-radius:50%;background:var(--surface2);${ringStyle}align-items:center;justify-content:center;font-size:24px;font-weight:600;color:var(--text);flex-shrink:0;cursor:pointer;">${initials}</div>`
     : `<div onclick="openPhotoEdit('${mid}')" style="width:72px;height:72px;border-radius:50%;background:var(--surface2);${ringStyle}display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:var(--text);flex-shrink:0;cursor:pointer;" title="Add photo">${initials}</div>`;
@@ -1448,20 +1449,20 @@ function openManifestCard(mid) {
 
   cardContent.innerHTML = `
     <!-- HEADER -->
-    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:16px 16px 20px;">
+    <div style="background:${rcCard.bg};border-bottom:3px solid ${rcCard.border};padding:16px 16px 20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <button onclick="closeManifestCard()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;gap:6px;">
+        <button onclick="closeManifestCard()" style="background:none;border:none;color:${rcCard.text};opacity:0.8;font-size:22px;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;gap:6px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <button onclick="openManifestEditModal('${mid}')" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;">Edit</button>
+        <button onclick="openManifestEditModal('${mid}')" style="background:none;border:1px solid ${rcCard.border};border-radius:20px;padding:5px 14px;font-family:var(--sans);font-size:12px;color:${rcCard.text};opacity:0.8;cursor:pointer;">Edit</button>
       </div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
         ${avatarHtml}
         <div style="flex:1;min-width:0;">
-          <div style="font-family:var(--serif);font-size:22px;color:var(--text);line-height:1.2;margin-bottom:3px;">${esc(m.pastor||'—')}</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:2px;">${esc(m.church||'')}</div>
-          <div style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div style="font-family:var(--serif);font-size:22px;color:${rcCard.text};line-height:1.2;margin-bottom:3px;">${esc(m.pastor||'—')}</div>
+          <div style="font-size:13px;color:${rcCard.text};opacity:0.75;margin-bottom:2px;">${esc(m.church||'')}</div>
+          <div style="font-size:12px;color:${rcCard.text};opacity:0.7;display:flex;align-items:center;gap:4px;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             ${esc(m.city||'')}${m.state?', '+esc(m.state):''}
           </div>
         </div>
