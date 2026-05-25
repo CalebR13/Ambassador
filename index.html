@@ -250,6 +250,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
     </div>
     <div id="tides-list" class="tides-list"></div>
   </div>
+  <div id="manifest-card-screen" class="tides-screen" style="z-index:55;">
+    <div id="manifest-card-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;"></div>
+  </div>
   <div id="manifest-screen" class="tides-screen">
     <div class="card-topbar">
       <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Manifest</div>
@@ -1358,6 +1361,79 @@ function renderManifest() {
 // ── MANIFEST CARD ──
 function openManifestCard(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  const screen = document.getElementById('manifest-card-screen');
+  const content = document.getElementById('manifest-card-content');
+  if (!screen || !content) return;
+
+  const visits = manifestVisits.filter(v => v.manifestId === mid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const visitRows = visits.length ? visits.map(v => `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;" onclick="openVisitDetail('${mid}','${v.id}')">
+      <div style="min-width:72px;font-size:11px;color:var(--muted);padding-top:1px;">${fmtCallDate(v.date)||v.date}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;color:var(--text);">${esc(v.sermon||'—')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(v.capacity||'')}${v.days?' · '+v.days+' day'+(v.days>1?'s':''):''}${v.handout==='Yes'?' · Handout':''}</div>
+      </div>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>`).join('') : '<div style="padding:14px 16px;font-size:13px;color:var(--muted);">No visits logged yet</div>';
+
+  const infoRows = [
+    m.phone ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Phone</span><a href="tel:${m.phone}" style="font-size:13px;color:var(--accent);">${esc(fmtPhone(m.phone))}</a></div>` : '',
+    m.cell ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Cell</span><a href="tel:${m.cell}" style="font-size:13px;color:var(--accent);">${esc(fmtPhone(m.cell))}</a></div>` : '',
+    m.email ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Email</span><a href="mailto:${m.email}" style="font-size:13px;color:var(--accent);word-break:break-all;">${esc(m.email)}</a></div>` : '',
+    m.church_email ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Church Email</span><a href="mailto:${m.church_email}" style="font-size:13px;color:var(--accent);word-break:break-all;">${esc(m.church_email)}</a></div>` : '',
+    m.address ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Address</span><span style="font-size:13px;color:var(--text);">${esc(m.address)}</span></div>` : '',
+    m.website ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Website</span><a href="${m.website}" target="_blank" style="font-size:13px;color:var(--accent);">${esc(m.website)}</a></div>` : '',
+  ].filter(Boolean).join('');
+
+  const supportColor = m.support_status === 'Supporting' ? '#4cd68a' : m.support_status === 'Non-supporting' ? 'var(--muted)' : 'var(--muted)';
+  const facilities = [m.prophet_chamber==='Yes'?'Prophets Chamber':'', m.rv_hookup==='Yes'?'RV Hookup':'', m.bible_handouts==='Yes'?'Bible Handouts':''].filter(Boolean).join(' · ') || '—';
+
+  content.innerHTML = `
+    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button onclick="closeManifestCard()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1;">←</button>
+        <div style="flex:1;"></div>
+        <button onclick="openManifestEditModal('${mid}')" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 12px;font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;">Edit</button>
+      </div>
+      <div style="font-family:var(--serif);font-size:22px;color:var(--text);margin-bottom:4px;">${esc(m.pastor||'—')}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">${esc(m.church||'')}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">${esc(m.city||'')}${m.state?', '+esc(m.state):''}</div>
+      <div style="display:flex;gap:8px;">
+        ${m.phone||m.cell?`<a href="tel:${m.cell||m.phone}" style="flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--accent);text-align:center;text-decoration:none;">Call</a>`:''}
+        ${m.phone||m.cell?`<a href="sms:${m.cell||m.phone}" style="flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--accent);text-align:center;text-decoration:none;">Text</a>`:''}
+        ${m.email?`<a href="mailto:${m.email}" style="flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--accent);text-align:center;text-decoration:none;">Email</a>`:''}
+        <button onclick="openReminderFromManifest('${mid}')" style="flex:1;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;">Remind</button>
+      </div>
+    </div>
+    <div style="margin:12px 16px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:600;">Support</div>
+    <div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+      <div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Status</span><span style="font-size:13px;color:${supportColor};font-weight:500;">${esc(m.support_status||'—')}</span></div>
+      ${m.support_amount?`<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:80px;">Amount</span><span style="font-size:13px;color:var(--text);">$${esc(m.support_amount)}${m.support_cadence?' / '+esc(m.support_cadence):''}</span></div>`:''}
+    </div>
+    <div style="margin:12px 16px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:600;">Contact</div>
+    <div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">${infoRows||'<div style="padding:12px 16px;font-size:13px;color:var(--muted);">No contact info</div>'}</div>
+    <div style="margin:12px 16px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:600;">Facilities</div>
+    <div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 16px;font-size:13px;color:var(--text);">${facilities}</div>
+    ${m.notes?`<div style="margin:12px 16px 4px;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:600;">Notes</div><div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 16px;font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;">${esc(m.notes)}</div>`:''}
+    <div style="margin:12px 16px 4px;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:600;">Visit History</span>
+      <button onclick="openAddVisitModal('${mid}')" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:4px 12px;font-family:var(--sans);font-size:12px;font-weight:600;color:#000C1F;cursor:pointer;">+ Visit</button>
+    </div>
+    <div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">${visitRows}</div>
+  `;
+
+  screen.classList.add('visible');
+  window._currentManifestId = mid;
+}
+
+function closeManifestCard() {
+  const screen = document.getElementById('manifest-card-screen');
+  if (screen) screen.classList.remove('visible');
+  window._currentManifestId = null;
+}
+
+function _openManifestCard_old(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   const visits = manifestVisits.filter(v => v.manifestId === mid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
   const visitRows = visits.length ? visits.map(v => `
@@ -1377,7 +1453,7 @@ function openManifestCard(mid) {
     m.address ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Address</span><span style="font-size:13px;color:var(--text);">${esc(m.address)}</span></div>` : '',
     m.website ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Website</span><a href="${m.website}" target="_blank" style="font-size:13px;color:var(--accent);">${esc(m.website)}</a></div>` : '',
     `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Support</span><span style="font-size:13px;color:var(--text);">${esc(m.support_status||'—')}${m.support_amount?' · $'+m.support_amount:''}${m.support_cadence?' ('+m.support_cadence+')':''}</span></div>`,
-    `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Facilities</span><span style="font-size:13px;color:var(--text);">${m.prophet_chamber==='Yes'?'Prophet\'s Chamber':''} ${m.rv_hookup==='Yes'?'· RV Hookup':''} ${m.bible_handouts==='Yes'?'· Handouts':''}</span></div>`,
+    `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Facilities</span><span style="font-size:13px;color:var(--text);">${m.prophet_chamber==='Yes'?'Prophet Chamber':''} ${m.rv_hookup==='Yes'?'· RV Hookup':''} ${m.bible_handouts==='Yes'?'· Handouts':''}</span></div>`,
     m.notes ? `<div style="padding:10px 16px;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Notes</div><div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${esc(m.notes)}</div></div>` : '',
   ].filter(Boolean).join('');
 
@@ -1497,6 +1573,7 @@ function saveVisit(mid) {
   saveVisitEntry(visit);
   haptic(10);
   closeMKeepCard();
+  closeManifestCard();
   openManifestCard(mid);
 }
 
@@ -1573,6 +1650,8 @@ function saveManifestEdit(mid) {
   saveManifestContact(m);
   haptic(10);
   closeMKeepCard();
+  // Refresh the manifest card screen in place
+  closeManifestCard();
   openManifestCard(mid);
   renderManifest();
 }
