@@ -1882,8 +1882,8 @@ function closeManifestEditModal() {
 function openManifestEditModal(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   window._editModalMid = mid;
-  showM(`<div class="modal-backdrop" onclick="if(event.target===this)closeManifestEditModal()">
-    <div class="modal-box" onclick="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;">
+  showM(`<div class="modal-backdrop" onclick="alert('backdrop tapped');closeManifestEditModal();" style="cursor:default;">
+    <div class="modal-box" onclick="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;cursor:auto;">
       <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Contact</h2>
       ${['pastor','church','city','state','phone','cell','email','church_email','address','website'].map(f=>`
         <div style="margin-bottom:10px;">
