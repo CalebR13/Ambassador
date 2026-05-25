@@ -1947,11 +1947,7 @@ function saveManifestEdit(mid) {
   saveManifestContact(m);
   haptic(10);
   closeMKeepCard();
-  // Refresh card immediately without slide animation
-  const screen = document.getElementById('manifest-card-screen');
-  if (screen) { screen.classList.remove('slide-out'); }
-  renderManifest();
-  openManifestCard(mid);
+  setTimeout(() => { renderManifest(); openManifestCard(mid); }, 220);
 }
 
 function openManifestAddModal() {
