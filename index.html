@@ -250,6 +250,22 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
     </div>
     <div id="tides-list" class="tides-list"></div>
   </div>
+  <div id="manifest-screen" class="tides-screen">
+    <div class="card-topbar">
+      <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Manifest</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="manifest-filter" onchange="renderManifest()" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:11px;background:var(--surface);color:var(--muted);cursor:pointer;">
+          <option value="all">All</option>
+          <option value="Supporting">Supporting</option>
+          <option value="Non-supporting">Non-supporting</option>
+          <option value="Scheduled">Scheduled</option>
+          <option value="prayer">Prayer List</option>
+        </select>
+        <button onclick="openManifestAddModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Add</button>
+      </div>
+    </div>
+    <div id="manifest-list" class="tides-list"></div>
+  </div>
   <div class="bottom-nav" id="bottom-nav">
     <button class="bottom-nav-btn active" id="nav-voyage" onclick="switchWing('voyage')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-8 4 4 4-6 4 10"/><path d="M3 21h18"/></svg>
@@ -261,6 +277,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
         <span id="tides-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#e05555;color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 4px;min-width:14px;text-align:center;line-height:14px;"></span>
       </div>
       Tides
+    </button>
+    <button class="bottom-nav-btn" id="nav-manifest" onclick="switchWing('manifest')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Manifest
     </button>
   </div>
 </div>
@@ -678,29 +698,33 @@ let currentWing = 'voyage';
 function switchWing(wing) {
   if (currentWing === wing) return;
   const fade = document.getElementById('wing-fade');
-
-  // Fade to black
   fade.classList.add('show');
 
   setTimeout(() => {
     currentWing = wing;
     const tidesScreen = document.getElementById('tides-screen');
+    const manifestScreen = document.getElementById('manifest-screen');
     const voyageEls = ['state-filter-row','list-header','main-list','fullscreen-card','proximity-screen'];
 
     document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('nav-' + wing)?.classList.add('active');
 
+    // Hide all
+    tidesScreen.classList.remove('visible');
+    manifestScreen.classList.remove('visible');
+    voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+
     if (wing === 'tides') {
       tidesScreen.classList.add('visible');
-      voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
       renderTides();
+    } else if (wing === 'manifest') {
+      manifestScreen.classList.add('visible');
+      renderManifest();
     } else {
-      tidesScreen.classList.remove('visible');
       voyageEls.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ''; });
       renderList();
     }
 
-    // Fade back in
     setTimeout(() => { fade.classList.remove('show'); }, 20);
   }, 150);
 }
@@ -1230,7 +1254,330 @@ function showLongPressMenu(cid, x, y) {
   </div>`);
 }
 
-load().then(()=>{renderFilters();renderList();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);});
+
+// ── MANIFEST DATA ──
+let manifestContacts = [];
+let manifestVisits = [];
+
+function loadManifest() {
+  return new Promise((resolve) => {
+    const cbName = 'relay_mcb_' + Date.now();
+    window[cbName] = (data) => { manifestContacts = data || []; delete window[cbName]; resolve(); };
+    const s = document.createElement('script');
+    s.src = SCRIPT_URL + '?action=getManifest&secret=' + SECRET + '&callback=' + cbName;
+    document.head.appendChild(s);
+  });
+}
+
+function loadVisits() {
+  return new Promise((resolve) => {
+    const cbName = 'relay_vcb_' + Date.now();
+    window[cbName] = (data) => { manifestVisits = data || []; delete window[cbName]; resolve(); };
+    const s = document.createElement('script');
+    s.src = SCRIPT_URL + '?action=getVisits&secret=' + SECRET + '&callback=' + cbName;
+    document.head.appendChild(s);
+  });
+}
+
+function saveManifestContact(m) {
+  save();
+  fetch(SCRIPT_URL + '?action=saveManifest&secret=' + SECRET + '&data=' + encodeURIComponent(JSON.stringify(m))).catch(()=>{});
+}
+
+function saveVisitEntry(v) {
+  fetch(SCRIPT_URL + '?action=saveVisit&secret=' + SECRET + '&data=' + encodeURIComponent(JSON.stringify(v))).catch(()=>{});
+}
+
+// ── MANIFEST RENDER ──
+function renderManifest() {
+  const list = document.getElementById('manifest-list');
+  if (!list) return;
+
+  const filter = document.getElementById('manifest-filter')?.value || 'all';
+  let items = [...manifestContacts];
+
+  if (filter === 'Supporting') items = items.filter(m => m.support_status === 'Supporting');
+  else if (filter === 'Non-supporting') items = items.filter(m => m.support_status === 'Non-supporting');
+  else if (filter === 'Scheduled') items = items.filter(m => (m.groups||'').includes('Scheduled'));
+  else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
+
+  items.sort((a,b) => (a.pastor||'').localeCompare(b.pastor||''));
+
+  if (!items.length) {
+    list.innerHTML = '<div class="tide-empty"><div style="font-size:14px">No contacts</div></div>';
+    return;
+  }
+
+  list.innerHTML = items.map(m => {
+    const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+    const supportBadge = m.support_status === 'Supporting'
+      ? `<span style="font-size:10px;font-weight:600;color:#4cd68a;background:#0a2a1a;border:1px solid #4cd68a44;border-radius:20px;padding:1px 7px;">Supporting</span>`
+      : m.support_status === 'Non-supporting'
+      ? `<span style="font-size:10px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:1px 7px;">Non-supporting</span>`
+      : '';
+    const visits = manifestVisits.filter(v => v.manifestId === m.id);
+    const lastVisit = visits.sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+    const lastVisitStr = lastVisit ? fmtCallDate(lastVisit.date) : 'No visits yet';
+    const prophecyIcon = m.prophet_chamber === 'Yes' ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F3B53A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="Prophet's Chamber"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>` : '';
+    const rvIcon = m.rv_hookup === 'Yes' ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#5b9fd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="RV Hookup"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>` : '';
+
+    return `<div class="tide-entry-wrap" onclick="openManifestCard('${m.id}')">
+      <div class="tide-entry upcoming" style="border-left:none;">
+        <div class="tide-avatar" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border);flex-shrink:0;">${initials}</div>
+        <div class="tide-content" style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="tide-pastor">${esc(m.pastor||'—')}</div>
+            ${prophecyIcon}${rvIcon}
+          </div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}${m.city?' · '+esc(m.city)+', '+esc(m.state):''}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
+            ${supportBadge}
+            <span style="font-size:10px;color:var(--muted);">Last visit: ${lastVisitStr}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MANIFEST CARD ──
+function openManifestCard(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  const visits = manifestVisits.filter(v => v.manifestId === mid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+
+  const visitRows = visits.length ? visits.map(v => `
+    <div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;" onclick="openVisitDetail('${mid}','${v.id}')">
+      <div style="min-width:70px;font-size:11px;color:var(--muted);">${fmtCallDate(v.date)||v.date}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;color:var(--text);">${esc(v.sermon||'—')}</div>
+        <div style="font-size:11px;color:var(--muted);">${esc(v.capacity||'')}${v.days?' · '+v.days+' day'+(v.days>1?'s':''):''}${v.handout==='Yes'?' · Handout':''}</div>
+      </div>
+    </div>`).join('') : '<div style="padding:14px 16px;font-size:13px;color:var(--muted);">No visits logged yet</div>';
+
+  const infoRows = [
+    m.phone ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Phone</span><a href="tel:${m.phone}" style="font-size:13px;color:var(--accent);">${esc(m.phone)}</a></div>` : '',
+    m.cell ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Cell</span><a href="tel:${m.cell}" style="font-size:13px;color:var(--accent);">${esc(m.cell)}</a></div>` : '',
+    m.email ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Email</span><a href="mailto:${m.email}" style="font-size:13px;color:var(--accent);">${esc(m.email)}</a></div>` : '',
+    m.church_email ? `<div style="display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Church Email</span><a href="mailto:${m.church_email}" style="font-size:13px;color:var(--accent);">${esc(m.church_email)}</a></div>` : '',
+    m.address ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Address</span><span style="font-size:13px;color:var(--text);">${esc(m.address)}</span></div>` : '',
+    m.website ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Website</span><a href="${m.website}" target="_blank" style="font-size:13px;color:var(--accent);">${esc(m.website)}</a></div>` : '',
+    `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Support</span><span style="font-size:13px;color:var(--text);">${esc(m.support_status||'—')}${m.support_amount?' · $'+m.support_amount:''}${m.support_cadence?' ('+m.support_cadence+')':''}</span></div>`,
+    `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Facilities</span><span style="font-size:13px;color:var(--text);">${m.prophet_chamber==='Yes'?'Prophet\'s Chamber':''} ${m.rv_hookup==='Yes'?'· RV Hookup':''} ${m.bible_handouts==='Yes'?'· Handouts':''}</span></div>`,
+    m.notes ? `<div style="padding:10px 16px;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Notes</div><div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${esc(m.notes)}</div></div>` : '',
+  ].filter(Boolean).join('');
+
+  const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-height:88vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+      <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;">
+        <div style="width:42px;height:42px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;">${initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:16px;font-weight:600;color:var(--text);">${esc(m.pastor||'—')}</div>
+          <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}${m.city?' · '+esc(m.city)+', '+esc(m.state):''}</div>
+        </div>
+        <button onclick="openManifestEditModal('${mid}')" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;">Edit</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;">
+        ${infoRows}
+        <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
+          <span style="font-size:12px;font-weight:600;color:var(--text);">Visit History</span>
+          <button onclick="openAddVisitModal('${mid}')" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:5px 12px;font-family:var(--sans);font-size:12px;font-weight:600;color:#000C1F;cursor:pointer;">+ Visit</button>
+        </div>
+        ${visitRows}
+        <div style="padding:12px 16px;">
+          <button onclick="closeMKeepCard();openReminderFromManifest('${mid}')" style="width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Set Reminder in Tides
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`);
+}
+
+function openVisitDetail(mid, vid) {
+  const v = manifestVisits.find(x => x.id === vid); if (!v) return;
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:12px;">${fmtCallDate(v.date)||v.date}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Sermon</div><div style="font-size:13px;color:var(--text);">${esc(v.sermon||'—')}</div></div>
+        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Capacity</div><div style="font-size:13px;color:var(--text);">${esc(v.capacity||'—')}</div></div>
+        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Length</div><div style="font-size:13px;color:var(--text);">${v.days?v.days+' day'+(v.days>1?'s':''):'—'}</div></div>
+        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Handout</div><div style="font-size:13px;color:var(--text);">${v.handout||'—'}</div></div>
+      </div>
+      ${v.notes?`<div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${esc(v.notes)}</div>`:''}
+      <div class="modal-actions" style="margin-top:14px;"><button class="btn-cancel" onclick="closeMKeepCard()">Close</button></div>
+    </div>
+  </div>`);
+}
+
+function openAddVisitModal(mid) {
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Log a Visit</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Date</div>
+        <input type="date" id="v-date" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Days stayed</div>
+        <input type="number" id="v-days" min="1" placeholder="1" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/></div>
+      </div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message</div>
+      <input type="text" id="v-sermon" placeholder="What did you preach?" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;box-sizing:border-box;"/>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Capacity</div>
+      <select id="v-capacity" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">
+        <option value="">Select...</option>
+        <option>Sunday AM</option>
+        <option>Sunday PM</option>
+        <option>Wednesday</option>
+        <option>Mission Conference</option>
+        <option>Revival</option>
+        <option>Other</option>
+      </select>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Bible Handout?</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button id="v-handout-yes" onclick="setVisitHandout('Yes')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:var(--sans);font-size:13px;cursor:pointer;">Yes</button>
+        <button id="v-handout-no" onclick="setVisitHandout('No')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:var(--sans);font-size:13px;cursor:pointer;">No</button>
+      </div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
+      <textarea id="v-notes" placeholder="Anything else to remember..." style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:60px;resize:vertical;margin-bottom:14px;box-sizing:border-box;"></textarea>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="saveVisit('${mid}')" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save Visit</button>
+      </div>
+    </div>
+  </div>`);
+  window._visitHandout = '';
+}
+
+function setVisitHandout(val) {
+  window._visitHandout = val;
+  ['Yes','No'].forEach(v => {
+    const btn = document.getElementById('v-handout-' + v.toLowerCase());
+    if (!btn) return;
+    const active = v === val;
+    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
+    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
+    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+  });
+}
+
+function saveVisit(mid) {
+  const d = document.getElementById('v-date')?.value;
+  if (!d) { alert('Please pick a date.'); return; }
+  const visit = {
+    id: uid(),
+    manifestId: mid,
+    date: d,
+    days: document.getElementById('v-days')?.value || '',
+    sermon: document.getElementById('v-sermon')?.value || '',
+    capacity: document.getElementById('v-capacity')?.value || '',
+    handout: window._visitHandout || '',
+    notes: document.getElementById('v-notes')?.value || '',
+  };
+  manifestVisits.push(visit);
+  saveVisitEntry(visit);
+  haptic(10);
+  closeMKeepCard();
+  openManifestCard(mid);
+}
+
+function openManifestEditModal(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;">
+      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Contact</h2>
+      ${['pastor','church','city','state','phone','cell','email','church_email','address','website'].map(f=>`
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">${f.replace('_',' ')}</div>
+          <input type="text" id="me-${f}" value="${esc(m[f]||'')}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>`).join('')}
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Support Status</div>
+        <select id="me-support_status" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);">
+          <option value="" ${!m.support_status?'selected':''}>None</option>
+          <option value="Supporting" ${m.support_status==='Supporting'?'selected':''}>Supporting</option>
+          <option value="Non-supporting" ${m.support_status==='Non-supporting'?'selected':''}>Non-supporting</option>
+        </select>
+      </div>
+      ${['support_amount','support_cadence'].map(f=>`
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">${f.replace('_',' ')}</div>
+          <input type="text" id="me-${f}" value="${esc(m[f]||'')}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>`).join('')}
+      ${["prophet_chamber","rv_hookup","bible_handouts"].map(f=>`
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">${f.replace(/_/g,' ')}</div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="setManifestToggle('${f}','Yes')" id="mt-${f}-yes" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${m[f]==='Yes'?'#F3B53A':'var(--border)'};background:${m[f]==='Yes'?'#2e1f00':'var(--surface2)'};color:${m[f]==='Yes'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Yes</button>
+            <button onclick="setManifestToggle('${f}','No')" id="mt-${f}-no" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${m[f]==='No'?'#F3B53A':'var(--border)'};background:${m[f]==='No'?'#2e1f00':'var(--surface2)'};color:${m[f]==='No'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">No</button>
+          </div>
+        </div>`).join('')}
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
+        <textarea id="me-notes" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;box-sizing:border-box;">${esc(m.notes||'')}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="saveManifestEdit('${mid}')" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
+      </div>
+    </div>
+  </div>`);
+  window._manifestToggles = {prophet_chamber: m.prophet_chamber||'', rv_hookup: m.rv_hookup||'', bible_handouts: m.bible_handouts||''};
+}
+
+function setManifestToggle(field, val) {
+  if (!window._manifestToggles) window._manifestToggles = {};
+  window._manifestToggles[field] = val;
+  ['Yes','No'].forEach(v => {
+    const btn = document.getElementById('mt-' + field + '-' + v.toLowerCase());
+    if (!btn) return;
+    const active = v === val;
+    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
+    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
+    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+  });
+}
+
+function saveManifestEdit(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  ['pastor','church','city','state','phone','cell','email','church_email','address','website','support_amount','support_cadence'].forEach(f => {
+    const el = document.getElementById('me-' + f);
+    if (el) m[f] = el.value;
+  });
+  const ss = document.getElementById('me-support_status');
+  if (ss) m.support_status = ss.value;
+  const notes = document.getElementById('me-notes');
+  if (notes) m.notes = notes.value;
+  if (window._manifestToggles) {
+    Object.assign(m, window._manifestToggles);
+  }
+  saveManifestContact(m);
+  haptic(10);
+  closeMKeepCard();
+  openManifestCard(mid);
+  renderManifest();
+}
+
+function openManifestAddModal() {
+  const newId = 'mfst-' + uid();
+  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', prophet_chamber:'', rv_hookup:'', bible_handouts:'', support_status:'', support_amount:'', support_cadence:'', relay_group:'', prayer_list:'', notes:''};
+  manifestContacts.push(m);
+  openManifestEditModal(newId);
+}
+
+function openReminderFromManifest(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  // Create a fake contact-like object so openReminderModal works
+  // We'll add the reminder to a special manifest-reminder contact
+  switchWing('tides');
+  setTimeout(() => openTidesReminderModal(), 300);
+}
+
+load().then(()=>{renderFilters();renderList();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);loadManifest();loadVisits();});
 window.addEventListener('resize',renderList);
 const _origRenderList = renderList;
 renderList = function(...a) { _origRenderList(...a); reInitScrollHaptics(); };
