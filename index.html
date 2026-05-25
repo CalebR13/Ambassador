@@ -712,10 +712,14 @@ function switchWing(wing) {
     currentWing = wing;
     const tidesScreen = document.getElementById('tides-screen');
     const manifestScreen = document.getElementById('manifest-screen');
-    const voyageEls = ['state-filter-row','list-header','main-list','fullscreen-card','proximity-screen'];
+    const voyageEls = ['state-filter-row','list-header','main-list','proximity-screen'];
 
     document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('nav-' + wing)?.classList.add('active');
+
+    // Always close any open calling card cleanly without animation
+    const card = document.getElementById('fullscreen-card');
+    if (card) { card.classList.remove('visible','slide-out','slide-in'); card.innerHTML=''; contactMenuOpen=false; }
 
     // Hide all
     tidesScreen.classList.remove('visible');
