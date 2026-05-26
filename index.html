@@ -561,6 +561,7 @@ function renderCallingCard(){
         <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')"><span class="btn-icon">${ICONS.bell}</span><span class="btn-label">Remind</span></button>
         <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">${ICONS.calendar}</span><span class="btn-label">Schedule</span></button>
       </div>
+      ${(c.calls||[]).some(x=>x.meetingBooked) ? `<div style="padding:0 16px 4px;"><button onclick="openSetSailModal('${c.id}')" style="width:100%;padding:11px;background:linear-gradient(135deg,#1a2e22,#1e2244);border:1px solid #4a9e6b44;border-radius:var(--radius);font-family:var(--serif);font-size:15px;color:#4cd68a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">${ICONS.pin} Set Sail → Manifest</button></div>` : ''}
       <div class="contact-submenu${contactMenuOpen?' open':''}">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);const msgSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>`;const emailSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>`;let out='';if(phones.length){phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="text-decoration:none;">${ICONS.cellPhone} ${phones.length>1?p:'Call'}</a>`;});phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="text-decoration:none;">${msgSvg} ${phones.length>1?'Text '+p:'Text'}</a>`;});}else{out+=`<span class="contact-sub-btn" style="opacity:.3;">${ICONS.phone} No phone</span>`;}if(emails.length){emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="text-decoration:none;">${emailSvg} ${emails.length>1?e:'Email'}</a>`;});}else{out+=`<span class="contact-sub-btn" style="opacity:.3;">${emailSvg} No email</span>`;}return out;})()}</div>
       <div class="card-history"><div class="history-title">Timeline (${realCalls.length})</div>
         ${calls.length?calls.map(x=>{
@@ -1936,6 +1937,70 @@ function saveVisit(mid) {
   haptic(10);
   closeMKeepCard();
   setTimeout(() => openManifestCard(mid), 220);
+}
+
+function openSetSailModal(cid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const meetingCall = (c.calls||[]).filter(x=>x.meetingBooked).slice(-1)[0];
+  const meetingDate = meetingCall?.meetingDate || '';
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()" style="background:linear-gradient(180deg,#0e1a12,var(--surface));border-color:#4a9e6b44;">
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:36px;margin-bottom:8px;">⚓</div>
+        <h2 style="font-family:var(--serif);font-size:22px;color:#4cd68a;margin-bottom:6px;">Set Sail to Manifest</h2>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5;">
+          <strong style="color:var(--text);">${esc(c.pastor||c.church||'This contact')}</strong> has a meeting booked${meetingDate?' for <strong style="color:#4cd68a;">'+esc(meetingDate)+'</strong>':''}.
+          <br/><br/>Move them to Manifest and remove from Voyage?
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Not yet</button>
+        <button onclick="setSailToManifest('${cid}')" style="flex:2;padding:13px;background:linear-gradient(135deg,#1a3a28,#1e2244);border:1px solid #4a9e6b66;border-radius:var(--radius-sm);font-family:var(--serif);font-size:15px;color:#4cd68a;cursor:pointer;">⚓ Set Sail</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function setSailToManifest(cid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  haptic(20);
+  // Create new Manifest entry from Voyage contact
+  const newId = 'mfst-' + uid();
+  const m = {
+    id: newId,
+    pastor: c.pastor || '',
+    church: c.church || '',
+    city: c.city || '',
+    state: c.state || '',
+    phone: c.phone || '',
+    cell: c.cell || '',
+    email: c.email || '',
+    church_email: '',
+    address: c.address || '',
+    website: '',
+    groups: 'Scheduled',
+    prophet_chamber: '',
+    rv_hookup: '',
+    bible_handouts: '',
+    support_status: '',
+    support_amount: '',
+    support_cadence: '',
+    relay_group: '',
+    prayer_list: '',
+    notes: c.notes ? (Array.isArray(c.notes) ? c.notes.join('\n') : c.notes) : '',
+    starred: c.starred || false,
+  };
+  manifestContacts.push(m);
+  saveManifestContact(m);
+  // Remove from Voyage
+  contacts = contacts.filter(x => x.id !== cid);
+  save();
+  deleteContactEntry(cid);
+  closeMKeepCard();
+  closeCard();
+  renderFilters();
+  renderList();
+  showStatus('Set sail to Manifest ⚓', 'ok');
 }
 
 function openManifestEmailCopy() {
