@@ -1026,6 +1026,9 @@ function openTideDetail(cid, xid) {
       </div>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
       <textarea id="td-note" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:64px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${esc(existingNote)}</textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <button onclick="closeMKeepCard()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1;">&times;</button>
+      </div>
       <div style="display:flex;gap:8px;">
         <button onclick="closeMKeepCard();openCallingCardFromTides('${cid}')" style="flex:1;padding:11px;background:#1a2d4a;border:1px solid #5b9fd444;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;font-weight:600;color:#5b9fd4;cursor:pointer;">Go to Contact</button>
         <button onclick="saveTideDetail()" style="flex:2;padding:11px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;">Save</button>
@@ -1163,8 +1166,9 @@ function renderTidesSearch() {
 }
 
 function openReminderFromTides(cid) {
-  closeMKeepCard();
-  openReminderModal(cid);
+  const l = document.getElementById('modal-layer');
+  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
+  setTimeout(() => openReminderModal(cid), 220);
 }
 
 
@@ -1892,8 +1896,8 @@ function closeManifestEditModal() {
 function openManifestEditModal(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   window._editModalMid = mid;
-  showM(`<div class="modal-backdrop" onclick="closeManifestEditModal()" style="cursor:default;">
-    <div class="modal-box" onclick="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;cursor:auto;">
+  showM(`<div class="modal-backdrop" onclick="closeManifestEditModal()" ontouchend="if(event.target===this){event.preventDefault();closeManifestEditModal();}" style="cursor:default;">
+    <div class="modal-box" onclick="event.stopPropagation()" ontouchend="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;cursor:auto;">
       <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Contact</h2>
       ${['pastor','church','city','state','phone','cell','email','church_email','address','website'].map(f=>`
         <div style="margin-bottom:10px;">
