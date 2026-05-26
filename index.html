@@ -271,6 +271,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
           <option value="Scheduled">Scheduled</option>
           <option value="prayer">Prayer List</option>
         </select>
+        <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Copy emails"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
         <button onclick="openManifestAddModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Add</button>
       </div>
     </div>
@@ -1935,6 +1936,44 @@ function saveVisit(mid) {
   haptic(10);
   closeMKeepCard();
   setTimeout(() => openManifestCard(mid), 220);
+}
+
+function openManifestEmailCopy() {
+  const filter = document.getElementById('manifest-filter')?.value || 'all';
+  const mq = (document.getElementById('manifest-search')?.value || '').trim().toLowerCase();
+  let items = [...manifestContacts];
+
+  if (filter === 'Supporting') items = items.filter(m => m.support_status === 'Supporting');
+  else if (filter === 'Non-supporting') items = items.filter(m => m.support_status === 'Non-supporting');
+  else if (filter === 'Scheduled') items = items.filter(m => (m.groups||'').includes('Scheduled'));
+  else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
+  if (mq) items = items.filter(m =>
+    (m.pastor||'').toLowerCase().includes(mq) ||
+    (m.church||'').toLowerCase().includes(mq) ||
+    (m.city||'').toLowerCase().includes(mq) ||
+    (m.state||'').toLowerCase().includes(mq)
+  );
+
+  // Collect all unique emails
+  const emails = [];
+  items.forEach(m => {
+    [m.email, m.church_email].forEach(e => {
+      if (e && e.trim() && !emails.includes(e.trim())) emails.push(e.trim());
+    });
+  });
+
+  const filterLabel = filter === 'all' ? 'All contacts' : filter === 'prayer' ? 'Prayer list' : filter;
+  const emailStr = emails.join(', ');
+
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:4px;">Email List</h2>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">${filterLabel}${mq?' · "'+mq+'"':''} · ${emails.length} address${emails.length!==1?'es':''}</div>
+      <textarea readonly onclick="this.select()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;background:var(--bg);color:var(--text);min-height:120px;resize:none;box-sizing:border-box;line-height:1.6;">${esc(emailStr)}</textarea>
+      ${emails.length ? `<button onclick="navigator.clipboard.writeText('${emailStr.replace(/'/g,"\\'")}').then(()=>showStatus('Copied!','ok'))" style="width:100%;margin-top:10px;padding:12px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Copy to Clipboard</button>` : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:8px 0;">No emails found for this filter</div>'}
+      <button class="btn-cancel" onclick="closeMKeepCard()" style="width:100%;margin-top:8px;">Close</button>
+    </div>
+  </div>`);
 }
 
 function deleteManifestContact(mid) {
