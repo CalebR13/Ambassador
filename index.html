@@ -58,7 +58,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .reminder-dot{width:7px;height:7px;border-radius:50%;background:#f0b429;display:inline-block;margin-left:5px;vertical-align:middle;}
 .empty-state{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:14px;}
 .proximity-screen{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
-.proximity-screen.visible{display:flex;}
+.proximity-screen.visible{display:flex;animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);}
+.proximity-screen.slide-out{animation:slideOutRight .2s cubic-bezier(0.55,0,1,0.45);}
 .prox-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .fullscreen-card{position:absolute;inset:0;z-index:100;background:var(--bg);flex-direction:column;overflow:hidden;display:none;}
 .fullscreen-card.slide-in{animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);}
@@ -376,7 +377,11 @@ function openProximityScreen(){
   scr.innerHTML=`<div class="card-topbar"><button class="card-back-btn" onclick="closeProximityScreen()">←</button><div style="flex:1;text-align:center;font-family:var(--serif);font-size:17px;color:var(--text)">Nearby</div><div style="width:60px"></div></div><div style="padding:16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;gap:10px;"><div style="display:flex;gap:8px;"><input id="prox-city" type="text" placeholder="City…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);"/><select id="prox-state" style="padding:10px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);width:80px;"><option value="">State</option>${stateOpts}</select></div><div style="display:flex;gap:8px;align-items:center;"><label style="font-size:12px;color:var(--muted);white-space:nowrap;">Within</label><select id="prox-radius" style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;background:var(--bg);color:var(--text);"><option value="25">25 mi</option><option value="50" selected>50 mi</option><option value="100">100 mi</option><option value="200">200 mi</option><option value="500">500 mi</option><option value="99999">Any distance</option></select><button onclick="runProximitySearch()" style="flex:1;padding:9px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;">Search</button></div><button onclick="useMyLocation()" style="padding:9px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>Use my location</button></div><div class="prox-body" id="prox-results"><div class="empty-state">Enter a city and state to find nearby contacts</div></div>`;
   setTimeout(()=>{const ci=document.getElementById('prox-city');if(ci)ci.addEventListener('keydown',e=>{if(e.key==='Enter')runProximitySearch();});},50);
 }
-function closeProximityScreen(){document.getElementById('proximity-screen').classList.remove('visible');}
+function closeProximityScreen(){
+  const scr=document.getElementById('proximity-screen');
+  scr.classList.add('slide-out');
+  setTimeout(()=>{ scr.classList.remove('visible','slide-out'); },190);
+}
 function useMyLocation(){if(!navigator.geolocation){alert('Location not available.');return;}navigator.geolocation.getCurrentPosition(pos=>{renderProximityResults(pos.coords.latitude,pos.coords.longitude);},()=>alert('Could not get your location.'));}
 async function runProximitySearch(){
   const city=(document.getElementById('prox-city').value||'').trim();const state=(document.getElementById('prox-state').value||'').trim();
@@ -948,13 +953,13 @@ function renderCompletedSection(items) {
   const rows = shown.map(({contact: c, call}) => {
     const rc = getRegionColor(c);
     const dateLabel = call.date ? fmtCallDate(call.date) : '';
-    return `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;opacity:0.5;">
-      <div class="tide-avatar" style="width:28px;height:28px;font-size:10px;background:${rc.bg};color:${rc.text};border:1px solid ${rc.border};border-radius:50%;display:flex;align-items:center;justify-content:center;">${ini(c.pastor||c.church||'?')}</div>
-      <div style="flex:1;min-width:0;">
+    return `<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+      <div class="tide-avatar" style="width:28px;height:28px;font-size:10px;background:${rc.bg};color:${rc.text};border:1px solid ${rc.border};border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0.5;">${ini(c.pastor||c.church||'?')}</div>
+      <div style="flex:1;min-width:0;opacity:0.5;">
         <div style="font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.pastor||'—')}</div>
         <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.church||'')}${c.city?' · '+esc(c.city):''}${dateLabel?' · '+dateLabel:''}</div>
       </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4cd68a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <button onclick="undoCompleteReminder('${c.id}','${call.id}')" style="background:none;border:1px solid var(--border);border-radius:12px;padding:4px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;flex-shrink:0;">Put back</button>
     </div>`;
   }).join('');
   return `<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:8px;">
@@ -1101,6 +1106,30 @@ function completeTideReminder(cid, xid) {
   const call = c.calls.find(x => x.id === xid); if (!call) return;
   call.outcome = 'note'; call.completed = true;
   save(); saveCallEntry(cid, call); renderTides(); renderList(); updateTidesBadge();
+  // Show undo toast for 5 seconds
+  showUndoToast(cid, xid);
+}
+
+function showUndoToast(cid, xid) {
+  let toast = document.getElementById('undo-toast');
+  if (toast) clearTimeout(toast._t);
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'undo-toast';
+    document.body.appendChild(toast);
+  }
+  toast.style.cssText = 'position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:8px 8px 8px 16px;font-family:var(--sans);font-size:13px;color:var(--text);z-index:500;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;';
+  toast.innerHTML = `<span>Reminder completed</span><button onclick="undoCompleteReminder('${cid}','${xid}')" style="background:#F3B53A;border:none;border-radius:12px;padding:5px 12px;font-family:var(--sans);font-size:12px;font-weight:700;color:#000;cursor:pointer;">Undo</button>`;
+  toast._t = setTimeout(() => { toast.style.display = 'none'; }, 5000);
+}
+
+function undoCompleteReminder(cid, xid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+  call.outcome = 'reminder'; call.completed = false;
+  save(); saveCallEntry(cid, call); renderTides(); renderList(); updateTidesBadge();
+  const toast = document.getElementById('undo-toast');
+  if (toast) toast.style.display = 'none';
 }
 
 function openSnoozeModal(cid, xid) {
