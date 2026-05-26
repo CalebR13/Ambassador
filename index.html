@@ -1937,6 +1937,19 @@ function saveVisit(mid) {
   setTimeout(() => openManifestCard(mid), 220);
 }
 
+function deleteManifestContact(mid) {
+  if (!confirm('Delete this contact? This cannot be undone.')) return;
+  manifestContacts = manifestContacts.filter(x => x.id !== mid);
+  const l = document.getElementById('modal-layer');
+  if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
+  closeManifestCard();
+  renderManifest();
+  // Also delete from sheets if connected
+  if (sheetsReady) {
+    fetch(SCRIPT_URL + '?action=deleteManifest&secret=' + SECRET + '&id=' + encodeURIComponent(mid)).catch(()=>{});
+  }
+}
+
 function closeManifestEditModal() {
   const l = document.getElementById('modal-layer');
   if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
@@ -1957,7 +1970,10 @@ function openManifestEditModal(mid) {
   window._editModalMid = mid;
   showM(`<div class="modal-backdrop" onclick="closeManifestEditModal()" ontouchend="if(event.target===this){event.preventDefault();closeManifestEditModal();}" style="cursor:default;">
     <div class="modal-box" onclick="event.stopPropagation()" ontouchend="event.stopPropagation()" style="padding:20px 16px 24px;max-height:85vh;overflow-y:auto;cursor:auto;">
-      <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:14px;">Edit Contact</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <h2 style="font-family:var(--serif);font-size:20px;margin:0;">Edit Contact</h2>
+        <button onclick="deleteManifestContact('${mid}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>
+      </div>
       ${['pastor','church','city','state','phone','cell','email','church_email','address','website'].map(f=>`
         <div style="margin-bottom:10px;">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">${f.replace('_',' ')}</div>
