@@ -857,11 +857,12 @@ function renderTides() {
   });
 
   // Gather completed reminders for history
+  // Supports both old format (outcome=reminder,completed=true) and new (outcome=note,completed=true)
   const completedItems = [];
   contacts.forEach(c => {
     (c.calls || []).forEach(call => {
-      if (call.outcome !== 'reminder') return;
       if (!call.completed) return;
+      if (call.outcome !== 'note' && call.outcome !== 'reminder') return;
       completedItems.push({ contact: c, call });
     });
   });
