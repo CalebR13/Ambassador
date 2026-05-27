@@ -1915,17 +1915,65 @@ function openVisitDetail(mid, vid) {
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:12px;">${fmtCallDate(v.date)||v.date}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Sermon</div><div style="font-size:13px;color:var(--text);">${esc(v.sermon||'—')}</div></div>
-        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Capacity</div><div style="font-size:13px;color:var(--text);">${esc(v.capacity||'—')}</div></div>
-        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Length</div><div style="font-size:13px;color:var(--text);">${v.days?v.days+' day'+(v.days>1?'s':''):'—'}</div></div>
-        <div style="padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Handout</div><div style="font-size:13px;color:var(--text);">${v.handout||'—'}</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <h2 style="font-family:var(--serif);font-size:18px;margin:0;">Edit Visit</h2>
+        <button onclick="deleteVisitEntry('${mid}','${vid}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>
       </div>
-      ${v.notes?`<div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${esc(v.notes)}</div>`:''}
-      <div class="modal-actions" style="margin-top:14px;"><button class="btn-cancel" onclick="closeMKeepCard()">Close</button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Date</div>
+          <input type="date" id="ve-date" value="${v.date||''}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Days stayed</div>
+          <input type="number" id="ve-days" min="1" value="${v.days||''}" placeholder="1" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>
+      </div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message</div>
+      <input type="text" id="ve-sermon" value="${esc(v.sermon||'')}" placeholder="What did you preach?" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;box-sizing:border-box;"/>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Capacity</div>
+      <select id="ve-capacity" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">
+        <option value="">Select...</option>
+        ${['Sunday AM','Sunday PM','Wednesday','Mission Conference','Revival','Other'].map(o=>`<option value="${o}"${v.capacity===o?' selected':''}>${o}</option>`).join('')}
+      </select>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Bible Handout?</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button id="ve-handout-yes" onclick="setVisitHandout('Yes')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${v.handout==='Yes'?'#F3B53A':'var(--border)'};background:${v.handout==='Yes'?'#2e1f00':'var(--surface2)'};color:${v.handout==='Yes'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Yes</button>
+        <button id="ve-handout-no" onclick="setVisitHandout('No')" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${v.handout==='No'?'#F3B53A':'var(--border)'};background:${v.handout==='No'?'#2e1f00':'var(--surface2)'};color:${v.handout==='No'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">No</button>
+      </div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
+      <textarea id="ve-notes" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:60px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${esc(v.notes||'')}</textarea>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="saveVisitEdit('${mid}','${vid}')" style="flex:2;padding:13px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;">Save</button>
+      </div>
     </div>
   </div>`);
+  window._visitHandout = v.handout || '';
+}
+
+function saveVisitEdit(mid, vid) {
+  const v = manifestVisits.find(x => x.id === vid); if (!v) return;
+  v.date = document.getElementById('ve-date')?.value || v.date;
+  v.days = document.getElementById('ve-days')?.value || '';
+  v.sermon = document.getElementById('ve-sermon')?.value?.trim() || '';
+  v.capacity = document.getElementById('ve-capacity')?.value || '';
+  v.handout = window._visitHandout || '';
+  v.notes = document.getElementById('ve-notes')?.value?.trim() || '';
+  saveVisitEntry(v);
+  haptic(10);
+  closeMKeepCard();
+  renderManifest();
+  setTimeout(() => openManifestCard(mid), 220);
+}
+
+function deleteVisitEntry(mid, vid) {
+  if (!confirm('Delete this visit?')) return;
+  manifestVisits = manifestVisits.filter(x => x.id !== vid);
+  if (sheetsReady) api({action:'deleteVisit', id: vid}).catch(()=>{});
+  closeMKeepCard();
+  renderManifest();
+  setTimeout(() => openManifestCard(mid), 220);
 }
 
 function openAddVisitModal(mid) {
@@ -1970,12 +2018,15 @@ function openAddVisitModal(mid) {
 function setVisitHandout(val) {
   window._visitHandout = val;
   ['Yes','No'].forEach(v => {
-    const btn = document.getElementById('v-handout-' + v.toLowerCase());
-    if (!btn) return;
-    const active = v === val;
-    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
-    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
-    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+    // Works for both add modal (v-handout-) and edit modal (ve-handout-)
+    ['v-handout-','ve-handout-'].forEach(prefix => {
+      const btn = document.getElementById(prefix + v.toLowerCase());
+      if (!btn) return;
+      const active = v === val;
+      btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
+      btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
+      btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+    });
   });
 }
 
