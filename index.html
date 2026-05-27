@@ -1538,10 +1538,11 @@ function openManifestCard(mid) {
   // Visit history rows
   const visitRows = visits.slice(0,10).map(v=>`
     <div onclick="openVisitDetail('${mid}','${v.id}')" style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;cursor:pointer;">
-      <div style="min-width:68px;font-size:11px;color:var(--muted);padding-top:1px;">${fmtCallDate(v.date)||v.date}</div>
+      <div style="min-width:68px;font-size:11px;color:var(--muted);padding-top:1px;">${fmtCallDate(v.date)||v.date}${v.endDate?`<br/><span style="font-size:10px;">– ${fmtCallDate(v.endDate)}</span>`:''}</div>
       <div style="flex:1;">
         ${v.sermon ? v.sermon.split('\n').filter(Boolean).map(s=>`<div style="font-size:13px;font-weight:500;color:var(--text);">${esc(s.trim())}</div>`).join('') : '<div style="font-size:13px;color:var(--muted);">—</div>'}
         <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(v.capacity||'')}${v.days?' · '+v.days+' day'+(v.days>1?'s':''):''}${v.handout==='Yes'?' · Handout':''}</div>
+        ${v.notes?`<div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4;white-space:pre-wrap;">${esc(v.notes)}</div>`:''}
       </div>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </div>`).join('');
@@ -2182,6 +2183,7 @@ function openEditNextMeeting(mid) {
 }
 
 function saveNextMeeting(mid, existingId) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   const d = document.getElementById('nm-date')?.value;
   if (!d) { alert('Please pick a date.'); return; }
   const dEnd = document.getElementById('nm-end-date')?.value || '';
