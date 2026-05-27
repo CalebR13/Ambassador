@@ -1387,11 +1387,11 @@ function loadVisits() {
 
 function saveManifestContact(m) {
   save();
-  fetch(SCRIPT_URL + '?action=saveManifest&secret=' + SECRET + '&data=' + encodeURIComponent(JSON.stringify(m))).catch(()=>{});
+  if (sheetsReady) api({action:'saveManifest', data: JSON.stringify(m)}).catch(()=>{});
 }
 
 function saveVisitEntry(v) {
-  fetch(SCRIPT_URL + '?action=saveVisit&secret=' + SECRET + '&data=' + encodeURIComponent(JSON.stringify(v))).catch(()=>{});
+  if (sheetsReady) api({action:'saveVisit', data: JSON.stringify(v)}).catch(()=>{});
 }
 
 // ── MANIFEST RENDER ──
@@ -2067,10 +2067,7 @@ function deleteNextMeeting(mid, visitId) {
   if (!confirm('Remove this scheduled meeting?')) return;
   if (visitId) {
     manifestVisits = manifestVisits.filter(x => x.id !== visitId);
-    // Delete from sheets
-    if (sheetsReady) {
-      fetch(SCRIPT_URL + '?action=deleteVisit&secret=' + SECRET + '&id=' + encodeURIComponent(visitId)).catch(()=>{});
-    }
+    if (sheetsReady) api({action:'deleteVisit', id: visitId}).catch(()=>{});
   }
   const m = manifestContacts.find(x => x.id === mid);
   if (m) { m.next_visit_date = ''; saveManifestContact(m); }
@@ -2171,10 +2168,7 @@ function deleteManifestContact(mid) {
   if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
   closeManifestCard();
   renderManifest();
-  // Also delete from sheets if connected
-  if (sheetsReady) {
-    fetch(SCRIPT_URL + '?action=deleteManifest&secret=' + SECRET + '&id=' + encodeURIComponent(mid)).catch(()=>{});
-  }
+  if (sheetsReady) api({action:'deleteManifest', id: mid}).catch(()=>{});
 }
 
 function closeManifestEditModal() {
