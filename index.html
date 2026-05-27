@@ -1503,9 +1503,9 @@ function openManifestCard(mid) {
 
   // On-site checks
   function checkIcon(val) {
-    return val==='Yes'
-      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4cd68a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>`
-      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
+    if (val==='Yes') return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4cd68a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>`;
+    if (val==='No') return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e05555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
   }
 
   // Collapsed contact info
@@ -1630,7 +1630,7 @@ function openManifestCard(mid) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">On-Site</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:12px;color:var(--muted);">Chamber</span>${checkIcon(m.prophet_chamber)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:12px;color:var(--muted);">Lodging</span>${checkIcon(m.lodging)}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:12px;color:var(--muted);">RV Hookup</span>${checkIcon(m.rv_hookup)}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;color:var(--muted);">Handouts</span>${checkIcon(m.bible_handouts)}</div>
       </div>
@@ -1816,7 +1816,7 @@ function _openManifestCard_old(mid) {
     m.address ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Address</span><span style="font-size:13px;color:var(--text);">${esc(m.address)}</span></div>` : '',
     m.website ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Website</span><a href="${m.website}" target="_blank" style="font-size:13px;color:var(--accent);">${esc(m.website)}</a></div>` : '',
     `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Support</span><span style="font-size:13px;color:var(--text);">${esc(m.support_status||'—')}${m.support_amount?' · $'+m.support_amount:''}${m.support_cadence?' ('+m.support_cadence+')':''}</span></div>`,
-    `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Facilities</span><span style="font-size:13px;color:var(--text);">${m.prophet_chamber==='Yes'?'Prophet Chamber':''} ${m.rv_hookup==='Yes'?'· RV Hookup':''} ${m.bible_handouts==='Yes'?'· Handouts':''}</span></div>`,
+    `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Facilities</span><span style="font-size:13px;color:var(--text);">${m.lodging==='Yes'?'Lodging':''} ${m.rv_hookup==='Yes'?'· RV Hookup':''} ${m.bible_handouts==='Yes'?'· Handouts':''}</span></div>`,
     m.notes ? `<div style="padding:10px 16px;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Notes</div><div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${esc(m.notes)}</div></div>` : '',
   ].filter(Boolean).join('');
 
@@ -1979,7 +1979,7 @@ function setSailToManifest(cid) {
     address: c.address || '',
     website: '',
     groups: 'Scheduled',
-    prophet_chamber: '',
+    lodging: '',
     rv_hookup: '',
     bible_handouts: '',
     support_status: '',
@@ -2096,7 +2096,7 @@ function openManifestEditModal(mid) {
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">${f.replace('_',' ')}</div>
           <input type="text" id="me-${f}" value="${esc(m[f]||'')}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
         </div>`).join('')}
-      ${["prophet_chamber","rv_hookup","bible_handouts"].map(f=>`
+      ${["lodging","rv_hookup","bible_handouts"].map(f=>`
         <div style="margin-bottom:10px;">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">${f.replace(/_/g,' ')}</div>
           <div style="display:flex;gap:8px;">
@@ -2114,7 +2114,7 @@ function openManifestEditModal(mid) {
       </div>
     </div>
   </div>`);
-  window._manifestToggles = {prophet_chamber: m.prophet_chamber||'', rv_hookup: m.rv_hookup||'', bible_handouts: m.bible_handouts||''};
+  window._manifestToggles = {lodging: m.lodging||'', rv_hookup: m.rv_hookup||'', bible_handouts: m.bible_handouts||''};
 }
 
 function setManifestToggle(field, val) {
@@ -2151,7 +2151,7 @@ function saveManifestEdit(mid) {
 
 function openManifestAddModal() {
   const newId = 'mfst-' + uid();
-  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', prophet_chamber:'', rv_hookup:'', bible_handouts:'', support_status:'', support_amount:'', support_cadence:'', relay_group:'', prayer_list:'', notes:''};
+  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', lodging:'', rv_hookup:'', bible_handouts:'', support_status:'', support_amount:'', support_cadence:'', relay_group:'', prayer_list:'', notes:''};
   manifestContacts.push(m);
   window._editModalFromCard = false;
   openManifestEditModal(newId);
