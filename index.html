@@ -2100,8 +2100,9 @@ function openManifestEditModal(mid) {
         <div style="margin-bottom:10px;">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">${f.replace(/_/g,' ')}</div>
           <div style="display:flex;gap:8px;">
-            <button onclick="setManifestToggle('${f}','Yes')" id="mt-${f}-yes" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${m[f]==='Yes'?'#F3B53A':'var(--border)'};background:${m[f]==='Yes'?'#2e1f00':'var(--surface2)'};color:${m[f]==='Yes'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Yes</button>
-            <button onclick="setManifestToggle('${f}','No')" id="mt-${f}-no" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${m[f]==='No'?'#F3B53A':'var(--border)'};background:${m[f]==='No'?'#2e1f00':'var(--surface2)'};color:${m[f]==='No'?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">No</button>
+            <button onclick="setManifestToggle('${f}','')" id="mt-${f}-none" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${!m[f]?'#F3B53A':'var(--border)'};background:${!m[f]?'#2e1f00':'var(--surface2)'};color:${!m[f]?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">—</button>
+            <button onclick="setManifestToggle('${f}','Yes')" id="mt-${f}-yes" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${m[f]==='Yes'?'#4cd68a':'var(--border)'};background:${m[f]==='Yes'?'#0a2a1a':'var(--surface2)'};color:${m[f]==='Yes'?'#4cd68a':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">Yes</button>
+            <button onclick="setManifestToggle('${f}','No')" id="mt-${f}-no" style="flex:1;padding:8px;border-radius:var(--radius-sm);border:1px solid ${m[f]==='No'?'#e05555':'var(--border)'};background:${m[f]==='No'?'#2a0a0a':'var(--surface2)'};color:${m[f]==='No'?'#e05555':'var(--muted)'};font-family:var(--sans);font-size:13px;cursor:pointer;">No</button>
           </div>
         </div>`).join('')}
       <div style="margin-bottom:14px;">
@@ -2120,13 +2121,19 @@ function openManifestEditModal(mid) {
 function setManifestToggle(field, val) {
   if (!window._manifestToggles) window._manifestToggles = {};
   window._manifestToggles[field] = val;
-  ['Yes','No'].forEach(v => {
-    const btn = document.getElementById('mt-' + field + '-' + v.toLowerCase());
+  const states = {
+    '': { border: '#F3B53A', bg: '#2e1f00', color: '#F3B53A' },
+    'Yes': { border: '#4cd68a', bg: '#0a2a1a', color: '#4cd68a' },
+    'No': { border: '#e05555', bg: '#2a0a0a', color: '#e05555' },
+  };
+  ['','Yes','No'].forEach(v => {
+    const suffix = v === '' ? 'none' : v.toLowerCase();
+    const btn = document.getElementById('mt-' + field + '-' + suffix);
     if (!btn) return;
     const active = v === val;
-    btn.style.borderColor = active ? '#F3B53A' : 'var(--border)';
-    btn.style.background  = active ? '#2e1f00' : 'var(--surface2)';
-    btn.style.color       = active ? '#F3B53A' : 'var(--muted)';
+    btn.style.borderColor = active ? states[v].border : 'var(--border)';
+    btn.style.background  = active ? states[v].bg : 'var(--surface2)';
+    btn.style.color       = active ? states[v].color : 'var(--muted)';
   });
 }
 
