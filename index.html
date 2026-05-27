@@ -270,6 +270,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
           <option value="Non-supporting">Non-supporting</option>
           <option value="Scheduled">Scheduled</option>
           <option value="prayer">Prayer List</option>
+          <option value="sort-scheduled">Sort: Soonest Visit</option>
         </select>
         <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Copy emails"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
         <button onclick="openManifestAddModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Add</button>
@@ -1414,7 +1415,19 @@ function renderManifest() {
     (m.state||'').toLowerCase().includes(mq)
   );
 
-  items.sort((a,b) => (a.pastor||'').localeCompare(b.pastor||''));
+  if (filter === 'sort-scheduled') {
+    const now = new Date();
+    items.sort((a,b) => {
+      const aNext = manifestVisits.filter(v=>v.manifestId===a.id&&v.date&&new Date(v.date)>=now).sort((x,y)=>new Date(x.date)-new Date(y.date))[0];
+      const bNext = manifestVisits.filter(v=>v.manifestId===b.id&&v.date&&new Date(v.date)>=now).sort((x,y)=>new Date(x.date)-new Date(y.date))[0];
+      if (!aNext && !bNext) return 0;
+      if (!aNext) return 1;
+      if (!bNext) return -1;
+      return new Date(aNext.date) - new Date(bNext.date);
+    });
+  } else {
+    items.sort((a,b) => (a.pastor||'').localeCompare(b.pastor||''));
+  }
 
   if (!items.length) {
     // If manifestContacts is truly empty (not just filtered), show loading
@@ -1428,7 +1441,6 @@ function renderManifest() {
 
   list.innerHTML = items.map(m => {
     const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
-    // Use region color like Voyage, falling back to state-based region
     const mRegion = m.groups ? (m.groups.toLowerCase().includes('illinois')||m.state==='IL' ? 'central' : STATE_REGION[m.state] || 'noncont') : (STATE_REGION[m.state] || 'noncont');
     const mFakeContact = {region: mRegion, state: m.state};
     const rcM = getRegionColor(mFakeContact);
@@ -1436,16 +1448,19 @@ function renderManifest() {
     const ringWidth = m.support_status ? '2px' : '1.5px';
 
     const visits = manifestVisits.filter(v => v.manifestId === m.id);
-    const lastVisit = visits.sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+    const now = new Date();
+    const futureVisits = visits.filter(v => v.date && new Date(v.date) >= now).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const pastVisits = visits.filter(v => !v.date || new Date(v.date) < now).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    const nextVisit = futureVisits[0];
+    const lastVisit = pastVisits[0];
     const lastVisitStr = lastVisit ? fmtCallDate(lastVisit.date) : 'No visits yet';
-    const prophecyIcon = '';
-    const rvIcon = '';
+    const scheduledTag = nextVisit ? `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:#1a2e22;border:1px solid #4a9e6b44;color:#4cd68a;margin-left:4px;">📅 ${fmtCallDate(nextVisit.date)}</span>` : '';
 
     return `<div class="tide-entry-wrap manifest-list-row" onclick="openManifestCard('${m.id}')">
       <div class="tide-entry upcoming" style="border-left:none;">
         <div class="tide-avatar" style="background:${rcM.bg};color:${rcM.text};border:${ringWidth} solid ${ringColor||rcM.border};flex-shrink:0;">${initials}</div>
         <div class="tide-content" style="flex:1;min-width:0;">
-          <div class="tide-pastor">${esc(m.pastor||'—')}</div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;"><span class="tide-pastor">${esc(m.pastor||'—')}</span>${scheduledTag}</div>
           <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px;">Last visit: ${lastVisitStr}</div>
         </div>
@@ -1462,8 +1477,10 @@ function openManifestCard(mid) {
   if (!screen || !cardContent) return;
   haptic(8);
 
+  const now = new Date();
   const visits = manifestVisits.filter(v => v.manifestId === mid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  const lastVisit = visits[0];
+  const nextVisit = manifestVisits.filter(v => v.manifestId === mid && v.date && new Date(v.date) >= now).sort((a,b)=>new Date(a.date)-new Date(b.date))[0] || null;
+  const lastVisit = visits.filter(v => !v.date || new Date(v.date) < now)[0];
   const visitCount = visits.length;
 
   // Manifest contact's own call log (stored in Calls sheet with mfst- id)
@@ -1635,6 +1652,26 @@ function openManifestCard(mid) {
         <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;color:var(--muted);">Handouts</span>${checkIcon(m.bible_handouts)}</div>
       </div>
     </div>
+
+    <!-- NEXT MEETING (only if scheduled) -->
+    ${nextVisit || m.next_visit_date ? `
+    <div style="margin:0 16px 10px;background:linear-gradient(135deg,#0a2a1a,#1a2e22);border:1px solid #4a9e6b44;border-radius:var(--radius-sm);padding:14px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4cd68a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span style="font-size:11px;font-weight:600;color:#4cd68a;">Next Meeting</span>
+        </div>
+        <button onclick="openEditNextMeeting('${mid}')" style="background:none;border:1px solid #4a9e6b44;border-radius:12px;padding:3px 10px;font-family:var(--sans);font-size:11px;color:#4cd68a;cursor:pointer;">Edit</button>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);">${fmtCallDate(nextVisit?.date || m.next_visit_date)}</div>
+      ${nextVisit?.sermon ? `<div style="font-size:12px;color:var(--muted);margin-top:3px;">${esc(nextVisit.sermon)}</div>` : ''}
+    </div>` : `
+    <div style="margin:0 16px 10px;">
+      <button onclick="openEditNextMeeting('${mid}')" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Schedule a meeting
+      </button>
+    </div>`}
 
     <!-- PERSONAL / CHURCH INFO (collapsible) -->
     <div style="margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
@@ -2001,6 +2038,54 @@ function setSailToManifest(cid) {
   renderFilters();
   renderList();
   showStatus('Set sail to Manifest ⚓', 'ok');
+}
+
+function openEditNextMeeting(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  const now = new Date();
+  const nextVisit = manifestVisits.filter(v => v.manifestId === mid && v.date && new Date(v.date) >= now).sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+  const existingDate = nextVisit ? nextVisit.date : (m.next_visit_date || '');
+  const existingSermon = nextVisit ? (nextVisit.sermon || '') : '';
+  const existingId = nextVisit ? nextVisit.id : null;
+
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
+      <h2 style="font-family:var(--serif);font-size:18px;margin-bottom:14px;color:#4cd68a;">Next Meeting</h2>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Date</div>
+      <input type="date" id="nm-date" value="${existingDate}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);margin-bottom:12px;box-sizing:border-box;"/>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message <span style="opacity:.5;">(optional)</span></div>
+      <input type="text" id="nm-sermon" value="${esc(existingSermon)}" placeholder="What will you preach?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:14px;box-sizing:border-box;"/>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="saveNextMeeting('${mid}','${existingId||''}')" style="flex:2;padding:12px;background:linear-gradient(135deg,#1a3a28,#1e2244);border:1px solid #4a9e6b44;border-radius:var(--radius-sm);font-family:var(--serif);font-size:15px;color:#4cd68a;cursor:pointer;">Save</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function saveNextMeeting(mid, existingId) {
+  const d = document.getElementById('nm-date')?.value;
+  if (!d) { alert('Please pick a date.'); return; }
+  const sermon = document.getElementById('nm-sermon')?.value?.trim() || '';
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+
+  if (existingId) {
+    // Update existing visit
+    const v = manifestVisits.find(x => x.id === existingId);
+    if (v) { v.date = d; v.sermon = sermon; saveVisitEntry(v); }
+  } else {
+    // Create new future visit
+    const visit = { id: uid(), manifestId: mid, date: d, sermon, capacity: '', days: '', handout: '', notes: '' };
+    manifestVisits.push(visit);
+    saveVisitEntry(visit);
+  }
+  // Also store on the contact for easy access
+  m.next_visit_date = d;
+  saveManifestContact(m);
+  haptic(10);
+  closeMKeepCard();
+  setTimeout(() => openManifestCard(mid), 220);
 }
 
 function openManifestEmailCopy() {
