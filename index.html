@@ -643,8 +643,8 @@ function saveReminder(cid){haptic(10);
   save();saveCallEntry(cid,remCall);closeMKeepCard();renderCallingCard();renderList();
 }
 
-function openCalendarModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Add to Calendar</h2><div class="modal-sub">Pick a date and we'll open Google Calendar with the event pre-filled.</div><div class="fg"><label>Meeting date</label><input type="date" id="cal-date"/></div><div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div><button class="cal-open-btn" onclick="openGCal('${cid}')">${ICONS.calendar} Open Google Calendar</button><div class="modal-actions" style="margin-top:10px"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div></div></div>`);}
-function openGCal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;const d=document.getElementById('cal-date').value;const t=document.getElementById('cal-time').value;if(!d){alert('Please pick a date.');return;}const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);let dates='';if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=d.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}else{const day=d.replace(/-/g,'');dates=`${day}/${day}`;}window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');if(!c.calls)c.calls=[];const [y,m,dy]=d.split('-').map(Number);const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const lbl=`${months[m-1]} ${dy}, ${y}`;const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,details:`Meeting scheduled for ${lbl}`};c.calls.push(calCall);save();saveCallEntry(cid,calCall);closeMKeepCard();renderCallingCard();renderList();}
+function openCalendarModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Schedule Meeting</h2><div class="modal-sub">Dates will carry over to Manifest when you Set Sail.</div><div class="fg"><label>Arrival date *</label><input type="date" id="cal-date"/></div><div class="fg"><label>Departure date <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="date" id="cal-end-date"/></div><div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div><button class="cal-open-btn" onclick="openGCal('${cid}')">${ICONS.calendar} Open Google Calendar</button><div class="modal-actions" style="margin-top:10px"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div></div></div>`);}
+function openGCal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;const d=document.getElementById('cal-date').value;const dEnd=document.getElementById('cal-end-date')?.value||'';const t=document.getElementById('cal-time').value;if(!d){alert('Please pick an arrival date.');return;}const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);let dates='';if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const endDay=dEnd||d;const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=endDay.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}else{const startDay=d.replace(/-/g,'');const endDay=(dEnd||d).replace(/-/g,'');dates=`${startDay}/${endDay}`;}window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');if(!c.calls)c.calls=[];const [y,m,dy]=d.split('-').map(Number);const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const lbl=`${months[m-1]} ${dy}, ${y}${dEnd?' – '+fmtCallDate(dEnd):''}`;const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,meetingEndDate:dEnd,details:`Meeting scheduled: ${lbl}`};c.calls.push(calCall);save();saveCallEntry(cid,calCall);closeMKeepCard();renderCallingCard();renderList();}
 
 function openContactModal(id){const c=id?contacts.find(x=>x.id===id):null;const v=f=>c?(c[f]||''):'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h2 style="margin-bottom:0">${c?'Edit contact':'New contact'}</h2>${id?`<button onclick="deleteContact('${id}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>`:''}</div><div class="form-row"><div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div><div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div></div><div class="form-row"><div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div><div class="fgi"><label>State</label>${stateDropdown('fst',v('state')||'IL')}</div></div><div class="form-row"><div class="fgi full"><label>Phone Numbers <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const phones=splitField(v('phone'));while(phones.length<4)phones.push('');return phones.slice(0,4).map((p,i)=>`<input id="fph${i}" value="${esc(p)}" placeholder="${i===0?'Primary number':'Additional number'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div><div class="form-row"><div class="fgi full"><label>Email Addresses <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const emails=splitField(v('email'));while(emails.length<4)emails.push('');return emails.slice(0,4).map((e,i)=>`<input id="fe${i}" type="email" value="${esc(e)}" placeholder="${i===0?'Primary email':'Additional email'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveCM('${id||''}')">Save</button></div></div></div>`);}
 function saveCM(id){const ch=(document.getElementById('fc')||{}).value||'';const pa=(document.getElementById('fp')||{}).value||'';if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};let savedContact;if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();if(id)renderCallingCard();}
@@ -1536,11 +1536,11 @@ function openManifestCard(mid) {
   ].filter(Boolean).join('');
 
   // Visit history rows
-  const visitRows = visits.slice(0,5).map(v=>`
+  const visitRows = visits.slice(0,10).map(v=>`
     <div onclick="openVisitDetail('${mid}','${v.id}')" style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;cursor:pointer;">
       <div style="min-width:68px;font-size:11px;color:var(--muted);padding-top:1px;">${fmtCallDate(v.date)||v.date}</div>
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:500;color:var(--text);">${esc(v.sermon||'—')}</div>
+        ${v.sermon ? v.sermon.split('\n').filter(Boolean).map(s=>`<div style="font-size:13px;font-weight:500;color:var(--text);">${esc(s.trim())}</div>`).join('') : '<div style="font-size:13px;color:var(--muted);">—</div>'}
         <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(v.capacity||'')}${v.days?' · '+v.days+' day'+(v.days>1?'s':''):''}${v.handout==='Yes'?' · Handout':''}</div>
       </div>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1683,7 +1683,7 @@ function openManifestCard(mid) {
               <button onclick="deleteNextMeeting('${mid}','${nextVisit?.id||''}')" style="width:30px;height:30px;background:none;border:1px solid #e0555544;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#e05555;">${ICONS.trash}</button>
             </div>
           </div>
-          <div style="font-size:18px;font-weight:700;color:var(--text);">${fmtCallDate(meetingDate)}</div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);">${fmtCallDate(meetingDate)}${(nextVisit?.endDate||m.next_visit_end_date)?` – ${fmtCallDate(nextVisit?.endDate||m.next_visit_end_date)}`:''}</div>
           ${nextVisit?.sermon ? `<div style="font-size:12px;color:var(--muted);margin-top:3px;">${esc(nextVisit.sermon)}</div>` : ''}
           <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent((m.pastor||'')+' | '+(m.church||''))}&dates=${meetingDate.replace(/-/g,'')}/${meetingDate.replace(/-/g,'')}&location=${encodeURIComponent([m.address,m.city,m.state].filter(Boolean).join(', '))}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;color:#4cd68a;text-decoration:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Add to Google Calendar</a>
         </div>`;
@@ -1929,8 +1929,8 @@ function openVisitDetail(mid, vid) {
           <input type="number" id="ve-days" min="1" value="${v.days||''}" placeholder="1" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
         </div>
       </div>
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message</div>
-      <input type="text" id="ve-sermon" value="${esc(v.sermon||'')}" placeholder="What did you preach?" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;box-sizing:border-box;"/>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermons Preached <span style="opacity:.5;text-transform:none;letter-spacing:0;">(one per line)</span></div>
+      <textarea id="ve-sermon" placeholder="e.g.&#10;Faith Over Fear&#10;The Prodigal Son" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:10px;box-sizing:border-box;">${esc(v.sermon||'')}</textarea>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Capacity</div>
       <select id="ve-capacity" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">
         <option value="">Select...</option>
@@ -1987,8 +1987,8 @@ function openAddVisitModal(mid) {
         <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Days stayed</div>
         <input type="number" id="v-days" min="1" placeholder="1" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/></div>
       </div>
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message</div>
-      <input type="text" id="v-sermon" placeholder="What did you preach?" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;box-sizing:border-box;"/>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermons Preached <span style="opacity:.5;text-transform:none;letter-spacing:0;">(one per line)</span></div>
+      <textarea id="v-sermon" placeholder="e.g.&#10;Faith Over Fear&#10;The Prodigal Son&#10;Grace Unlimited" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:10px;box-sizing:border-box;">${esc(v?.sermon||'')}</textarea>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Capacity</div>
       <select id="v-capacity" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:10px;">
         <option value="">Select...</option>
@@ -2038,8 +2038,7 @@ function saveVisit(mid) {
     manifestId: mid,
     date: d,
     days: document.getElementById('v-days')?.value || '',
-    sermon: document.getElementById('v-sermon')?.value || '',
-    capacity: document.getElementById('v-capacity')?.value || '',
+    sermon: document.getElementById('v-sermon')?.value || '',    capacity: document.getElementById('v-capacity')?.value || '',
     handout: window._visitHandout || '',
     notes: document.getElementById('v-notes')?.value || '',
   };
@@ -2075,7 +2074,11 @@ function openSetSailModal(cid) {
 function setSailToManifest(cid) {
   const c = contacts.find(x => x.id === cid); if (!c) return;
   haptic(20);
-  // Create new Manifest entry from Voyage contact
+
+  // Find the most recent booked meeting date
+  const meetingCall = (c.calls||[]).filter(x=>x.meetingBooked).sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  const nextVisitDate = meetingCall?.meetingDate || '';
+
   const newId = 'mfst-' + uid();
   const m = {
     id: newId,
@@ -2100,9 +2103,29 @@ function setSailToManifest(cid) {
     prayer_list: '',
     notes: c.notes ? (Array.isArray(c.notes) ? c.notes.join('\n') : c.notes) : '',
     starred: c.starred || false,
+    next_visit_date: nextVisitDate,
+    lat: c.lat || '',
+    lng: c.lng || '',
   };
   manifestContacts.push(m);
   saveManifestContact(m);
+
+  // Migrate full call history — re-save each call under the new manifest ID
+  if (c.calls && c.calls.length) {
+    c.calls.forEach(call => {
+      const migratedCall = {...call, contactId: newId};
+      // Add to contacts array under new ID so manifest card can show them
+      let pseudo = contacts.find(x => x.id === newId);
+      if (!pseudo) {
+        pseudo = {id: newId, pastor: m.pastor, church: m.church, city: m.city, state: m.state, calls: []};
+        contacts.push(pseudo);
+      }
+      pseudo.calls = pseudo.calls || [];
+      pseudo.calls.push(migratedCall);
+      saveCallEntry(newId, migratedCall);
+    });
+  }
+
   // Remove from Voyage
   contacts = contacts.filter(x => x.id !== cid);
   save();
@@ -2138,8 +2161,16 @@ function openEditNextMeeting(mid) {
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
       <h2 style="font-family:var(--serif);font-size:18px;margin-bottom:14px;color:#4cd68a;">Next Meeting</h2>
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Date</div>
-      <input type="date" id="nm-date" value="${existingDate}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:15px;background:var(--bg);color:var(--text);margin-bottom:12px;box-sizing:border-box;"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Arrival date *</div>
+          <input type="date" id="nm-date" value="${existingDate}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Departure <span style="opacity:.5;">(opt)</span></div>
+          <input type="date" id="nm-end-date" value="${existingId ? (manifestVisits.find(x=>x.id===existingId)?.endDate||'') : (m.next_visit_end_date||'')}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+        </div>
+      </div>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message <span style="opacity:.5;">(optional)</span></div>
       <input type="text" id="nm-sermon" value="${esc(existingSermon)}" placeholder="What will you preach?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:14px;box-sizing:border-box;"/>
       <div style="display:flex;gap:8px;">
@@ -2153,21 +2184,19 @@ function openEditNextMeeting(mid) {
 function saveNextMeeting(mid, existingId) {
   const d = document.getElementById('nm-date')?.value;
   if (!d) { alert('Please pick a date.'); return; }
+  const dEnd = document.getElementById('nm-end-date')?.value || '';
   const sermon = document.getElementById('nm-sermon')?.value?.trim() || '';
-  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
 
   if (existingId) {
-    // Update existing visit
     const v = manifestVisits.find(x => x.id === existingId);
-    if (v) { v.date = d; v.sermon = sermon; saveVisitEntry(v); }
+    if (v) { v.date = d; v.endDate = dEnd; v.sermon = sermon; saveVisitEntry(v); }
   } else {
-    // Create new future visit
-    const visit = { id: uid(), manifestId: mid, date: d, sermon, capacity: '', days: '', handout: '', notes: '' };
+    const visit = { id: uid(), manifestId: mid, date: d, endDate: dEnd, sermon, capacity: '', days: '', handout: '', notes: '' };
     manifestVisits.push(visit);
     saveVisitEntry(visit);
   }
-  // Also store on the contact for easy access
   m.next_visit_date = d;
+  m.next_visit_end_date = dEnd;
   saveManifestContact(m);
   haptic(10);
   closeMKeepCard();
