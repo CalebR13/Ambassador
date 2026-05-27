@@ -2065,9 +2065,16 @@ function setSailToManifest(cid) {
 
 function deleteNextMeeting(mid, visitId) {
   if (!confirm('Remove this scheduled meeting?')) return;
-  if (visitId) manifestVisits = manifestVisits.filter(x => x.id !== visitId);
+  if (visitId) {
+    manifestVisits = manifestVisits.filter(x => x.id !== visitId);
+    // Delete from sheets
+    if (sheetsReady) {
+      fetch(SCRIPT_URL + '?action=deleteVisit&secret=' + SECRET + '&id=' + encodeURIComponent(visitId)).catch(()=>{});
+    }
+  }
   const m = manifestContacts.find(x => x.id === mid);
   if (m) { m.next_visit_date = ''; saveManifestContact(m); }
+  renderManifest();
   setTimeout(() => openManifestCard(mid), 50);
 }
 
