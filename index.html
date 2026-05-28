@@ -1452,14 +1452,15 @@ function renderManifest() {
   );
 
   if (filter === 'sort-scheduled') {
-    const now = new Date();
+    const todaySort = new Date().toISOString().slice(0,10);
+    items = items.filter(m => {
+      const nv = manifestVisits.filter(v => v.manifestId===m.id && v.date).find(v => (v.endDate||v.date) >= todaySort);
+      return nv || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todaySort);
+    });
     items.sort((a,b) => {
-      const aNext = manifestVisits.filter(v=>v.manifestId===a.id&&v.date&&new Date(v.date)>=now).sort((x,y)=>new Date(x.date)-new Date(y.date))[0];
-      const bNext = manifestVisits.filter(v=>v.manifestId===b.id&&v.date&&new Date(v.date)>=now).sort((x,y)=>new Date(x.date)-new Date(y.date))[0];
-      if (!aNext && !bNext) return 0;
-      if (!aNext) return 1;
-      if (!bNext) return -1;
-      return new Date(aNext.date) - new Date(bNext.date);
+      const aDate = (manifestVisits.filter(v=>v.manifestId===a.id&&v.date&&(v.endDate||v.date)>=todaySort).sort((x,y)=>x.date.localeCompare(y.date))[0]?.date) || a.next_visit_date || '';
+      const bDate = (manifestVisits.filter(v=>v.manifestId===b.id&&v.date&&(v.endDate||v.date)>=todaySort).sort((x,y)=>x.date.localeCompare(y.date))[0]?.date) || b.next_visit_date || '';
+      return aDate.localeCompare(bDate);
     });
   } else {
     items.sort((a,b) => (a.pastor||'').localeCompare(b.pastor||''));
