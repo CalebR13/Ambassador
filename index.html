@@ -270,6 +270,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
           <option value="Non-supporting">Non-supporting</option>
           <option value="Scheduled">Scheduled</option>
           <option value="prayer">Prayer List</option>
+          <option value="lodging">Lodging</option>
+          <option value="rv">RV</option>
+          <option value="handouts">Handouts</option>
           <option value="sort-scheduled">Sort: Soonest Visit</option>
         </select>
         <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Copy emails"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
@@ -1432,6 +1435,9 @@ function renderManifest() {
   else if (filter === 'Non-supporting') items = items.filter(m => m.support_status === 'Non-supporting');
   else if (filter === 'Scheduled') items = items.filter(m => (m.groups||'').includes('Scheduled'));
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
+  else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
+  else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
+  else if (filter === 'handouts') items = items.filter(m => m.bible_handouts === 'Yes');
 
   if (mq) items = items.filter(m =>
     (m.pastor||'').toLowerCase().includes(mq) ||
@@ -1469,8 +1475,11 @@ function renderManifest() {
     const mRegion = m.groups ? (m.groups.toLowerCase().includes('illinois')||m.state==='IL' ? 'central' : STATE_REGION[m.state] || 'noncont') : (STATE_REGION[m.state] || 'noncont');
     const mFakeContact = {region: mRegion, state: m.state};
     const rcM = getRegionColor(mFakeContact);
-    const ringColor = m.support_status==='Supporting' ? '#2d7a4a' : m.support_status==='Non-supporting' ? '#6b2020' : 'transparent';
-    const ringWidth = m.support_status ? '2px' : '1.5px';
+    const supportDot = m.support_status==='Supporting'
+      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#4cd68a;margin-left:5px;flex-shrink:0;vertical-align:middle;"></span>`
+      : m.support_status==='Non-supporting'
+      ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#e05555;margin-left:5px;flex-shrink:0;vertical-align:middle;"></span>`
+      : '';
 
     const visits = manifestVisits.filter(v => v.manifestId === m.id);
     const now = new Date();
@@ -1483,9 +1492,9 @@ function renderManifest() {
 
     return `<div class="tide-entry-wrap manifest-list-row" onclick="openManifestCard('${m.id}')">
       <div class="tide-entry upcoming" style="border-left:none;">
-        <div class="tide-avatar" style="background:${rcM.bg};color:${rcM.text};border:${ringWidth} solid ${ringColor||rcM.border};flex-shrink:0;">${initials}</div>
+        <div class="tide-avatar" style="background:${rcM.bg};color:${rcM.text};border:1.5px solid ${rcM.border};flex-shrink:0;">${initials}</div>
         <div class="tide-content" style="flex:1;min-width:0;">
-          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;"><span class="tide-pastor">${esc(m.pastor||'—')}</span>${scheduledTag}</div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;"><span class="tide-pastor">${esc(m.pastor||'—')}</span>${supportDot}${scheduledTag}</div>
           <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(m.church||'')}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px;">Last visit: ${lastVisitStr}</div>
         </div>
@@ -1524,14 +1533,20 @@ function openManifestCard(mid) {
   // Active reminder from manifest calls
   const activeRem = allManifestCalls.find(x=>x.outcome==='reminder'&&!x.completed) || null;
 
-  // Groups as pills
-  const groupList = (m.groups||'').split(',').map(g=>g.trim()).filter(g=>g&&g!=='* myContacts'&&g!=='Email List');
-  const groupPills = groupList.map(g=>`<span style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted);background:var(--surface2);">${esc(g)}</span>`).join('');
+  // Derived tag pills
+  const tagDefs = [
+    m.support_status==='Supporting'     ? {label:'Supporting',   bg:'#0a2a1a', border:'#4cd68a44', color:'#4cd68a'} : null,
+    m.support_status==='Non-supporting' ? {label:'Non-supporting',bg:'#2a0a0a', border:'#e0555544', color:'#e05555'} : null,
+    m.prayer_list==='Yes'               ? {label:'Prayer List',  bg:'var(--surface2)', border:'var(--border)', color:'var(--muted)'} : null,
+    m.lodging==='Yes'                   ? {label:'Lodging',      bg:'#1a1f35', border:'#8899ee44', color:'#8899ee'} : null,
+    m.rv_hookup==='Yes'                 ? {label:'RV',           bg:'#1a1f35', border:'#8899ee44', color:'#8899ee'} : null,
+    m.bible_handouts==='Yes'            ? {label:'Handouts',     bg:'#2e1f00', border:'#f0b42944', color:'#f0b429'} : null,
+  ].filter(Boolean);
+  const groupPills = tagDefs.map(t=>`<span style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid ${t.border};color:${t.color};background:${t.bg};">${t.label}</span>`).join('');
 
   // Photo or initials
   const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
-  const ringColor = m.support_status==='Supporting' ? '#2d7a4a' : m.support_status==='Non-supporting' ? '#6b2020' : 'var(--border)';
-  const ringStyle = `border:2px solid ${ringColor};`;
+  const ringStyle = `border:1.5px solid var(--border);`;
   const cardRegion = STATE_REGION[m.state] || 'noncont';
   const rcCard = getRegionColor({region: cardRegion, state: m.state});
   const avatarHtml = m.photo
@@ -2239,6 +2254,9 @@ function openManifestEmailCopy() {
   else if (filter === 'Non-supporting') items = items.filter(m => m.support_status === 'Non-supporting');
   else if (filter === 'Scheduled') items = items.filter(m => (m.groups||'').includes('Scheduled'));
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
+  else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
+  else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
+  else if (filter === 'handouts') items = items.filter(m => m.bible_handouts === 'Yes');
   if (mq) items = items.filter(m =>
     (m.pastor||'').toLowerCase().includes(mq) ||
     (m.church||'').toLowerCase().includes(mq) ||
