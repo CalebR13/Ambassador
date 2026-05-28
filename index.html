@@ -1527,7 +1527,7 @@ function openManifestCard(mid) {
   const visits = manifestVisits.filter(v => v.manifestId === mid).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const todayStr2 = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"); const nextVisit = manifestVisits.filter(v => v.manifestId === mid && v.date && v.date >= todayStr2).sort((a,b)=>a.date.localeCompare(b.date))[0] || null;
   const lastVisit = visits.filter(v => !v.date || v.date < todayStr2)[0];
-  const visitCount = visits.length;
+  const visitCount = visits.filter(v => v.date && v.date < todayStr2).length;
 
   // Manifest contact's own call log (stored in Calls sheet with mfst- id)
   const mCalls = (contacts.find(c=>c.id===mid)||{calls:[]}).calls || 
@@ -2203,6 +2203,19 @@ function setSailToManifest(cid) {
   manifestContacts.push(m);
   saveManifestContact(m);
 
+  // Create a manifestVisit entry for the booked meeting date if one exists
+  if (nextVisitDate) {
+    const cleanDate = nextVisitDate.split(' – ')[0].split(' - ')[0].trim();
+    const parsedDate = new Date(cleanDate);
+    if (!isNaN(parsedDate.getTime())) {
+      const isoDate = parsedDate.toISOString().slice(0,10);
+      const endPart = meetingCall?.meetingEndDate || '';
+      const visit = { id: uid(), manifestId: newId, date: isoDate, endDate: endPart, sermon: '', capacity: '', days: '', handout: '', notes: '' };
+      manifestVisits.push(visit);
+      saveVisitEntry(visit);
+    }
+  }
+
   // Migrate full call history — re-save each call under the new manifest ID
   if (c.calls && c.calls.length) {
     c.calls.forEach(call => {
@@ -2518,9 +2531,8 @@ function openManifestEditModal(mid) {
       <div style="margin-bottom:10px;">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Support Status</div>
         <select id="me-support_status" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);">
-          <option value="" ${!m.support_status?'selected':''}>None</option>
           <option value="Supporting" ${m.support_status==='Supporting'?'selected':''}>Supporting</option>
-          <option value="Non-supporting" ${m.support_status==='Non-supporting'?'selected':''}>Non-supporting</option>
+          <option value="Non-supporting" ${m.support_status!=='Supporting'?'selected':''}>Non-supporting</option>
         </select>
       </div>
       ${['support_amount','support_cadence'].map(f=>`
@@ -2618,7 +2630,30 @@ function openReminderFromManifest(mid) {
   openReminderModal(mid);
 }
 
-load().then(()=>{renderFilters();renderList();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);loadManifest();loadVisits();});
+load().then(()=>{renderFilters();renderList();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);
+  Promise.all([loadManifest(), loadVisits()]).then(() => {
+    // Migrate legacy next_visit_date entries that have no matching manifestVisit
+    const parseClean = d => { if(!d)return null; const c=d.split(' – ')[0].split(' - ')[0].trim(); const dt=new Date(c); return isNaN(dt.getTime())?null:dt; };
+    manifestContacts.forEach(m => {
+      if (!m.next_visit_date) return;
+      const dt = parseClean(m.next_visit_date);
+      if (!dt) return;
+      const isoDate = dt.toISOString().slice(0,10);
+      const already = manifestVisits.find(v => v.manifestId === m.id && v.date === isoDate);
+      if (!already) {
+        // Extract end date if present in range string
+        let endDate = m.next_visit_end_date || '';
+        if (!endDate && m.next_visit_date.includes(' – ')) {
+          const endPart = m.next_visit_date.split(' – ')[1]?.trim();
+          if (endPart) { const ed = new Date(endPart); if (!isNaN(ed.getTime())) endDate = ed.toISOString().slice(0,10); }
+        }
+        const visit = { id: uid(), manifestId: m.id, date: isoDate, endDate, sermon: '', capacity: '', days: '', handout: '', notes: '' };
+        manifestVisits.push(visit);
+        saveVisitEntry(visit);
+      }
+    });
+  });
+});
 window.addEventListener('resize',renderList);
 const _origRenderList = renderList;
 renderList = function(...a) { _origRenderList(...a); reInitScrollHaptics(); };
