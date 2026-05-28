@@ -1434,8 +1434,10 @@ function renderManifest() {
   else if (filter === 'Scheduled') {
     const todayF = new Date().toISOString().slice(0,10);
     items = items.filter(m => {
-      const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayF);
-      return nv || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayF);
+      const todayMs2 = Date.now();
+      const nvMs = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+      const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).find(v => nvMs(v.endDate||v.date) >= todayMs2);
+      return nv || (m.next_visit_date && nvMs(m.next_visit_end_date||m.next_visit_date) >= todayMs2);
     });
   }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
@@ -1452,16 +1454,19 @@ function renderManifest() {
   );
 
   if (filter === 'sort-scheduled') {
-    const todaySort = new Date().toISOString().slice(0,10);
-    items = items.filter(m => {
-      const nv = manifestVisits.filter(v => v.manifestId===m.id && v.date).find(v => (v.endDate||v.date) >= todaySort);
-      return nv || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todaySort);
-    });
-    items.sort((a,b) => {
-      const aDate = (manifestVisits.filter(v=>v.manifestId===a.id&&v.date&&(v.endDate||v.date)>=todaySort).sort((x,y)=>x.date.localeCompare(y.date))[0]?.date) || a.next_visit_date || '';
-      const bDate = (manifestVisits.filter(v=>v.manifestId===b.id&&v.date&&(v.endDate||v.date)>=todaySort).sort((x,y)=>x.date.localeCompare(y.date))[0]?.date) || b.next_visit_date || '';
-      return aDate.localeCompare(bDate);
-    });
+    const todayMs = Date.now();
+    const toMs = d => { if (!d) return Infinity; const t = new Date(d).getTime(); return isNaN(t) ? Infinity : t; };
+    const getNextMs = m => {
+      const fromVisits = manifestVisits
+        .filter(v => v.manifestId===m.id && v.date && toMs(v.date) >= todayMs)
+        .map(v => toMs(v.date))
+        .filter(t => t !== Infinity)
+        .sort((a,b) => a-b)[0] || Infinity;
+      const fromContact = toMs(m.next_visit_date) >= todayMs ? toMs(m.next_visit_date) : Infinity;
+      return Math.min(fromVisits, fromContact);
+    };
+    items = items.filter(m => getNextMs(m) !== Infinity);
+    items.sort((a,b) => getNextMs(a) - getNextMs(b));
   } else {
     items.sort((a,b) => (a.pastor||'').localeCompare(b.pastor||''));
   }
@@ -1543,8 +1548,10 @@ function openManifestCard(mid) {
   // Derived tag pills
   // Compute Scheduled derived tag
   const todayTagStr = new Date().toISOString().slice(0,10);
-  const scheduledVisit = manifestVisits.filter(v => v.manifestId === mid && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayTagStr);
-  const isScheduled = !!(scheduledVisit || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayTagStr));
+  const nvMs2 = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+  const todayMs3 = Date.now();
+  const scheduledVisit = manifestVisits.filter(v => v.manifestId === mid && v.date).find(v => nvMs2(v.endDate||v.date) >= todayMs3);
+  const isScheduled = !!(scheduledVisit || (m.next_visit_date && nvMs2(m.next_visit_end_date||m.next_visit_date) >= todayMs3));
 
   const tagDefs = [
     isScheduled                             ? {label:'Scheduled',    bg:'#1a2e22', border:'#4a9e6b44', color:'#4cd68a', readonly:true} : null,
@@ -2286,8 +2293,10 @@ function addMeetingToGCal(mid, existingId) {
 function openTagEditor(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   const todayTE = new Date().toISOString().slice(0,10);
-  const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayTE);
-  const isScheduled = !!(scheduledV || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayTE));
+  const nvMsE = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+  const todayMsE = Date.now();
+  const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).find(v => nvMsE(v.endDate||v.date) >= todayMsE);
+  const isScheduled = !!(scheduledV || (m.next_visit_date && nvMsE(m.next_visit_end_date||m.next_visit_date) >= todayMsE));
 
   function tagRow(label, active, color, onclick, readonly) {
     const activeStyle = active
@@ -2343,8 +2352,10 @@ function toggleManifestTag(mid, tag) {
   haptic(8);
   // Re-render the tag rows in place without closing the modal
   const todayTE = new Date().toISOString().slice(0,10);
-  const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayTE);
-  const isScheduled = !!(scheduledV || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayTE));
+  const nvMsE = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+  const todayMsE = Date.now();
+  const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).find(v => nvMsE(v.endDate||v.date) >= todayMsE);
+  const isScheduled = !!(scheduledV || (m.next_visit_date && nvMsE(m.next_visit_end_date||m.next_visit_date) >= todayMsE));
   function tagRow(label, active, color, onclick, readonly) {
     const activeStyle = active ? `background:${color}22;border-color:${color}88;` : 'background:var(--surface2);border-color:var(--border);';
     const indicator = active ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>` : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`;
@@ -2386,8 +2397,10 @@ function openManifestEmailCopy() {
   else if (filter === 'Scheduled') {
     const todayF = new Date().toISOString().slice(0,10);
     items = items.filter(m => {
-      const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayF);
-      return nv || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayF);
+      const todayMs2 = Date.now();
+      const nvMs = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+      const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).find(v => nvMs(v.endDate||v.date) >= todayMs2);
+      return nv || (m.next_visit_date && nvMs(m.next_visit_end_date||m.next_visit_date) >= todayMs2);
     });
   }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
