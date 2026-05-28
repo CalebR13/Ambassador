@@ -285,6 +285,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
         <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="manifest-search" placeholder="Search pastor or church…" oninput="renderManifest()" style="width:100%;padding:9px 10px 9px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--surface2);color:var(--text);font-family:var(--sans);box-sizing:border-box;"/>
       </div>
+      <div style="display:flex;gap:12px;margin-top:7px;padding-left:2px;">
+        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);"><span style="width:7px;height:7px;border-radius:50%;background:#4cd68a;display:inline-block;"></span>Supporting</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);"><span style="width:7px;height:7px;border-radius:50%;background:#e05555;display:inline-block;"></span>Non-supporting</span>
+      </div>
     </div>
     <div id="manifest-list" class="tides-list"></div>
   </div>
@@ -2308,7 +2312,7 @@ function saveNextMeeting(mid, existingId) {
 
   if (existingId) {
     const v = manifestVisits.find(x => x.id === existingId);
-    if (v) { v.date = d; v.endDate = dEnd; v.notes = notes; saveVisitEntry(v); }
+    if (v) { v.date = d; v.endDate = dEnd; v.notes = notes; v.sermon = ''; saveVisitEntry(v); }
   } else {
     const visit = { id: uid(), manifestId: mid, date: d, endDate: dEnd, sermon: '', capacity: '', days: '', handout: '', notes };
     manifestVisits.push(visit);
