@@ -450,7 +450,7 @@ function toggleInfo(){
   }
   if(chevron) chevron.innerHTML=infoExpanded?ICONS.chevronUp:ICONS.chevronDown;
 }
-function toggleStar(cid){haptic(8);const c=contacts.find(x=>x.id===cid);if(!c)return;c.starred=!c.starred;save();saveContact(c);renderList();renderCallingCard();}
+function toggleStar(cid){haptic(8);const c=contacts.find(x=>x.id===cid);if(!c)return;c.starred=!c.starred;save();saveContact(c);renderList();refreshCallingCard();}
 function toggleManifestStar(mid){haptic(8);const m=manifestContacts.find(x=>x.id===mid);if(!m)return;m.starred=!m.starred;saveManifestContact(m);openManifestCard(mid);}
 
 function getReminders(){
@@ -545,20 +545,18 @@ function refreshCallingCard(){
   const body=card.querySelector('.card-body');
   const scrollTop=body?body.scrollTop:0;
   // Re-render without animation
-  const wasVisible=card.classList.contains('visible');
-  card.classList.remove('slide-in','slide-out');
-  renderCallingCard();
+  renderCallingCard(true);
   // Restore scroll
   requestAnimationFrame(()=>{
     const newBody=card.querySelector('.card-body');
     if(newBody)newBody.scrollTop=scrollTop;
   });
 }
-function renderCallingCard(){
+function renderCallingCard(noAnimation){
   const c=filteredList[callingIdx];if(!c){closeCard();return;}
   const rc=getRegionColor(c);const total=filteredList.length;const pct=Math.round(((callingIdx+1)/total)*100);
   const calls=(c.calls||[]).slice().reverse();const realCalls=calls.filter(x=>x.outcome!=='imported');
-  const card=document.getElementById('fullscreen-card');card.classList.remove('slide-out');card.classList.add('visible');requestAnimationFrame(()=>{ card.classList.add('slide-in'); setTimeout(()=>card.classList.remove('slide-in'),250); });
+  const card=document.getElementById('fullscreen-card');card.classList.remove('slide-out');card.classList.add('visible');if(!noAnimation){requestAnimationFrame(()=>{ card.classList.add('slide-in'); setTimeout(()=>card.classList.remove('slide-in'),250); });}
   card.innerHTML=`<div class="card-topbar"><button class="card-back-btn" onclick="closeCard()">\u2190</button><div class="card-topbar-center"><div class="card-progress-label">${callingIdx+1} of ${total}</div><div class="card-progress-bar-wrap"><div class="card-progress-bar-fill" style="width:${pct}%"></div></div></div><button class="card-edit-btn" onclick="openContactModal('${c.id}')" style="padding:6px 10px;display:flex;align-items:center;">${ICONS.pencil}</button></div>
     <div class="card-body">
       <div class="card-hero" style="background:linear-gradient(180deg,${rc.bg} 0%,var(--bg) 100%)">
@@ -666,7 +664,7 @@ function openCalendarModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)retur
 function openGCal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;const d=document.getElementById('cal-date').value;const dEnd=document.getElementById('cal-end-date')?.value||'';const t=document.getElementById('cal-time').value;if(!d){alert('Please pick an arrival date.');return;}const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);let dates='';if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const endDay=dEnd||d;const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=endDay.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}else{const startDay=d.replace(/-/g,'');const endDay=(dEnd||d).replace(/-/g,'');dates=`${startDay}/${endDay}`;}window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');if(!c.calls)c.calls=[];const [y,m,dy]=d.split('-').map(Number);const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const lbl=`${months[m-1]} ${dy}, ${y}${dEnd?' – '+fmtCallDate(dEnd):''}`;const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,meetingEndDate:dEnd,details:`Meeting scheduled: ${lbl}`};c.calls.push(calCall);save();saveCallEntry(cid,calCall);closeMKeepCard();refreshCallingCard();renderList();}
 
 function openContactModal(id){const c=id?contacts.find(x=>x.id===id):null;const v=f=>c?(c[f]||''):'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h2 style="margin-bottom:0">${c?'Edit contact':'New contact'}</h2>${id?`<button onclick="deleteContact('${id}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>`:''}</div><div class="form-row"><div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div><div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div></div><div class="form-row"><div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div><div class="fgi"><label>State</label>${stateDropdown('fst',v('state')||'IL')}</div></div><div class="form-row"><div class="fgi full"><label>Phone Numbers <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const phones=splitField(v('phone'));while(phones.length<4)phones.push('');return phones.slice(0,4).map((p,i)=>`<input id="fph${i}" value="${esc(p)}" placeholder="${i===0?'Primary number':'Additional number'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div><div class="form-row"><div class="fgi full"><label>Email Addresses <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const emails=splitField(v('email'));while(emails.length<4)emails.push('');return emails.slice(0,4).map((e,i)=>`<input id="fe${i}" type="email" value="${esc(e)}" placeholder="${i===0?'Primary email':'Additional email'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveCM('${id||''}')">Save</button></div></div></div>`);}
-function saveCM(id){const ch=(document.getElementById('fc')||{}).value||'';const pa=(document.getElementById('fp')||{}).value||'';if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};let savedContact;if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();if(id)renderCallingCard();}
+function saveCM(id){const ch=(document.getElementById('fc')||{}).value||'';const pa=(document.getElementById('fp')||{}).value||'';if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};let savedContact;if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();if(id)refreshCallingCard();}
 function deleteContact(id){if(!confirm('Delete this contact? This cannot be undone.'))return;contacts=contacts.filter(c=>c.id!==id);save();deleteContactEntry(id);closeMKeepCard();closeCard();renderFilters();renderList();}
 function showM(h){
   const l=document.getElementById('modal-layer');
@@ -1135,7 +1133,7 @@ function saveTideDetail() {
   saveCallEntry(cid, call);
   closeMKeepCard();
   renderTides();
-  renderCallingCard();
+  refreshCallingCard();
 }
 
 function haptic(ms=10) { try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
