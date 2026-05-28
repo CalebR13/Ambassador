@@ -1384,7 +1384,7 @@ function loadManifest() {
   return new Promise((resolve) => {
     const cbName = 'relay_mcb_' + Date.now();
     window[cbName] = (data) => {
-      manifestContacts = data || [];
+      manifestContacts = (data || []).map(m => ({...m, support_status: m.support_status || 'Non-supporting'}));
       delete window[cbName];
       // Re-render if manifest wing is currently showing
       if (currentWing === 'manifest') renderManifest();
@@ -1667,7 +1667,7 @@ function openManifestCard(mid) {
       }
 
       allFuture.forEach((v, i) => {
-        const label = i === 0 ? 'Next Meeting' : 'Meeting ' + (i+1);
+        const label = i === 0 && !legacyDate ? 'Next Meeting' : 'Meeting ' + (i + (legacyDate ? 2 : 1));
         html += `<div style="margin:0 16px 10px;background:linear-gradient(135deg,#0a2a1a,#1a2e22);border:1px solid #4a9e6b44;border-radius:var(--radius-sm);padding:14px 16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <div style="display:flex;align-items:center;gap:6px;">
@@ -1683,6 +1683,23 @@ function openManifestCard(mid) {
           ${v.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;white-space:pre-wrap;">${esc(v.notes)}</div>` : ''}
         </div>`;
       });
+
+      // Render legacy next_visit_date if no matching manifestVisit
+      if (legacyDate) {
+        html = `<div style="margin:0 16px 10px;background:linear-gradient(135deg,#0a2a1a,#1a2e22);border:1px solid #4a9e6b44;border-radius:var(--radius-sm);padding:14px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4cd68a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span style="font-size:11px;font-weight:600;color:#4cd68a;">Next Meeting</span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button onclick="openEditNextMeeting('${mid}','')" style="width:30px;height:30px;background:none;border:1px solid #4a9e6b44;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#4cd68a;">${ICONS.pencil}</button>
+              <button onclick="deleteLegacyMeeting('${mid}')" style="width:30px;height:30px;background:none;border:1px solid #e0555544;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#e05555;">${ICONS.trash}</button>
+            </div>
+          </div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);">${fmtCallDate(legacyDate)}${m.next_visit_end_date?` – ${fmtCallDate(m.next_visit_end_date)}`:''}</div>
+        </div>` + html;
+      }
 
       // Always show schedule button
       html += `<div style="margin:0 16px 10px;">
@@ -2172,7 +2189,7 @@ function setSailToManifest(cid) {
     lodging: '',
     rv_hookup: '',
     bible_handouts: '',
-    support_status: '',
+    support_status: 'Non-supporting',
     support_amount: '',
     support_cadence: '',
     relay_group: '',
@@ -2221,6 +2238,14 @@ function deleteNextMeeting(mid, visitId) {
   }
   const m = manifestContacts.find(x => x.id === mid);
   if (m) { m.next_visit_date = ''; saveManifestContact(m); }
+  renderManifest();
+  setTimeout(() => openManifestCard(mid), 50);
+}
+
+function deleteLegacyMeeting(mid) {
+  if (!confirm('Remove this scheduled meeting?')) return;
+  const m = manifestContacts.find(x => x.id === mid);
+  if (m) { m.next_visit_date = ''; m.next_visit_end_date = ''; saveManifestContact(m); }
   renderManifest();
   setTimeout(() => openManifestCard(mid), 50);
 }
@@ -2351,9 +2376,9 @@ function openTagEditor(mid) {
 function toggleManifestTag(mid, tag) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   if (tag === 'supporting') {
-    m.support_status = m.support_status === 'Supporting' ? '' : 'Supporting';
+    m.support_status = 'Supporting';
   } else if (tag === 'nonsupporting') {
-    m.support_status = m.support_status === 'Non-supporting' ? '' : 'Non-supporting';
+    m.support_status = 'Non-supporting';
   } else if (tag === 'handouts') {
     m.bible_handouts = m.bible_handouts === 'Yes' ? '' : 'Yes';
   } else if (tag === 'lodging') {
@@ -2565,7 +2590,7 @@ function saveManifestEdit(mid) {
 
 function openManifestAddModal() {
   const newId = 'mfst-' + uid();
-  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', lodging:'', rv_hookup:'', bible_handouts:'', support_status:'', support_amount:'', support_cadence:'', relay_group:'', prayer_list:'', notes:''};
+  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', lodging:'', rv_hookup:'', bible_handouts:'', support_status:'Non-supporting', support_amount:'', support_cadence:'', relay_group:'', prayer_list:'', notes:''};
   manifestContacts.push(m);
   window._editModalFromCard = false;
   openManifestEditModal(newId);
