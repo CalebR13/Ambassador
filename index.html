@@ -998,23 +998,22 @@ function renderCompletedSection(items) {
 }
 
 function openCallingCardFromTides(cid) {
-  switchWing('voyage');
-  setTimeout(() => {
+  // Set up contact state before switching wing
+  filteredList = buildFilteredList();
+  const idx = filteredList.findIndex(c => c.id === cid);
+  if (idx >= 0) {
+    callingIdx = idx;
+  } else {
+    fState = 'All';
+    proxResults = null;
+    showingReminders = false;
     filteredList = buildFilteredList();
-    const idx = filteredList.findIndex(c => c.id === cid);
-    if (idx >= 0) {
-      callingIdx = idx;
-    } else {
-      // Contact not in current filter — reset filter and find it
-      fState = 'All';
-      proxResults = null;
-      showingReminders = false;
-      filteredList = buildFilteredList();
-      callingIdx = Math.max(0, filteredList.findIndex(c => c.id === cid));
-    }
-    contactMenuOpen = false; infoExpanded = false;
-    renderCallingCard();
-  }, 200);
+    callingIdx = Math.max(0, filteredList.findIndex(c => c.id === cid));
+  }
+  contactMenuOpen = false; infoExpanded = false;
+  switchWing('voyage');
+  // Render card just after switchWing's inner timeout (150ms) completes
+  setTimeout(() => { renderCallingCard(); }, 160);
 }
 
 function openTideDetail(cid, xid) {
@@ -1879,7 +1878,7 @@ function saveManifestPhoto(mid) {
   haptic(10);
   closeMKeepCard();
   closeManifestCard();
-  openManifestCard(mid);
+  setTimeout(() => openManifestCard(mid), 220);
 }
 
 
