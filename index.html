@@ -1431,7 +1431,13 @@ function renderManifest() {
 
   if (filter === 'Supporting') items = items.filter(m => m.support_status === 'Supporting');
   else if (filter === 'Non-supporting') items = items.filter(m => m.support_status === 'Non-supporting');
-  else if (filter === 'Scheduled') items = items.filter(m => (m.groups||'').includes('Scheduled'));
+  else if (filter === 'Scheduled') {
+    const todayF = new Date().toISOString().slice(0,10);
+    items = items.filter(m => {
+      const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayF);
+      return nv || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayF);
+    });
+  }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
   else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
@@ -1534,15 +1540,23 @@ function openManifestCard(mid) {
   const activeRem = allManifestCalls.find(x=>x.outcome==='reminder'&&!x.completed) || null;
 
   // Derived tag pills
+  // Compute Scheduled derived tag
+  const todayTagStr = new Date().toISOString().slice(0,10);
+  const scheduledVisit = manifestVisits.filter(v => v.manifestId === mid && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayTagStr);
+  const isScheduled = !!(scheduledVisit || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayTagStr));
+
   const tagDefs = [
-    m.support_status==='Supporting'     ? {label:'Supporting',   bg:'#0a2a1a', border:'#4cd68a44', color:'#4cd68a'} : null,
-    m.support_status==='Non-supporting' ? {label:'Non-supporting',bg:'#2a0a0a', border:'#e0555544', color:'#e05555'} : null,
-    m.prayer_list==='Yes'               ? {label:'Prayer List',  bg:'var(--surface2)', border:'var(--border)', color:'var(--muted)'} : null,
-    m.lodging==='Yes'                   ? {label:'Lodging',      bg:'#1a1f35', border:'#8899ee44', color:'#8899ee'} : null,
-    m.rv_hookup==='Yes'                 ? {label:'RV',           bg:'#1a1f35', border:'#8899ee44', color:'#8899ee'} : null,
-    m.bible_handouts==='Yes'            ? {label:'Handouts',     bg:'#2e1f00', border:'#f0b42944', color:'#f0b429'} : null,
+    isScheduled                             ? {label:'Scheduled',    bg:'#1a2e22', border:'#4a9e6b44', color:'#4cd68a', readonly:true} : null,
+    m.support_status==='Supporting'         ? {label:'Supporting',   bg:'#0a2a1a', border:'#4cd68a44', color:'#4cd68a'} : null,
+    m.support_status==='Non-supporting'     ? {label:'Non-supporting',bg:'#2a0a0a', border:'#e0555544', color:'#e05555'} : null,
+    m.bible_handouts==='Yes'                ? {label:'Handouts',     bg:'#2e1f00', border:'#f0b42944', color:'#f0b429'} : null,
+    m.lodging==='Yes'                       ? {label:'Lodging',      bg:'#1a1f35', border:'#8899ee44', color:'#8899ee'} : null,
+    m.rv_hookup==='Yes'                     ? {label:'RV',           bg:'#1a1f35', border:'#8899ee44', color:'#8899ee'} : null,
+    m.prayer_list==='Yes'                   ? {label:'Prayer List',  bg:'var(--surface2)', border:'var(--border)', color:'var(--muted)'} : null,
   ].filter(Boolean);
-  const groupPills = tagDefs.map(t=>`<span style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid ${t.border};color:${t.color};background:${t.bg};">${t.label}</span>`).join('');
+  const groupPills = tagDefs.length
+    ? tagDefs.map(t=>`<span onclick="openTagEditor('${mid}')" style="cursor:pointer;font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid ${t.border};color:${t.color};background:${t.bg};">${t.label}</span>`).join('')
+    : `<span onclick="openTagEditor('${mid}')" style="cursor:pointer;font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted);background:var(--surface2);">+ Tags</span>`;
 
   // Photo or initials
   const initials = (m.pastor||m.church||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
@@ -1612,7 +1626,7 @@ function openManifestCard(mid) {
         ${m.phone||m.cell ? `<a href="tel:${m.cell||m.phone}" style="width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:50%;color:var(--accent);text-decoration:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.34a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>` : ''}
         ${m.cell||m.phone ? `<a href="sms:${m.cell||m.phone}" style="width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:50%;color:var(--accent);text-decoration:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></a>` : ''}
         ${m.email ? `<a href="mailto:${m.email}" style="width:40px;height:40px;background:var(--surface);border:1px solid var(--border);border-radius:50%;color:var(--accent);text-decoration:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>` : ''}
-        ${groupPills ? `<div style="display:flex;flex-wrap:wrap;gap:4px;">${groupPills}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${groupPills}</div>
       </div>
     </div>
 
@@ -2268,6 +2282,89 @@ function addMeetingToGCal(mid, existingId) {
   saveNextMeeting(mid, existingId);
 }
 
+function openTagEditor(mid) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  const todayTE = new Date().toISOString().slice(0,10);
+  const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayTE);
+  const isScheduled = !!(scheduledV || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayTE));
+
+  function tagRow(label, active, color, onclick, readonly) {
+    const activeStyle = active
+      ? `background:${color}22;border-color:${color}88;`
+      : 'background:var(--surface2);border-color:var(--border);';
+    const indicator = active
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`;
+    const cursor = readonly ? 'default' : 'pointer';
+    const opacity = readonly ? '0.6' : '1';
+    return `<div onclick="${readonly ? '' : onclick}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-radius:var(--radius-sm);border:1px solid;margin-bottom:8px;cursor:${cursor};opacity:${opacity};${activeStyle}">
+      <span style="font-size:14px;font-weight:500;color:${active ? color : 'var(--text)'};">${label}</span>
+      <div style="display:flex;align-items:center;gap:6px;">${active && readonly ? '<span style="font-size:10px;color:var(--muted);">auto</span>' : ''}${indicator}</div>
+    </div>`;
+  }
+
+  const rows = [
+    tagRow('Scheduled', isScheduled, '#4cd68a', '', true),
+    tagRow('Supporting', m.support_status==='Supporting', '#4cd68a', `toggleManifestTag('${mid}','supporting')`, false),
+    tagRow('Non-supporting', m.support_status==='Non-supporting', '#e05555', `toggleManifestTag('${mid}','nonsupporting')`, false),
+    tagRow('Handouts', m.bible_handouts==='Yes', '#f0b429', `toggleManifestTag('${mid}','handouts')`, false),
+    tagRow('Lodging', m.lodging==='Yes', '#8899ee', `toggleManifestTag('${mid}','lodging')`, false),
+    tagRow('RV', m.rv_hookup==='Yes', '#8899ee', `toggleManifestTag('${mid}','rv')`, false),
+    tagRow('Prayer List', m.prayer_list==='Yes', '#aaaaaa', `toggleManifestTag('${mid}','prayer')`, false),
+  ].join('');
+
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this){const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';setTimeout(()=>{ const mc=document.getElementById('manifest-card-${mid}');if(mc){ const b=mc.querySelector('.card-body');const s=b?b.scrollTop:0;openManifestCard('${mid}');requestAnimationFrame(()=>{const nb=document.getElementById('manifest-card-${mid}')?.querySelector('.card-body');if(nb)nb.scrollTop=s;}); } },50);}">
+    <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 28px;">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+      <h2 style="font-family:var(--serif);font-size:18px;margin-bottom:16px;">Tags</h2>
+      <div id="tag-editor-rows">${rows}</div>
+      <button onclick="const l=document.getElementById('modal-layer');l.innerHTML='';l.style.pointerEvents='none';setTimeout(()=>openManifestCard('${mid}'),50);" style="width:100%;margin-top:6px;padding:12px;background:none;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;color:var(--muted);cursor:pointer;">Done</button>
+    </div>
+  </div>`);
+}
+
+function toggleManifestTag(mid, tag) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  if (tag === 'supporting') {
+    m.support_status = m.support_status === 'Supporting' ? '' : 'Supporting';
+  } else if (tag === 'nonsupporting') {
+    m.support_status = m.support_status === 'Non-supporting' ? '' : 'Non-supporting';
+  } else if (tag === 'handouts') {
+    m.bible_handouts = m.bible_handouts === 'Yes' ? '' : 'Yes';
+  } else if (tag === 'lodging') {
+    m.lodging = m.lodging === 'Yes' ? '' : 'Yes';
+  } else if (tag === 'rv') {
+    m.rv_hookup = m.rv_hookup === 'Yes' ? '' : 'Yes';
+  } else if (tag === 'prayer') {
+    m.prayer_list = m.prayer_list === 'Yes' ? '' : 'Yes';
+  }
+  saveManifestContact(m);
+  haptic(8);
+  // Re-render the tag rows in place without closing the modal
+  const todayTE = new Date().toISOString().slice(0,10);
+  const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayTE);
+  const isScheduled = !!(scheduledV || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayTE));
+  function tagRow(label, active, color, onclick, readonly) {
+    const activeStyle = active ? `background:${color}22;border-color:${color}88;` : 'background:var(--surface2);border-color:var(--border);';
+    const indicator = active ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>` : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>`;
+    const cursor = readonly ? 'default' : 'pointer';
+    const opacity = readonly ? '0.6' : '1';
+    return `<div onclick="${readonly ? '' : onclick}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-radius:var(--radius-sm);border:1px solid;margin-bottom:8px;cursor:${cursor};opacity:${opacity};${activeStyle}"><span style="font-size:14px;font-weight:500;color:${active ? color : 'var(--text)'};">${label}</span><div style="display:flex;align-items:center;gap:6px;">${active && readonly ? '<span style="font-size:10px;color:var(--muted);">auto</span>' : ''}${indicator}</div></div>`;
+  }
+  const rows = [
+    tagRow('Scheduled', isScheduled, '#4cd68a', '', true),
+    tagRow('Supporting', m.support_status==='Supporting', '#4cd68a', `toggleManifestTag('${mid}','supporting')`, false),
+    tagRow('Non-supporting', m.support_status==='Non-supporting', '#e05555', `toggleManifestTag('${mid}','nonsupporting')`, false),
+    tagRow('Handouts', m.bible_handouts==='Yes', '#f0b429', `toggleManifestTag('${mid}','handouts')`, false),
+    tagRow('Lodging', m.lodging==='Yes', '#8899ee', `toggleManifestTag('${mid}','lodging')`, false),
+    tagRow('RV', m.rv_hookup==='Yes', '#8899ee', `toggleManifestTag('${mid}','rv')`, false),
+    tagRow('Prayer List', m.prayer_list==='Yes', '#aaaaaa', `toggleManifestTag('${mid}','prayer')`, false),
+  ].join('');
+  const container = document.getElementById('tag-editor-rows');
+  if (container) container.innerHTML = rows;
+  renderManifest();
+}
+
 let manifestStarFilter = false;
 function toggleManifestStarFilter() {
   manifestStarFilter = !manifestStarFilter;
@@ -2285,7 +2382,13 @@ function openManifestEmailCopy() {
 
   if (filter === 'Supporting') items = items.filter(m => m.support_status === 'Supporting');
   else if (filter === 'Non-supporting') items = items.filter(m => m.support_status === 'Non-supporting');
-  else if (filter === 'Scheduled') items = items.filter(m => (m.groups||'').includes('Scheduled'));
+  else if (filter === 'Scheduled') {
+    const todayF = new Date().toISOString().slice(0,10);
+    items = items.filter(m => {
+      const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).sort((a,b)=>a.date.localeCompare(b.date)).find(v => (v.endDate||v.date) >= todayF);
+      return nv || (m.next_visit_date && (m.next_visit_end_date||m.next_visit_date) >= todayF);
+    });
+  }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
   else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
