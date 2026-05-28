@@ -276,6 +276,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
           <option value="sort-scheduled">Sort: Soonest Visit</option>
         </select>
         <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Copy emails"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
+        <button id="manifest-star-btn" onclick="toggleManifestStarFilter()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Starred only"><svg id="manifest-star-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
         <button onclick="openManifestAddModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Add</button>
       </div>
     </div>
@@ -660,8 +661,8 @@ function saveReminder(cid){haptic(10);
   save();saveCallEntry(cid,remCall);closeMKeepCard();setTimeout(()=>refreshCallingCard(),180);renderList();
 }
 
-function openCalendarModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Schedule Meeting</h2><div class="modal-sub">Dates will carry over to Manifest when you Set Sail.</div><div class="fg"><label>Arrival date *</label><input type="date" id="cal-date"/></div><div class="fg"><label>Departure date <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="date" id="cal-end-date"/></div><div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div><button class="cal-open-btn" onclick="openGCal('${cid}')">${ICONS.calendar} Open Google Calendar</button><div class="modal-actions" style="margin-top:10px"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div></div></div>`);}
-function openGCal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;const d=document.getElementById('cal-date').value;const dEnd=document.getElementById('cal-end-date')?.value||'';const t=document.getElementById('cal-time').value;if(!d){alert('Please pick an arrival date.');return;}const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));const details=encodeURIComponent(`Pastor: ${c.pastor||''}\nChurch: ${c.church||''}\nPhone: ${c.phone||''}\nEmail: ${c.email||''}`);let dates='';if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const endDay=dEnd||d;const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=endDay.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}else{const startDay=d.replace(/-/g,'');const endDateObj=new Date((dEnd||d)+'T12:00:00');endDateObj.setDate(endDateObj.getDate()+1);const endDay=endDateObj.toISOString().slice(0,10).replace(/-/g,'');dates=`${startDay}/${endDay}`;}window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');if(!c.calls)c.calls=[];const [y,m,dy]=d.split('-').map(Number);const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const lbl=`${months[m-1]} ${dy}, ${y}${dEnd?' – '+fmtCallDate(dEnd):''}`;const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,meetingEndDate:dEnd,details:`Meeting scheduled: ${lbl}`};c.calls.push(calCall);save();saveCallEntry(cid,calCall);closeMKeepCard();setTimeout(()=>refreshCallingCard(),180);renderList();}
+function openCalendarModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2 style="display:flex;align-items:center;gap:8px;">${ICONS.calendar} Schedule Meeting</h2><div class="modal-sub">Dates will carry over to Manifest when you Set Sail.</div><div class="fg"><label>Arrival date *</label><input type="date" id="cal-date"/></div><div class="fg"><label>Departure date <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="date" id="cal-end-date"/></div><div class="fg"><label>Meeting time <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><input type="time" id="cal-time"/></div><div class="fg"><label>Notes <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="cal-notes" placeholder="e.g. Staying at pastor's house, bring extra books..." style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:70px;resize:vertical;box-sizing:border-box;"></textarea></div><button class="cal-open-btn" onclick="openGCal('${cid}')">${ICONS.calendar} Add to Google Calendar</button><div class="modal-actions" style="margin-top:10px"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button></div></div></div>`);}
+function openGCal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;const d=document.getElementById('cal-date').value;const dEnd=document.getElementById('cal-end-date')?.value||'';const t=document.getElementById('cal-time').value;const calNotes=document.getElementById('cal-notes')?.value?.trim()||'';if(!d){alert('Please pick an arrival date.');return;}const title=encodeURIComponent(`${c.city||''} ${c.state?', '+c.state:''} | ${c.pastor||'Pastor'} | ${c.church||''}`).replace(/%20/g,'+');const loc=encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '));const detailParts=[`Pastor: ${c.pastor||''}`,`Church: ${c.church||''}`,`Phone: ${c.phone||''}`,`Email: ${c.email||''}`];if(calNotes)detailParts.push(`Notes: ${calNotes}`);const details=encodeURIComponent(detailParts.join('\n'));let dates='';if(t){const s=d.replace(/-/g,'')+'T'+t.replace(':','')+'00';const endDay=dEnd||d;const eh=String(Number(t.split(':')[0])+1).padStart(2,'0');const e=endDay.replace(/-/g,'')+'T'+eh+t.split(':')[1]+'00';dates=`${s}/${e}`;}else{const startDay=d.replace(/-/g,'');const endDateObj=new Date((dEnd||d)+'T12:00:00');endDateObj.setDate(endDateObj.getDate()+1);const endDay=endDateObj.toISOString().slice(0,10).replace(/-/g,'');dates=`${startDay}/${endDay}`;}window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${loc}&details=${details}`,'_blank');if(!c.calls)c.calls=[];const [y,m,dy]=d.split('-').map(Number);const months=['January','February','March','April','May','June','July','August','September','October','November','December'];const lbl=`${months[m-1]} ${dy}, ${y}${dEnd?' – '+fmtCallDate(dEnd):''}`;const calCall={id:uid(),date:fmtDate(new Date()),outcome:'pastor',meetingBooked:true,meetingDate:lbl,meetingEndDate:dEnd,details:`Meeting scheduled: ${lbl}${calNotes?'\n'+calNotes:''}`};c.calls.push(calCall);save();saveCallEntry(cid,calCall);closeMKeepCard();setTimeout(()=>refreshCallingCard(),180);renderList();}
 
 function openContactModal(id){const c=id?contacts.find(x=>x.id===id):null;const v=f=>c?(c[f]||''):'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><h2 style="margin-bottom:0">${c?'Edit contact':'New contact'}</h2>${id?`<button onclick="deleteContact('${id}')" style="background:#3a0a0a;border:1px solid #5a1a1a;border-radius:6px;padding:6px 8px;cursor:pointer;color:#e05555;display:flex;align-items:center;">${ICONS.trash}</button>`:''}</div><div class="form-row"><div class="fgi"><label>Pastor name</label><input id="fp" value="${esc(v('pastor'))}" placeholder="First Last"/></div><div class="fgi"><label>Church</label><input id="fc" value="${esc(v('church'))}" placeholder="Church name"/></div></div><div class="form-row"><div class="fgi"><label>City</label><input id="fci" value="${esc(v('city'))}" placeholder="City"/></div><div class="fgi"><label>State</label>${stateDropdown('fst',v('state')||'IL')}</div></div><div class="form-row"><div class="fgi full"><label>Phone Numbers <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const phones=splitField(v('phone'));while(phones.length<4)phones.push('');return phones.slice(0,4).map((p,i)=>`<input id="fph${i}" value="${esc(p)}" placeholder="${i===0?'Primary number':'Additional number'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="form-row"><div class="fgi full"><label>Address</label><input id="fa" value="${esc(v('address'))}" placeholder="Street address"/></div></div><div class="form-row"><div class="fgi full"><label>Email Addresses <span style="color:var(--muted);font-weight:400;font-style:italic;text-transform:none;letter-spacing:0">(up to 4)</span></label>${(()=>{const emails=splitField(v('email'));while(emails.length<4)emails.push('');return emails.slice(0,4).map((e,i)=>`<input id="fe${i}" type="email" value="${esc(e)}" placeholder="${i===0?'Primary email':'Additional email'}" style="margin-bottom:${i<3?'6px':'0'};"/>`).join('');})()}</div></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveCM('${id||''}')">Save</button></div></div></div>`);}
 function saveCM(id){const ch=(document.getElementById('fc')||{}).value||'';const pa=(document.getElementById('fp')||{}).value||'';if(!ch.trim()&&!pa.trim()){alert('Church or pastor name required.');return;}const phones=[0,1,2,3].map(i=>(document.getElementById('fph'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const emails=[0,1,2,3].map(i=>(document.getElementById('fe'+i)||{}).value?.trim()||'').filter(Boolean).join(', ');const d={pastor:pa.trim(),church:ch.trim(),city:(document.getElementById('fci')||{}).value?.trim()||'',state:((document.getElementById('fst')||{}).value||'').trim().toUpperCase(),phone:phones,address:(document.getElementById('fa')||{}).value?.trim()||'',email:emails};let savedContact;if(id){const c=contacts.find(x=>x.id===id);Object.assign(c,d);savedContact=c;}else{savedContact={id:uid(),calls:[],notes:[],photo:'',...d};contacts.push(savedContact);}save();saveContact(savedContact);closeMKeepCard();renderFilters();renderList();if(id)setTimeout(()=>refreshCallingCard(),180);}
@@ -1435,6 +1436,7 @@ function renderManifest() {
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
   else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
   else if (filter === 'handouts') items = items.filter(m => m.bible_handouts === 'Yes');
+  if (manifestStarFilter) items = items.filter(m => m.starred === true || m.starred === 'true' || m.starred === 'TRUE');
 
   if (mq) items = items.filter(m =>
     (m.pastor||'').toLowerCase().includes(mq) ||
@@ -1646,7 +1648,7 @@ function openManifestCard(mid) {
             </div>
           </div>
           <div style="font-size:18px;font-weight:700;color:var(--text);">${fmtCallDate(meetingDate)}${(nextVisit?.endDate||m.next_visit_end_date)?` – ${fmtCallDate(nextVisit?.endDate||m.next_visit_end_date)}`:''}</div>
-          ${nextVisit?.sermon ? `<div style="font-size:12px;color:var(--muted);margin-top:3px;">${esc(nextVisit.sermon)}</div>` : ''}
+          ${nextVisit?.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5;white-space:pre-wrap;">${esc(nextVisit.notes)}</div>` : ''}
           <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent((m.pastor||'')+' | '+(m.church||''))}&dates=${meetingDate.replace(/-/g,'')}/${meetingDate.replace(/-/g,'')}&location=${encodeURIComponent([m.address,m.city,m.state].filter(Boolean).join(', '))}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;color:#4cd68a;text-decoration:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Add to Google Calendar</a>
         </div>`;
       }
@@ -2193,8 +2195,9 @@ function openEditNextMeeting(mid) {
   const now = new Date();
   const todayStr3 = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0"); const nextVisit = manifestVisits.filter(v => v.manifestId === mid && v.date && v.date >= todayStr3).sort((a,b)=>a.date.localeCompare(b.date))[0];
   const existingDate = nextVisit ? nextVisit.date : (m.next_visit_date || '');
-  const existingSermon = nextVisit ? (nextVisit.sermon || '') : '';
+  const existingNotes = nextVisit ? (nextVisit.notes || '') : '';
   const existingId = nextVisit ? nextVisit.id : null;
+  const existingEnd = existingId ? (manifestVisits.find(x=>x.id===existingId)?.endDate||'') : (m.next_visit_end_date||'');
 
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
@@ -2207,15 +2210,16 @@ function openEditNextMeeting(mid) {
         </div>
         <div>
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Departure <span style="opacity:.5;">(opt)</span></div>
-          <input type="date" id="nm-end-date" value="${existingId ? (manifestVisits.find(x=>x.id===existingId)?.endDate||'') : (m.next_visit_end_date||'')}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+          <input type="date" id="nm-end-date" value="${existingEnd}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
         </div>
       </div>
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Sermon / Message <span style="opacity:.5;">(optional)</span></div>
-      <input type="text" id="nm-sermon" value="${esc(existingSermon)}" placeholder="What will you preach?" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);margin-bottom:14px;box-sizing:border-box;"/>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes <span style="opacity:.5;text-transform:none;letter-spacing:0;">(optional)</span></div>
+      <textarea id="nm-notes" placeholder="e.g. Staying at pastor's house, bring extra books..." style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:80px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${esc(existingNotes)}</textarea>
       <div style="display:flex;gap:8px;">
         <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
         <button onclick="saveNextMeeting('${mid}','${existingId||''}')" style="flex:2;padding:12px;background:linear-gradient(135deg,#1a3a28,#1e2244);border:1px solid #4a9e6b44;border-radius:var(--radius-sm);font-family:var(--serif);font-size:15px;color:#4cd68a;cursor:pointer;">Save</button>
       </div>
+      <button onclick="addMeetingToGCal('${mid}','${existingId||''}')" style="width:100%;margin-top:10px;padding:11px;background:none;border:1px solid #4a9e6b44;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;color:#4cd68a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Add to Google Calendar</button>
     </div>
   </div>`);
 }
@@ -2225,13 +2229,13 @@ function saveNextMeeting(mid, existingId) {
   const d = document.getElementById('nm-date')?.value;
   if (!d) { alert('Please pick a date.'); return; }
   const dEnd = document.getElementById('nm-end-date')?.value || '';
-  const sermon = document.getElementById('nm-sermon')?.value?.trim() || '';
+  const notes = document.getElementById('nm-notes')?.value?.trim() || '';
 
   if (existingId) {
     const v = manifestVisits.find(x => x.id === existingId);
-    if (v) { v.date = d; v.endDate = dEnd; v.sermon = sermon; saveVisitEntry(v); }
+    if (v) { v.date = d; v.endDate = dEnd; v.notes = notes; saveVisitEntry(v); }
   } else {
-    const visit = { id: uid(), manifestId: mid, date: d, endDate: dEnd, sermon, capacity: '', days: '', handout: '', notes: '' };
+    const visit = { id: uid(), manifestId: mid, date: d, endDate: dEnd, sermon: '', capacity: '', days: '', handout: '', notes };
     manifestVisits.push(visit);
     saveVisitEntry(visit);
   }
@@ -2242,6 +2246,36 @@ function saveNextMeeting(mid, existingId) {
   closeMKeepCard();
   renderManifest();
   setTimeout(() => openManifestCard(mid), 220);
+}
+
+function addMeetingToGCal(mid, existingId) {
+  const m = manifestContacts.find(x => x.id === mid); if (!m) return;
+  const d = document.getElementById('nm-date')?.value;
+  if (!d) { alert('Please pick an arrival date first.'); return; }
+  const dEnd = document.getElementById('nm-end-date')?.value || '';
+  const notes = document.getElementById('nm-notes')?.value?.trim() || '';
+  const title = encodeURIComponent(`${m.city||''}, ${m.state||''} | ${m.pastor||'Pastor'} | ${m.church||''}`);
+  const loc = encodeURIComponent([m.address,m.city,m.state].filter(Boolean).join(', '));
+  const detailParts = [`Pastor: ${m.pastor||''}`, `Church: ${m.church||''}`, `Phone: ${m.phone||m.cell||''}`, `Email: ${m.email||''}`];
+  if (notes) detailParts.push(`Notes: ${notes}`);
+  const details = encodeURIComponent(detailParts.join('\n'));
+  const startDay = d.replace(/-/g,'');
+  const endDateObj = new Date((dEnd||d)+'T12:00:00');
+  endDateObj.setDate(endDateObj.getDate()+1);
+  const endDay = endDateObj.toISOString().slice(0,10).replace(/-/g,'');
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDay}/${endDay}&location=${loc}&details=${details}`,'_blank');
+  // Also save
+  saveNextMeeting(mid, existingId);
+}
+
+let manifestStarFilter = false;
+function toggleManifestStarFilter() {
+  manifestStarFilter = !manifestStarFilter;
+  const btn = document.getElementById('manifest-star-btn');
+  const icon = document.getElementById('manifest-star-icon');
+  if (btn) btn.style.borderColor = manifestStarFilter ? '#F3B53A' : 'var(--border)';
+  if (icon) { icon.setAttribute('fill', manifestStarFilter ? '#F3B53A' : 'none'); icon.setAttribute('stroke', manifestStarFilter ? '#F3B53A' : 'currentColor'); }
+  renderManifest();
 }
 
 function openManifestEmailCopy() {
