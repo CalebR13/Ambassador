@@ -1435,7 +1435,7 @@ function renderManifest() {
     const todayF = new Date().toISOString().slice(0,10);
     items = items.filter(m => {
       const todayMs2 = Date.now();
-      const nvMs = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+      const nvMs = t => { if(!t)return 0; const c=t.split(' – ')[0].split(' - ')[0].trim(); const x=new Date(c).getTime(); return isNaN(x)?0:x; };
       const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).find(v => nvMs(v.endDate||v.date) >= todayMs2);
       return nv || (m.next_visit_date && nvMs(m.next_visit_end_date||m.next_visit_date) >= todayMs2);
     });
@@ -1455,7 +1455,7 @@ function renderManifest() {
 
   if (filter === 'sort-scheduled') {
     const todayMs = Date.now();
-    const toMs = d => { if (!d) return Infinity; const t = new Date(d).getTime(); return isNaN(t) ? Infinity : t; };
+    const toMs = d => { if (!d) return Infinity; const clean = d.split(' – ')[0].split(' - ')[0].trim(); const t = new Date(clean).getTime(); return isNaN(t) ? Infinity : t; };
     const getNextMs = m => {
       const fromVisits = manifestVisits
         .filter(v => v.manifestId===m.id && v.date && toMs(v.date) >= todayMs)
@@ -1548,7 +1548,7 @@ function openManifestCard(mid) {
   // Derived tag pills
   // Compute Scheduled derived tag
   const todayTagStr = new Date().toISOString().slice(0,10);
-  const nvMs2 = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+  const nvMs2 = t => { if(!t)return 0; const c=t.split(' – ')[0].split(' - ')[0].trim(); const x=new Date(c).getTime(); return isNaN(x)?0:x; };
   const todayMs3 = Date.now();
   const scheduledVisit = manifestVisits.filter(v => v.manifestId === mid && v.date).find(v => nvMs2(v.endDate||v.date) >= todayMs3);
   const isScheduled = !!(scheduledVisit || (m.next_visit_date && nvMs2(m.next_visit_end_date||m.next_visit_date) >= todayMs3));
@@ -2293,7 +2293,7 @@ function addMeetingToGCal(mid, existingId) {
 function openTagEditor(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
   const todayTE = new Date().toISOString().slice(0,10);
-  const nvMsE = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+  const nvMsE = t => { if(!t)return 0; const c=t.split(' – ')[0].split(' - ')[0].trim(); const x=new Date(c).getTime(); return isNaN(x)?0:x; };
   const todayMsE = Date.now();
   const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).find(v => nvMsE(v.endDate||v.date) >= todayMsE);
   const isScheduled = !!(scheduledV || (m.next_visit_date && nvMsE(m.next_visit_end_date||m.next_visit_date) >= todayMsE));
@@ -2352,7 +2352,7 @@ function toggleManifestTag(mid, tag) {
   haptic(8);
   // Re-render the tag rows in place without closing the modal
   const todayTE = new Date().toISOString().slice(0,10);
-  const nvMsE = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+  const nvMsE = t => { if(!t)return 0; const c=t.split(' – ')[0].split(' - ')[0].trim(); const x=new Date(c).getTime(); return isNaN(x)?0:x; };
   const todayMsE = Date.now();
   const scheduledV = manifestVisits.filter(v => v.manifestId === mid && v.date).find(v => nvMsE(v.endDate||v.date) >= todayMsE);
   const isScheduled = !!(scheduledV || (m.next_visit_date && nvMsE(m.next_visit_end_date||m.next_visit_date) >= todayMsE));
@@ -2398,7 +2398,7 @@ function openManifestEmailCopy() {
     const todayF = new Date().toISOString().slice(0,10);
     items = items.filter(m => {
       const todayMs2 = Date.now();
-      const nvMs = t => { const x=new Date(t).getTime(); return isNaN(x)?0:x; };
+      const nvMs = t => { if(!t)return 0; const c=t.split(' – ')[0].split(' - ')[0].trim(); const x=new Date(c).getTime(); return isNaN(x)?0:x; };
       const nv = manifestVisits.filter(v => v.manifestId === m.id && v.date).find(v => nvMs(v.endDate||v.date) >= todayMs2);
       return nv || (m.next_visit_date && nvMs(m.next_visit_end_date||m.next_visit_date) >= todayMs2);
     });
