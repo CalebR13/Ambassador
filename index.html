@@ -3465,7 +3465,9 @@ function saveManifestEdit(mid) {
 
 function openManifestAddModal() {
   const newId = 'mfst-' + uid();
-  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', lodging:'', rv_hookup:'', bible_handouts:'', support_status:'Non-supporting', support_amount:'', support_cadence:'', relay_group:'', prayer_list:'', notes:''};
+  // Auto-assign relay group 1-4 round-robin based on total manifest contacts so far
+  const nextGroup = (manifestContacts.length % 4) + 1;
+  const m = {id: newId, pastor:'', church:'', city:'', state:'', phone:'', cell:'', email:'', church_email:'', address:'', website:'', groups:'', lodging:'', rv_hookup:'', bible_handouts:'', support_status:'Non-supporting', support_amount:'', support_cadence:'', relay_group: String(nextGroup), prayer_list:'', notes:''};
   manifestContacts.push(m);
   window._editModalFromCard = false;
   openManifestEditModal(newId);
@@ -4035,6 +4037,15 @@ function helmOpenCalendar() {
 
 load().then(()=>{renderHelm();renderFilters();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);
   Promise.all([loadManifest(), loadVisits()]).then(() => {
+    // Backfill relay_group for any existing contacts that don't have one
+    let groupCounter = 0;
+    manifestContacts.forEach(m => {
+      if (!m.relay_group) {
+        m.relay_group = String((groupCounter % 4) + 1);
+        saveManifestContact(m);
+      }
+      groupCounter++;
+    });
     // Migrate legacy next_visit_date entries that have no matching manifestVisit
     const parseClean = d => { if(!d)return null; const c=d.split(' – ')[0].split(' - ')[0].trim(); const dt=new Date(c); return isNaN(dt.getTime())?null:dt; };
     manifestContacts.forEach(m => {
