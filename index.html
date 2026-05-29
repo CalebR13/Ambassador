@@ -332,7 +332,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
     <span style="font-family:var(--serif);font-size:26px;color:var(--accent);flex-shrink:0;letter-spacing:.03em;">Voyage</span>
     <div class="top-bar-right">
       <span id="count-label" class="count-badge">0</span>
-      <button class="add-btn" onclick="openContactModal(null)" style="font-size:22px;padding:4px 12px;line-height:1;">+</button>
+      <button class="add-btn" onclick="openContactModal(null)" style="font-size:13px;padding:6px 14px;line-height:1;font-weight:600;">+ Add</button>
     </div>
   </div>
   <div id="voyage-search-row" style="padding:8px 14px;background:var(--surface);flex-shrink:0;">
@@ -1537,10 +1537,10 @@ function initPullToRefresh() {
   app.addEventListener('touchmove', e => {
     if (!pulling) return;
     const dy = e.touches[0].clientY - startY;
-    if (dy > 0 && dy < 80) {
-      ptr.style.height = (dy * 0.6) + 'px';
+    if (dy > 0 && dy < 160) {
+      ptr.style.height = (dy * 0.3) + 'px';
     }
-    if (dy > 60 && !triggered) {
+    if (dy > 140 && !triggered) {
       triggered = true;
       haptic(15);
     }
