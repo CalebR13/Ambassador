@@ -156,7 +156,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .fgi input,.fgi select{padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;}
 .fgi input:focus,.fgi select:focus{outline:none;border-color:var(--accent);}
 .fgi select option{background:var(--surface);}
-.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:max(16px,env(safe-area-inset-bottom));position:fixed;bottom:0;left:0;right:0;z-index:60;}
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:max(16px,env(safe-area-inset-bottom));position:fixed;bottom:0;left:0;right:0;z-index:210;}
 .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;background:none;border:none;cursor:pointer;font-family:var(--sans);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:500;transition:color .15s;}
 .bottom-nav-btn.active{color:#F3B53A;}
 .bottom-nav-btn svg{width:20px;height:20px;}
@@ -197,7 +197,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   --border: rgba(22,35,54,0.35);
   --accent: #D99B2D;
   --accent-light: #0a0800;
-  --muted: #4A7099;
+  --muted: #7AAFD4;
 }
 #app[data-wing="manifest"] .bottom-nav { background: #001122; border-top-color: rgba(22,35,54,0.35); }
 #app[data-wing="manifest"] .bottom-nav-btn.active { color: #D99B2D; }
@@ -213,7 +213,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 #app[data-wing="manifest"] .manifest-list-row::after { content:''; position:absolute; bottom:0; left:14px; right:14px; height:1px; background:rgba(22,35,54,0.35); }
 #app[data-wing="manifest"] .manifest-list-row:active { background: rgba(217,155,45,0.06); }
 /* Placeholder muted color */
-#app[data-wing="manifest"] #manifest-search::placeholder { color: #4A7099; }
+#app[data-wing="manifest"] #manifest-search::placeholder { color: #7AAFD4; }
 /* Filter pill text color */
 #app[data-wing="manifest"] #manifest-filter { color: #E8E6E1; -webkit-text-fill-color: #E8E6E1; background: #001122; }
 /* ── MANIFEST CARD COLORS ── */
@@ -1193,7 +1193,7 @@ function openTideDetail(cid, xid) {
   const textIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
   const emailIcon2 = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
 
-  showM(`<div style="position:fixed;top:0;left:0;right:0;bottom:max(60px,calc(60px + env(safe-area-inset-bottom)));background:#291B04;z-index:55;display:flex;flex-direction:column;overflow:hidden;animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);">
+  showM(`<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:#291B04;z-index:55;display:flex;flex-direction:column;overflow:hidden;animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);">
 
     <!-- HEADER -->
     <div style="background:#382800;padding:12px 16px 14px;flex-shrink:0;border-bottom:1px solid rgba(138,106,24,0.25);">  
