@@ -216,6 +216,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 #app[data-wing="manifest"] #manifest-search::placeholder { color: #4A7099; }
 /* Filter pill text color */
 #app[data-wing="manifest"] #manifest-filter { color: #E8E6E1; -webkit-text-fill-color: #E8E6E1; background: #001122; }
+/* ── MANIFEST CARD COLORS ── */
+#app[data-wing="manifest"] #manifest-card-screen { background: #01162B; }
+#app[data-wing="manifest"] #manifest-card-content { background: #01162B; }
+#app[data-wing="manifest"] #manifest-card-screen .card-topbar { background: #011B38 !important; border-bottom: 1px solid #426788; }
+#app[data-wing="manifest"] .mc-upper-card { background: #093A65 !important; border-color: #426788 !important; }
+#app[data-wing="manifest"] .mc-action-btn { background: #01274A !important; border-color: #426788 !important; color: var(--muted) !important; }
+#app[data-wing="manifest"] .mc-lower-card { background: #093A65 !important; border-color: #426788 !important; }
+#app[data-wing="manifest"] .mc-info-bar { background: #01274A !important; border-color: #426788 !important; }
+#app[data-wing="manifest"] .mc-supporting-pill { background: #001830 !important; border-color: #4cd68a44 !important; }
 
 body.wing-tides .bottom-nav { background:#211708; border-top-color:rgba(86,62,12,0.35); }
 body.wing-tides #nav-tides { color:#C8860A; }
@@ -1866,17 +1875,17 @@ function openManifestCard(mid) {
 
   cardContent.innerHTML = `
     <!-- HERO -->
-    <div style="background:linear-gradient(180deg,${rcCard.bg} 0%,var(--bg) 100%);padding:20px 16px 16px;border-bottom:1px solid var(--border);width:100%;box-sizing:border-box;overflow:hidden;">
+    <div style="background:#011B38;padding:20px 16px 16px;border-bottom:1px solid #426788;width:100%;box-sizing:border-box;overflow:hidden;">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
-        <div class="card-hero-avatar" style="background:${rcCard.bg};color:${rcCard.text};border:2px solid ${rcCard.border};flex-shrink:0;">${initials}</div>
+        <div class="card-hero-avatar" style="background:#001830;color:${rcCard.text};border:2px solid #D99B2D;flex-shrink:0;">${initials}</div>
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
             <div style="min-width:0;flex:1;">
               <div class="card-hero-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(m.pastor||'—')}<button onclick="toggleManifestStar('${mid}')" style="background:none;border:none;cursor:pointer;padding:0;line-height:1;flex-shrink:0;display:flex;align-items:center;">${starIcon(m.starred)}</button></div>
-              <div class="card-hero-church" style="color:${rcCard.text};">${esc(m.church||'—')}</div>
+              <div class="card-hero-church" style="color:#D99B2D;">${esc(m.church||'—')}</div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
-              <div style="font-size:14px;line-height:1.1;display:flex;align-items:center;gap:4px;justify-content:flex-end;"><span style="color:${rcCard.text};display:flex;align-items:center;">${ICONS.pin}</span><span style="font-family:var(--serif);font-weight:600;color:${rcCard.text};">${esc(m.city||'—')}</span></div>
+              <div style="font-size:14px;line-height:1.1;display:flex;align-items:center;gap:4px;justify-content:flex-end;"><span style="color:#D99B2D;display:flex;align-items:center;">${ICONS.pin}</span><span style="font-family:var(--serif);font-weight:600;color:#D99B2D;">${esc(m.city||'—')}</span></div>
               <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(m.state||'')}</div>
             </div>
           </div>
@@ -1955,7 +1964,7 @@ function openManifestCard(mid) {
 
       // Always show schedule button
       html += `<div style="margin:0 16px 10px;">
-        <button onclick="openEditNextMeeting('${mid}','')" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <button onclick="openEditNextMeeting('${mid}','')" class="mc-action-btn" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           ${allFuture.length ? '+ Schedule Another Meeting' : 'Schedule a meeting'}
         </button>
@@ -1966,7 +1975,7 @@ function openManifestCard(mid) {
 
     <!-- 2 COL: LAST COMM + VISIT HISTORY -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;" onclick="document.getElementById('mc-log-${mid}').style.display=document.getElementById('mc-log-${mid}').style.display==='none'?'block':'none'">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;" class="mc-upper-card" onclick="document.getElementById('mc-log-${mid}').style.display=document.getElementById('mc-log-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Contact Log</span>
@@ -1974,7 +1983,7 @@ function openManifestCard(mid) {
         ${lastCall ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${fmtCallDate(lastCall.date||'')}</div><div style="font-size:12px;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc((lastCall.details||'').split('\n')[0]||lastCall.outcome||'—')}</div>` : `<div style="font-size:12px;color:var(--muted);">No logs yet</div>`}
         <button onclick="event.stopPropagation();openManifestLogEntry('${mid}')" style="margin-top:8px;width:100%;padding:6px;background:none;border:1px solid var(--accent);border-radius:var(--radius-sm);font-family:var(--sans);font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;position:sticky;bottom:0;">+ Log</button>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;" onclick="document.getElementById('mc-visits-${mid}').style.display=document.getElementById('mc-visits-${mid}').style.display==='none'?'block':'none'">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;" class="mc-upper-card" onclick="document.getElementById('mc-visits-${mid}').style.display=document.getElementById('mc-visits-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Visit History</span>
@@ -2014,7 +2023,7 @@ function openManifestCard(mid) {
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.4;">${esc((activeRem.details||'').split('\n').slice(1).join(' ').trim()||'—')}</div>
     </div>` : `<div style="margin:0 16px 10px;">
-      <button onclick="openReminderFromManifest('${mid}')" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <button onclick="openReminderFromManifest('${mid}')" class="mc-action-btn" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Set a reminder
       </button>
@@ -2022,15 +2031,16 @@ function openManifestCard(mid) {
 
     <!-- 2 COL: SUPPORT + ON-SITE -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 10px;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+      <div class="mc-lower-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Support</span>
         </div>
-        ${m.support_status ? `<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${suppBg};border:1px solid ${suppBorder};color:${suppColor};">${esc(m.support_status)}</span>` : '<span style="font-size:12px;color:var(--muted);">—</span>'}
+        ${m.support_status ? `<span class="${m.support_status==='Supporting'?'mc-supporting-pill':''}" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${suppBg};border:1px solid ${suppBorder};color:${suppColor};">${esc(m.support_status)}</span>` : '<span style="font-size:12px;color:var(--muted);">—</span>'}
         ${m.support_amount ? `<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--text);">$${esc(m.support_amount)}<span style="font-size:11px;font-weight:400;color:var(--muted);"> / ${esc(m.support_cadence||'mo')}</span></div>` : ''}
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+      <div class="mc-lower-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">On-Site</span>
@@ -2042,7 +2052,7 @@ function openManifestCard(mid) {
     </div>
 
     <!-- PERSONAL / CHURCH INFO (collapsible) -->
-    <div style="margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+    <div class="mc-info-bar" style="margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
       <button onclick="(function(btn){const d=document.getElementById('mc-info-${mid}');const open=d.style.display==='none'||!d.style.display;if(open){d.style.display='block';d.style.animation='expandDown .25s cubic-bezier(0.4,0,0.2,1)';}else{d.style.animation='collapseUp .2s cubic-bezier(0.4,0,0.2,1)';setTimeout(()=>{if(d.style.animation.includes('collapseUp'))d.style.display='none';},180);}btn.querySelector('.info-chev').style.transform=open?'rotate(180deg)':'rotate(0deg)';})(this)" style="width:100%;padding:12px;background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--sans);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span style="font-size:12px;font-weight:600;color:var(--text);flex:1;text-align:left;">Personal / Church Info</span>
