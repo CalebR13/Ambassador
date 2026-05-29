@@ -172,8 +172,26 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .tide-entry.overdue{border-left:3px solid #e05555;}
 .tide-entry.upcoming{border-left:3px solid #f0b429;}
 .tide-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;}
+
+/* ── TIDES — warm bronze ──────────────────────────────── */
+#app[data-wing="tides"] {
+  --bg: #251D0A;
+  --surface: #2E2208;
+  --surface2: #23190A;
+  --border: #563E0C;
+  --accent: #C8860A;
+  --accent-light: #1a1000;
+  --muted: #9A7A45;
+}
+#app[data-wing="tides"] .bottom-nav { background: #211708; border-top-color: #563E0C; }
+#app[data-wing="tides"] .bottom-nav-btn.active { color: #C8860A; }
+#app[data-wing="tides"] #tides-screen .card-topbar { background: #211708; border-bottom: none; }
+#app[data-wing="tides"] .tide-entry { background: var(--surface); }
+#app[data-wing="tides"] .tides-list { background: var(--bg); }
+body.wing-tides .bottom-nav { background:#211708; border-top-color:rgba(86,62,12,0.35); }
+body.wing-tides #nav-tides { color:#C8860A; }
 .tide-content{flex:1;min-width:0;}
-.tide-pastor{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tide-pastor{font-size:13px;font-weight:600;color:#E8E6E1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tide-church{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tide-details{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tide-due{font-size:11px;font-weight:600;}
@@ -215,8 +233,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .contact-row{transition:background .12s;}
 .contact-row:active{background:rgba(243,181,58,.06);}
 .tide-entry:active{background:rgba(255,255,255,.03);}
-/* ── WING COLOR OVERHAUL ──────────────────────────────── */
-/* VOYAGE — rich navy */
+/* ── VOYAGE — rich navy ──────────────────────────────── */
 #app[data-wing="voyage"] {
   --bg: #0A3B64;
   --surface: #032546;
@@ -226,12 +243,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   --accent-light: #162030;
   --muted: #6A8FB9;
 }
-/* Contact card gets the darker colors */
 #app[data-wing="voyage"] .fullscreen-card {
-  --bg: #010F22;
+  --bg: #011123;
   --surface: #011125;
+  --border: rgba(23,64,106,0.5);
 }
-/* Contact row separator — inset line, doesn't reach edges */
 #app[data-wing="voyage"] .contact-row {
   border-bottom: none;
   position: relative;
@@ -245,28 +261,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
   height: 1px;
   background: var(--border);
 }
-/* Voyage top section — no border lines, search on own row */
 #app[data-wing="voyage"] #voyage-topbar { border-bottom: none; justify-content: space-between; }
 #app[data-wing="voyage"] .top-bar { border-bottom: none; }
-#app[data-wing="voyage"] #voyage-search-row { border-bottom: none; }
-/* Contact card — specific background colors per section */
-#app[data-wing="voyage"] .fullscreen-card {
-  --bg: #011123;
-  --surface: #011125;
-  --border: rgba(23,64,106,0.5);
-}
 #app[data-wing="voyage"] .fullscreen-card .card-topbar { background: #001226; }
-#app[data-wing="voyage"] .fullscreen-card .card-nav { background: #001226; }
+#app[data-wing="voyage"] .fullscreen-card .card-nav { background: #011123; }
 #app[data-wing="voyage"] .fullscreen-card .call-entry { background: #0C2135; }
 .card-info-section { background: var(--surface); }
-#app[data-wing="voyage"] .fullscreen-card .card-info-section { background: #01152E; }
-/* Back arrows and edit button → white (nav next excluded — it's gold) */
+#app[data-wing="voyage"] .fullscreen-card .card-info-section { background: #001226; }
 #app[data-wing="voyage"] .card-back-btn { color: #ffffff; }
 #app[data-wing="voyage"] .card-edit-btn { color: #ffffff; }
 #app[data-wing="voyage"] .nav-btn:not(.next) { color: #ffffff; }
-/* Hide list header row */
 #app[data-wing="voyage"] .list-header { display: none !important; }
-/* Gold overrides — all hardcoded F3B53A → D99B2D */
 #app[data-wing="voyage"] .add-btn { background: #D99B2D; }
 #app[data-wing="voyage"] .log-btn { border-color: #D99B2D44; color: #D99B2D; }
 #app[data-wing="voyage"] .bottom-nav-btn.active { color: #D99B2D; }
@@ -278,13 +283,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 #app[data-wing="voyage"] #search::placeholder { color: #6A8FB9; }
 #app[data-wing="voyage"] .filter-pill.active { color: #D99B2D; border-color: #D99B2D; }
 #app[data-wing="voyage"] .outcome-opt.selected { border-color: #D99B2D; color: #D99B2D; }
-/* Edit modal inputs — muted placeholder color, italic */
 #app[data-wing="voyage"] .fg input::placeholder,
 #app[data-wing="voyage"] .fg textarea::placeholder,
 #app[data-wing="voyage"] .fgi input::placeholder { color: #6A8FB9; }
-#app[data-wing="voyage"] .fg input,
-#app[data-wing="voyage"] .fg textarea,
-#app[data-wing="voyage"] .fgi input { font-style: italic; }
 </style>
 </head>
 <body>
@@ -319,11 +320,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
     <div class="card-topbar">
       <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Tides</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <select id="tides-sort" onchange="renderTides()" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:11px;background:var(--surface);color:var(--muted);cursor:pointer;">
+        <select id="tides-sort" onchange="renderTides()" style="padding:6px 10px;border:1px solid rgba(138,106,24,0.5);border-radius:20px;font-family:var(--sans);font-size:11px;background:#2E2208;color:#C8860A;cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:22px;background-image:url('data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;10&quot; height=&quot;6&quot; viewBox=&quot;0 0 10 6&quot;><path d=&quot;M1 1l4 4 4-4&quot; stroke=&quot;%23C8860A&quot; stroke-width=&quot;1.5&quot; fill=&quot;none&quot; stroke-linecap=&quot;round&quot;/></svg>');background-repeat:no-repeat;background-position:right 8px center;">
           <option value="date">By Date</option>
           <option value="region">By Region</option>
         </select>
-        <button onclick="openTidesReminderModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Reminder</button>
+        <button onclick="openTidesReminderModal()" style="background:var(--accent);border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Reminder</button>
       </div>
     </div>
     <div id="tides-list" class="tides-list"></div>
@@ -409,7 +410,7 @@ const ICONS={
   trash:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
   pin:`<svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10,2 4,0 3,5 9,4" fill="currentColor" opacity="0.5"/><rect x="10" y="1" width="4" height="3" rx="0.5" fill="none" stroke="currentColor" stroke-width="1.4"/><polygon points="9,4 15,4 17,21 7,21" fill="currentColor"/><rect x="9" y="8.5" width="6" height="1.5" fill="white" opacity="0.3"/><rect x="9" y="13" width="6" height="1.5" fill="white" opacity="0.3"/><line x1="6" y1="21" x2="18" y2="21" stroke="currentColor" stroke-width="2.5"/></svg>`,
   starEmpty:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b5a2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-  starFilled:`<svg width="18" height="18" viewBox="0 0 24 24" fill="#D99B2D" stroke="#D99B2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  starFilled:`<svg width="18" height="18" viewBox="0 0 24 24" fill="#f0b429" stroke="#f0b429" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   personCheck:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>`,
   phoneOff:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.5 16.5L19 19a2 2 0 0 1-2 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6"/></svg>`,
   chair:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v-8a6 6 0 0 1 12 0v8"/><path d="M4 19h16"/><path d="M12 19v3"/><path d="M8 22h8"/></svg>`,
@@ -508,7 +509,7 @@ async function saveCallEntry(contactId,call){save();if(!sheetsReady)return;try{a
 async function deleteCallEntry(callId){save();if(!sheetsReady)return;try{await api({action:'deleteCall',id:callId});}catch(err){console.error('deleteCall error:',err);}}
 async function deleteContactEntry(contactId){save();if(!sheetsReady)return;try{await api({action:'deleteContact',id:contactId});}catch(err){console.error('deleteContact error:',err);}}
 function showStatus(msg,type){let el=document.getElementById('save-status');if(!el){el=document.createElement('div');el.id='save-status';document.body.appendChild(el);}const colors={ok:'background:#1a3a28;color:#4cd68a;border:1px solid #4a9e6b44',err:'background:#3a0a0a;color:#e05555;border:1px solid #5a1a1a44',info:'background:#1a1a2e;color:#F3B53A;border:1px solid #F3B53A44'};el.style.cssText=(colors[type]||colors.info)+';position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 14px;border-radius:20px;z-index:300;pointer-events:none;font-family:var(--sans);transition:opacity .3s;';el.textContent=msg;el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2500);}
-function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay');if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';el.innerHTML='<div style="font-size:28px">\u2693</div><div id="loading-msg" style="font-size:14px;color:#E8E6E1"></div>';document.body.appendChild(el);}document.getElementById('loading-msg').textContent=msg;el.style.display='flex';}
+function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay');if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';el.innerHTML='<div style="font-size:28px">\u2693</div><div id="loading-msg" style="font-size:14px;color:var(--muted)"></div>';document.body.appendChild(el);}document.getElementById('loading-msg').textContent=msg;el.style.display='flex';}
 function hideLoadingOverlay(){const el=document.getElementById('loading-overlay');if(el)el.style.display='none';}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 function lastContactedStr(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');if(!r.length)return null;const last=r[r.length-1];return `${last.date} \u00b7 ${OM[last.outcome]?.label||last.outcome}`;}
@@ -553,11 +554,11 @@ function renderFilters(){
   const remCount=getReminders().length;const overdueCount=getReminders().filter(r=>r.overdue).length;
   const nearbyPill=`<button class="filter-pill${proxResults?' active':''}" onclick="openProximityScreen()" style="display:flex;align-items:center;gap:4px;" title="Nearby"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6A8FB9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>${proxResults?' ('+proxResults.length+')':''}</button>`;
   const clearPill=proxResults?`<button class="filter-pill" onclick="clearProximity()" style="color:var(--danger);border-color:var(--danger)44;">\u2715 Clear</button>`:'';
-  const starredPill=`<button class="filter-pill${fState==='Starred'?' active':''}" onclick="setSF('Starred')" style="display:flex;align-items:center;" title="Starred"><span style="color:#D99B2D;font-size:14px;">\u2605</span></button>`;
+  const starredPill=`<button class="filter-pill${fState==='Starred'?' active':''}" onclick="setSF('Starred')" style="display:flex;align-items:center;" title="Starred"><span style="color:#f0b429;font-size:14px;">\u2605</span></button>`;
   const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
   const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6A8FB9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
   const stateOpts2=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()].map(s=>`<option value="${s}"${fState===s?' selected':''}>${s==='All'?'All States':s+' ('+(STATE_NAMES[s]||s)+')'}</option>`).join('');
-  const stateDropPill=`<select onchange="setSF(this.value)" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);color:${fState!=='All'?'var(--accent)':'var(--text)'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
+  const stateDropPill=`<select onchange="setSF(this.value)" style="flex:1;margin-right:20px;padding:5px 12px 5px 10px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="%236A8FB9" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');background-repeat:no-repeat;background-position:right 10px center;color:${fState!=='All'?'#D99B2D':'#E8E6E1'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+phonePill+stateDropPill;
 }
 function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
@@ -670,7 +671,7 @@ function renderCallingCard(noAnimation){
         }).join(''):`<div class="no-calls">Empty log.</div>`}
       </div>
     </div>
-    <div class="card-info-section" style="border-top:1px solid var(--border);flex-shrink:0;">
+    <div style="background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
       <button onclick="toggleInfo()" style="width:100%;background:none;border:none;cursor:pointer;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--sans);"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:600;color:var(--text);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span style="font-size:12px;font-weight:600;color:var(--text);">Personal / Church Info</span></div><span id="more-info-chevron" style="color:var(--muted);display:flex;align-items:center;">${infoExpanded?ICONS.chevronUp:ICONS.chevronDown}</span></button>
       <div id="more-info-body" style="display:${infoExpanded?'block':'none'};border-top:1px solid var(--border);${infoExpanded?'animation:expandDown .3s cubic-bezier(0.4,0,0.2,1);':''}overflow:hidden;">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);let out='';if(phones.length){phones.forEach((p,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone${phones.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text)">${esc(fmtPhone(p))}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Phone</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}if(emails.length){emails.forEach((e,i)=>{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;overflow:hidden;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email${emails.length>1?' '+(i+1):''}</div><div style="font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e)}</div></div>`;});}else{out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--muted)">\u2014</div></div>`;}out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Address</div><div style="font-size:12px;color:var(--text)">${c.address?`<a href="maps://?q=${encodeURIComponent([c.address,c.city,c.state].filter(Boolean).join(', '))}" style="color:var(--accent);text-decoration:none;">${esc(c.address)}</a>`:'\u2014'}</div></div>`;out+=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">Last Contacted</div><div style="font-size:12px;color:var(--text)">${lastContactedStr(c)||'\u2014'}</div></div>`;return out;})()}</div>
     </div>
@@ -848,6 +849,8 @@ function switchWing(wing) {
 
   setTimeout(() => {
     currentWing = wing;
+    document.body.classList.remove('wing-voyage','wing-manifest','wing-tides');
+    document.body.classList.add('wing-' + wing);
     document.getElementById('app').dataset.wing = wing;
     const tidesScreen = document.getElementById('tides-screen');
     const manifestScreen = document.getElementById('manifest-screen');
@@ -1008,14 +1011,14 @@ function renderTides() {
     const isOverdue = cls === 'overdue';
     const detailLine = call.details ? call.details.split('\n').slice(1).join(' ').trim() : '';
     const churchCity = [c.church, c.city && c.state ? c.city+', '+c.state : c.city].filter(Boolean).join(' · ');
-    return `<div class="tide-entry-wrap" id="wrap-${call.id}"><div class="tide-swipe-bg" id="swipebg-${call.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Done</div><div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}" onclick="openTideDetail('${c.id}','${call.id}')" data-cid="${c.id}" data-xid="${call.id}">
-      <div class="tide-avatar" style="background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border}">${ini(c.pastor || c.church || '?')}</div>
+    return `<div class="tide-entry-wrap" id="wrap-${call.id}" style="padding:0 12px 8px;"><div class="tide-swipe-bg" id="swipebg-${call.id}" style="border-radius:12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Done</div><div class="tide-entry ${isOverdue ? 'overdue' : 'upcoming'}" onclick="openTideDetail('${c.id}','${call.id}')" data-cid="${c.id}" data-xid="${call.id}" style="border-radius:12px;border:1px solid #563E0C;border-left:${isOverdue?'3px solid #e05555':'3px solid #C8860A'};">
+      <div class="tide-avatar" style="background:#23190A;color:#C8860A;border:1.5px solid #563E0C;">${ini(c.pastor || c.church || '?')}</div>
       <div class="tide-content" style="flex:1;min-width:0;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
           <div style="flex:1;min-width:0;">
             <div class="tide-pastor">${esc(c.pastor || '—')}</div>
-            <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(churchCity)}</div>
-            ${detailLine ? `<div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${esc(detailLine)}</div>` : ''}
+            <div style="font-size:11px;color:#9A7A45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(churchCity)}</div>
+            ${detailLine ? `<div style="font-size:11px;color:#9A7A45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">${esc(detailLine)}</div>` : ''}
             <div class="tide-due ${cls}" style="margin-top:2px;">${label}</div>
           </div>
           <div onclick="event.stopPropagation()" style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
@@ -1035,7 +1038,7 @@ function renderTides() {
 
   if (dueToday.length) {
     html += `<div style="padding:10px 16px 6px;display:flex;align-items:center;gap:8px;">
-      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;">Due Today</span>
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#C8860A;font-weight:500;">Due Today</span>
       <span style="background:#e05555;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;">${dueToday.length}</span>
     </div>`;
     html += dueToday.map(renderItem).join('');
@@ -1043,8 +1046,8 @@ function renderTides() {
 
   if (upcoming.length) {
     html += `<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:8px;">
-      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;">Upcoming</span>
-      <span style="background:#2e1f00;color:#f0b429;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;">${upcoming.length}</span>
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#C8860A;font-weight:500;">Upcoming</span>
+      <span style="background:#2e1f00;color:#C8860A;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;">${upcoming.length}</span>
     </div>`;
     html += upcoming.map(renderItem).join('');
   }
@@ -1066,12 +1069,12 @@ function renderCompletedSection(items) {
         <div style="font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.pastor||'—')}</div>
         <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.church||'')}${c.city?' · '+esc(c.city):''}${dateLabel?' · '+dateLabel:''}</div>
       </div>
-      <button onclick="undoCompleteReminder('${c.id}','${call.id}')" style="background:none;border:1px solid var(--border);border-radius:12px;padding:4px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;flex-shrink:0;">Put back</button>
+      <button onclick="undoCompleteReminder('${c.id}','${call.id}')" style="background:#23190A;border:1px solid #563E0C;border-radius:12px;padding:4px 10px;font-family:var(--sans);font-size:11px;color:#9A7A45;cursor:pointer;flex-shrink:0;">Put back</button>
     </div>`;
   }).join('');
   return `<div style="padding:14px 16px 6px;display:flex;align-items:center;gap:8px;">
-    <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500;">Completed</span>
-    <span style="background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;border-radius:20px;padding:1px 7px;border:1px solid var(--border);">${items.length}</span>
+    <span style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#C8860A;font-weight:500;">Completed</span>
+    <span style="background:#23190A;color:#9A7A45;font-size:10px;font-weight:600;border-radius:20px;padding:1px 7px;border:1px solid #563E0C;">${items.length}</span>
   </div>${rows}`;
 }
 
@@ -1094,15 +1097,133 @@ function openCallingCardFromTides(cid) {
   setTimeout(() => { renderCallingCard(); }, 160);
 }
 
+function closeTideDetail(callback) {
+  const l = document.getElementById('modal-layer');
+  const overlay = l ? l.firstElementChild : null;
+  if (overlay) {
+    overlay.style.animation = 'slideOutRight .2s cubic-bezier(0.55,0,1,0.45) forwards';
+    setTimeout(() => {
+      l.innerHTML = '';
+      l.style.pointerEvents = 'none';
+      if (callback) callback();
+    }, 190);
+  } else {
+    if (l) { l.innerHTML = ''; l.style.pointerEvents = 'none'; }
+    if (callback) callback();
+  }
+}
+
 function openTideDetail(cid, xid) {
   const c = contacts.find(x => x.id === cid); if (!c) return;
   const call = c.calls.find(x => x.id === xid); if (!call) return;
 
-  const lastLog = [...(c.calls || [])]
-    .filter(x => x.id !== xid && x.outcome && x.outcome !== 'reminder')
-    .sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
+  const initials = ini(c.pastor||c.church||'?');
+  const note = (call.details || '').split('\n').slice(1).join('\n').trim();
 
-  const rc = getRegionColor(c);
+  const parts = parseRemDate(call.remDate);
+  let dueDate = '';
+  let dueDateMs = 0;
+  if (parts) {
+    const [y,m,d] = parts;
+    dueDate = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    dueDateMs = new Date(dueDate).getTime();
+  }
+  const todayMs = new Date().setHours(0,0,0,0);
+  const isOverdue = dueDateMs && dueDateMs < todayMs;
+  const isToday = dueDateMs && dueDateMs === todayMs;
+  const statusLabel = isOverdue ? 'Overdue' : isToday ? 'Due Today' : 'Upcoming';
+  const statusColor = isOverdue ? '#e05555' : isToday ? '#F2B632' : '#4cd68a';
+  const statusBg = isOverdue ? '#2a0808' : isToday ? '#2e1f00' : '#0a2a1a';
+  const ringColor = isOverdue ? '#e05555' : '#F2B632';
+
+  const typeLabel = call.remType === 'email' ? 'Email' : call.remType === 'other' ? 'Other' : 'Call';
+  const phone = c.cell || c.phone || '';
+  const email = c.email || '';
+  const address = [c.address, c.city && c.state ? `${c.city}, ${c.state}` : c.city||c.state].filter(Boolean).join('\n');
+
+  const actionBtn = (href, icon, label) => href
+    ? `<a href="${href}" style="display:flex;align-items:center;gap:5px;padding:7px 12px;background:#251C00;border:1px solid #8A6A18;border-radius:20px;text-decoration:none;color:#F2B632;font-size:11px;font-weight:600;">${icon}${label}</a>`
+    : '';
+
+  const phoneIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.34a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+  const textIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+  const emailIcon2 = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+
+  showM(`<div style="position:fixed;top:0;left:0;right:0;bottom:max(60px,calc(60px + env(safe-area-inset-bottom)));background:#291B04;z-index:55;display:flex;flex-direction:column;overflow:hidden;animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);">
+
+    <!-- HEADER -->
+    <div style="background:#382800;padding:12px 16px 14px;flex-shrink:0;border-bottom:1px solid rgba(138,106,24,0.25);">  
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <button onclick="closeTideDetail()" style="width:34px;height:34px;background:none;border:1px solid #8A6A1844;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#F2B632;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div style="width:34px;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:#362600;color:#F2B632;border:2.5px solid ${ringColor};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;">${initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:var(--serif);font-size:20px;font-weight:700;color:#E8E6E1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.pastor||'—')}</div>
+          <div style="font-size:12px;color:#E8E6E1;opacity:.8;margin-top:1px;">${esc(c.church||'')}</div>
+          ${c.city ? `<div style="font-size:11px;color:#E8E6E1;opacity:.6;margin-top:1px;">${esc(c.city)}${c.state?', '+esc(c.state):''}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${statusBg};border:1px solid ${statusColor}44;color:${statusColor};">${statusLabel}</span>
+        <div style="display:flex;gap:6px;">
+          ${actionBtn(phone?`tel:${phone}`:'', phoneIcon, 'Call')}
+          ${actionBtn(phone?`sms:${phone}`:'', textIcon, 'Text')}
+          ${actionBtn(email?`mailto:${email}`:'', emailIcon2, 'Email')}
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;justify-content:space-between;">
+
+      <!-- 2-COL: REMINDER DETAILS + CONTACT INFO -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:10px;">Reminder Details</div>
+          <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Due</div>
+          <div style="font-size:14px;font-weight:600;color:${statusColor};margin-bottom:12px;">${dueDate ? fmtCallDate(dueDate) : '—'}${call.remTime?`<div style="font-size:11px;color:#E8E6E1;margin-top:2px;">${call.remTime}</div>`:''}</div>
+          <button onclick="openTideEdit('${cid}','${xid}')" style="width:100%;padding:9px;background:#372701;border:1px solid #8A6A18;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:#F2B632;cursor:pointer;">Edit Reminder</button>
+        </div>
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:10px;">Contact Info</div>
+          <div style="font-size:12px;color:#E8E6E1;line-height:1.5;margin-bottom:12px;">${address ? esc(address).replace('\n','<br>') : '<span style="color:#4a3a10;">—</span>'}</div>
+          <button onclick="closeTideDetail(()=>openCallingCardFromTides('${cid}'))" style="width:100%;padding:9px;background:#372701;border:1px solid #8A6A18;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:#F2B632;cursor:pointer;">Go to Contact</button>
+        </div>
+      </div>
+
+      <!-- MARK AS COMPLETE -->
+      <button onclick="closeTideDetail(()=>completeTideReminder('${cid}','${xid}'))" style="width:100%;padding:14px;background:#372701;border:1px solid #F2B63244;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:700;color:#F2B632;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark as Complete
+      </button>
+
+      <!-- 2-COL: NOTES + DETAILS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:8px;">Notes</div>
+          <div style="font-size:12px;color:#E8E6E1;line-height:1.5;white-space:pre-wrap;">${note ? esc(note) : '<span style="color:#4a3a10;">—</span>'}</div>
+        </div>
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:8px;">Details</div>
+          <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Type</div>
+          <div style="font-size:12px;color:#E8E6E1;margin-bottom:8px;">${typeLabel}</div>
+          <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Created</div>
+          <div style="font-size:12px;color:#E8E6E1;">${call.date ? fmtCallDate(call.date) : '—'}</div>
+        </div>
+      </div>
+
+    </div>
+  </div>`);
+}
+
+function openTideEdit(cid, xid) {
+  const c = contacts.find(x => x.id === cid); if (!c) return;
+  const call = c.calls.find(x => x.id === xid); if (!call) return;
+
   const existingNote = (call.details || '').split('\n').slice(1).join('\n').trim();
   const existingType = call.remType || 'call';
   const existingDate = (()=>{
@@ -1117,13 +1238,6 @@ function openTideDetail(cid, xid) {
   window._editRemXid = xid;
   window._remType = existingType;
 
-  const lastLogHtml = lastLog ? `
-    <div style="padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:14px;">
-      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px;">Last Contact</div>
-      <div style="font-size:11px;color:var(--muted);">${fmtCallDate(lastLog.date||'')} · ${lastLog.outcome||''}</div>
-      ${lastLog.details ? `<div style="font-size:12px;color:var(--text);margin-top:3px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(lastLog.details.split('\n')[0])}</div>` : ''}
-    </div>` : '';
-
   function typeBtn(t, label, icon) {
     const active = existingType === t;
     return `<button id="td-${t}" onclick="setTideDetailType('${t}')" style="flex:1;padding:9px 4px;border-radius:var(--radius-sm);border:1px solid ${active?'#F3B53A':'var(--border)'};background:${active?'#2e1f00':'var(--surface2)'};color:${active?'#F3B53A':'var(--muted)'};font-family:var(--sans);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">${icon}${label}</button>`;
@@ -1136,14 +1250,7 @@ function openTideDetail(cid, xid) {
   showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)">
     <div class="snooze-modal" onclick="event.stopPropagation()" style="padding:16px 16px 24px;">
       <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;"></div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-        <div style="width:38px;height:38px;border-radius:50%;background:${rc.bg};color:${rc.text};border:1.5px solid ${rc.border};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;">${ini(c.pastor||c.church||'?')}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.pastor||'—')}</div>
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.church||'')}${c.city?' · '+esc(c.city)+', '+esc(c.state):''}</div>
-        </div>
-      </div>
-      ${lastLogHtml}
+      <h2 style="font-family:var(--serif);font-size:17px;margin-bottom:14px;color:#F2B632;">Edit Reminder</h2>
       <div style="display:flex;gap:6px;margin-bottom:12px;">
         ${typeBtn('call','Call',callIcon)}
         ${typeBtn('email','Email',emailIcon)}
@@ -1161,13 +1268,9 @@ function openTideDetail(cid, xid) {
       </div>
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Notes</div>
       <textarea id="td-note" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:64px;resize:vertical;margin-bottom:14px;box-sizing:border-box;">${esc(existingNote)}</textarea>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <button onclick="closeMKeepCard()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1;">&times;</button>
-      </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="closeMKeepCard();openCallingCardFromTides('${cid}')" style="flex:1;padding:11px;background:#1a2d4a;border:1px solid #5b9fd444;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;font-weight:600;color:#5b9fd4;cursor:pointer;">Go to Contact</button>
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
         <button onclick="saveTideDetail()" style="flex:2;padding:11px;background:#F3B53A;color:#000C1F;border:none;border-radius:var(--radius-sm);font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;">Save</button>
-        <button onclick="closeMKeepCard();completeTideReminder('${cid}','${xid}')" style="flex:1;padding:11px;background:#2e1f00;border:1px solid #f0b42944;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;font-weight:600;color:#f0b429;cursor:pointer;">Done</button>
       </div>
     </div>
   </div>`);
@@ -1208,9 +1311,7 @@ function saveTideDetail() {
   haptic(10);
   save();
   saveCallEntry(cid, call);
-  closeMKeepCard();
-  renderTides();
-  setTimeout(()=>refreshCallingCard(),180);
+  closeTideDetail(() => { renderTides(); setTimeout(()=>refreshCallingCard(),180); });
 }
 
 function haptic(ms=10) { try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
