@@ -156,7 +156,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .fgi input,.fgi select{padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:16px;background:var(--bg);color:var(--text);width:100%;min-width:0;}
 .fgi input:focus,.fgi select:focus{outline:none;border-color:var(--accent);}
 .fgi select option{background:var(--surface);}
-.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:max(0px,env(safe-area-inset-bottom));position:fixed;bottom:0;left:0;right:0;z-index:60;}
+.bottom-nav{display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:max(16px,env(safe-area-inset-bottom));position:fixed;bottom:0;left:0;right:0;z-index:60;}
 .bottom-nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;background:none;border:none;cursor:pointer;font-family:var(--sans);color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:500;transition:color .15s;}
 .bottom-nav-btn.active{color:#F3B53A;}
 .bottom-nav-btn svg{width:20px;height:20px;}
@@ -219,7 +219,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 /* ── MANIFEST CARD COLORS ── */
 #app[data-wing="manifest"] #manifest-card-screen { background: #01162B; }
 #app[data-wing="manifest"] #manifest-card-content { background: #01162B; }
-#app[data-wing="manifest"] #manifest-card-screen .card-topbar { background: #011B38 !important; border-bottom: 1px solid #426788; }
+#app[data-wing="manifest"] #manifest-card-screen .card-topbar { background: #011B38 !important; border-bottom: none; padding: 8px 16px; }
 #app[data-wing="manifest"] .mc-upper-card { background: #093A65 !important; border-color: #426788 !important; }
 #app[data-wing="manifest"] .mc-action-btn { background: #01274A !important; border-color: #426788 !important; color: var(--muted) !important; }
 #app[data-wing="manifest"] .mc-lower-card { background: #093A65 !important; border-color: #426788 !important; }
@@ -369,7 +369,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
   </div>
   <div id="manifest-card-screen" class="tides-screen" style="z-index:55;">
     <div id="manifest-card-topbar" class="card-topbar"></div>
-    <div id="manifest-card-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;"></div>
+    <div id="manifest-card-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:max(20px,env(safe-area-inset-bottom));"></div>
   </div>
   <div id="manifest-screen" class="tides-screen">
     <div class="card-topbar" style="border-bottom:none;">
@@ -536,7 +536,7 @@ function api(params){return new Promise((resolve,reject)=>{const cbName='relay_c
 let sheetsReady=false,callsCache={};
 async function load(){
   try{
-    showLoadingOverlay('Loading contacts…');
+    showLoadingOverlay('Hoisting Sails…');
     const rawContacts=await api({action:'getContacts'});
     let rawCalls=[];try{rawCalls=await api({action:'getCalls'});}catch(e){rawCalls=[];}
     callsCache={};
@@ -551,7 +551,7 @@ async function saveCallEntry(contactId,call){save();if(!sheetsReady)return;try{a
 async function deleteCallEntry(callId){save();if(!sheetsReady)return;try{await api({action:'deleteCall',id:callId});}catch(err){console.error('deleteCall error:',err);}}
 async function deleteContactEntry(contactId){save();if(!sheetsReady)return;try{await api({action:'deleteContact',id:contactId});}catch(err){console.error('deleteContact error:',err);}}
 function showStatus(msg,type){let el=document.getElementById('save-status');if(!el){el=document.createElement('div');el.id='save-status';document.body.appendChild(el);}const colors={ok:'background:#1a3a28;color:#4cd68a;border:1px solid #4a9e6b44',err:'background:#3a0a0a;color:#e05555;border:1px solid #5a1a1a44',info:'background:#1a1a2e;color:#F3B53A;border:1px solid #F3B53A44'};el.style.cssText=(colors[type]||colors.info)+';position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:11px;padding:5px 14px;border-radius:20px;z-index:300;pointer-events:none;font-family:var(--sans);transition:opacity .3s;';el.textContent=msg;el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>el.style.opacity='0',2500);}
-function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay');if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';el.innerHTML='<div style="font-size:28px">\u2693</div><div id="loading-msg" style="font-size:14px;color:var(--muted)"></div>';document.body.appendChild(el);}document.getElementById('loading-msg').textContent=msg;el.style.display='flex';}
+function showLoadingOverlay(msg){let el=document.getElementById('loading-overlay');if(!el){el=document.createElement('div');el.id='loading-overlay';el.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:var(--sans);color:var(--text);gap:14px;';el.innerHTML='<div style="font-size:28px">\u2693</div><div id="loading-msg" style="font-size:14px;color:#E8E6E1"></div>';document.body.appendChild(el);}document.getElementById('loading-msg').textContent=msg;el.style.display='flex';}
 function hideLoadingOverlay(){const el=document.getElementById('loading-overlay');if(el)el.style.display='none';}
 function lc(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported');return r.length?r[r.length-1]:null;}
 function lastContactedStr(c){const r=(c.calls||[]).filter(x=>x.outcome!=='imported'&&x.outcome!=='reminder');if(!r.length)return null;const last=r[r.length-1];return `${last.date} \u00b7 ${OM[last.outcome]?.label||last.outcome}`;}
@@ -600,7 +600,9 @@ function renderFilters(){
   const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
   const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6A8FB9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
   const stateOpts2=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()].map(s=>`<option value="${s}"${fState===s?' selected':''}>${s==='All'?'All States':s+' ('+(STATE_NAMES[s]||s)+')'}</option>`).join('');
-  const stateDropPill=`<select onchange="setSF(this.value)" style="flex:1;margin-right:20px;padding:5px 12px 5px 10px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:#0E3253;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="%236A8FB9" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');background-repeat:no-repeat;background-position:right 10px center;color:${fState!=='All'?'#D99B2D':'#E8E6E1'};-webkit-text-fill-color:${fState!=='All'?'#D99B2D':'#E8E6E1'};opacity:1;cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
+  const stateLabel = fState!=='All' ? fState : 'All States';
+  const stateLabelColor = fState!=='All' ? '#D99B2D' : '#E8E6E1';
+  const stateDropPill=`<div style="flex:1;margin-right:20px;position:relative;min-height:28px;"><div style="pointer-events:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border:1px solid var(--border);border-radius:20px;background:#0E3253;font-family:var(--sans);font-size:12px;color:${stateLabelColor};font-weight:${fState!=='All'?'600':'400'};"><span>${stateLabel}</span><svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="#6A8FB9" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div><select onchange="setSF(this.value)" style="width:100%;height:100%;min-height:28px;padding:5px 32px 5px 10px;border:1px solid transparent;border-radius:20px;font-family:var(--sans);font-size:12px;background:transparent;appearance:none;-webkit-appearance:none;opacity:0.001;position:relative;z-index:1;cursor:pointer;">${stateOpts2}</select></div>`;
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+phonePill+stateDropPill;
 }
 function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
@@ -1220,36 +1222,40 @@ function openTideDetail(cid, xid) {
     </div>
 
     <!-- BODY -->
-    <div style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;justify-content:space-between;">
+    <div style="flex:1;overflow-y:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
 
       <!-- 2-COL: REMINDER DETAILS + CONTACT INFO -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;display:flex;flex-direction:column;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:10px;">Reminder Details</div>
           <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Due</div>
           <div style="font-size:14px;font-weight:600;color:${statusColor};margin-bottom:12px;">${dueDate ? fmtCallDate(dueDate) : '—'}${call.remTime?`<div style="font-size:11px;color:#E8E6E1;margin-top:2px;">${call.remTime}</div>`:''}</div>
-          <button onclick="openTideEdit('${cid}','${xid}')" style="width:100%;padding:9px;background:#372701;border:1px solid #8A6A18;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:#F2B632;cursor:pointer;">Edit Reminder</button>
+          <div style="margin-top:auto;">
+            <button onclick="openTideEdit('${cid}','${xid}')" style="width:100%;padding:9px;background:#372701;border:1px solid #8A6A18;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:#F2B632;cursor:pointer;">Edit Reminder</button>
+          </div>
         </div>
-        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;display:flex;flex-direction:column;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:10px;">Contact Info</div>
           <div style="font-size:12px;color:#E8E6E1;line-height:1.5;margin-bottom:12px;">${address ? esc(address).replace('\n','<br>') : '<span style="color:#4a3a10;">—</span>'}</div>
-          <button onclick="closeTideDetail(()=>openCallingCardFromTides('${cid}'))" style="width:100%;padding:9px;background:#372701;border:1px solid #8A6A18;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:#F2B632;cursor:pointer;">Go to Contact</button>
+          <div style="margin-top:auto;">
+            <button onclick="closeTideDetail(()=>openCallingCardFromTides('${cid}'))" style="width:100%;padding:9px;background:#372701;border:1px solid #8A6A18;border-radius:8px;font-family:var(--sans);font-size:12px;font-weight:600;color:#F2B632;cursor:pointer;">Go to Contact</button>
+          </div>
         </div>
       </div>
 
       <!-- MARK AS COMPLETE -->
-      <button onclick="closeTideDetail(()=>completeTideReminder('${cid}','${xid}'))" style="width:100%;padding:14px;background:#372701;border:1px solid #F2B63244;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:700;color:#F2B632;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <button onclick="closeTideDetail(()=>completeTideReminder('${cid}','${xid}'))" style="width:100%;padding:14px;background:#372701;border:1px solid #F2B63244;border-radius:12px;font-family:var(--sans);font-size:14px;font-weight:700;color:#F2B632;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         Mark as Complete
       </button>
 
       <!-- 2-COL: NOTES + DETAILS -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;overflow-y:auto;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:8px;">Notes</div>
           <div style="font-size:12px;color:#E8E6E1;line-height:1.5;white-space:pre-wrap;">${note ? esc(note) : '<span style="color:#4a3a10;">—</span>'}</div>
         </div>
-        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;">
+        <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;overflow-y:auto;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:8px;">Details</div>
           <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Type</div>
           <div style="font-size:12px;color:#E8E6E1;margin-bottom:8px;">${typeLabel}</div>
@@ -1871,12 +1877,12 @@ function openManifestCard(mid) {
     </div>`).join('');
 
   const topbar = document.getElementById('manifest-card-topbar');
-  if (topbar) topbar.innerHTML = `<button class="card-back-btn" onclick="closeManifestCard()">←</button><div class="card-topbar-center"><div class="card-progress-label" style="font-size:13px;font-weight:500;">${esc(m.pastor||m.church||'')}</div></div><button class="card-edit-btn" onclick="window._editModalFromCard=true;openManifestEditModal('${mid}')" style="padding:6px 10px;display:flex;align-items:center;">${ICONS.pencil}</button>`;
+  if (topbar) topbar.innerHTML = `<button class="card-back-btn" onclick="closeManifestCard()">←</button><div class="card-topbar-center"></div><button class="card-edit-btn" onclick="window._editModalFromCard=true;openManifestEditModal('${mid}')" style="padding:6px 10px;display:flex;align-items:center;">${ICONS.pencil}</button>`;
 
   cardContent.innerHTML = `
     <!-- HERO -->
-    <div style="background:#011B38;padding:20px 16px 16px;border-bottom:1px solid #426788;width:100%;box-sizing:border-box;overflow:hidden;">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+    <div style="background:#011B38;padding:12px 16px 12px;border-bottom:none;width:100%;box-sizing:border-box;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
         <div class="card-hero-avatar" style="background:#001830;color:${rcCard.text};border:2px solid #D99B2D;flex-shrink:0;">${initials}</div>
         <div style="flex:1;min-width:0;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
@@ -1964,8 +1970,8 @@ function openManifestCard(mid) {
 
       // Always show schedule button
       html += `<div style="margin:0 16px 10px;">
-        <button onclick="openEditNextMeeting('${mid}','')" class="mc-action-btn" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <button onclick="openEditNextMeeting('${mid}','')" class="mc-action-btn" style="width:100%;padding:10px;background:#01274A;border:1px solid #426788;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D99B2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           ${allFuture.length ? '+ Schedule Another Meeting' : 'Schedule a meeting'}
         </button>
       </div>`;
@@ -1975,7 +1981,7 @@ function openManifestCard(mid) {
 
     <!-- 2 COL: LAST COMM + VISIT HISTORY -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;" class="mc-upper-card" onclick="document.getElementById('mc-log-${mid}').style.display=document.getElementById('mc-log-${mid}').style.display==='none'?'block':'none'">
+      <div style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;" class="mc-upper-card" onclick="document.getElementById('mc-log-${mid}').style.display=document.getElementById('mc-log-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Contact Log</span>
@@ -1983,7 +1989,7 @@ function openManifestCard(mid) {
         ${lastCall ? `<div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${fmtCallDate(lastCall.date||'')}</div><div style="font-size:12px;color:var(--text);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc((lastCall.details||'').split('\n')[0]||lastCall.outcome||'—')}</div>` : `<div style="font-size:12px;color:var(--muted);">No logs yet</div>`}
         <button onclick="event.stopPropagation();openManifestLogEntry('${mid}')" style="margin-top:8px;width:100%;padding:6px;background:none;border:1px solid var(--accent);border-radius:var(--radius-sm);font-family:var(--sans);font-size:11px;font-weight:600;color:var(--accent);cursor:pointer;position:sticky;bottom:0;">+ Log</button>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;cursor:pointer;" class="mc-upper-card" onclick="document.getElementById('mc-visits-${mid}').style.display=document.getElementById('mc-visits-${mid}').style.display==='none'?'block':'none'">
+      <div style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;cursor:pointer;" class="mc-upper-card" onclick="document.getElementById('mc-visits-${mid}').style.display=document.getElementById('mc-visits-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Visit History</span>
@@ -2023,15 +2029,15 @@ function openManifestCard(mid) {
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.4;">${esc((activeRem.details||'').split('\n').slice(1).join(' ').trim()||'—')}</div>
     </div>` : `<div style="margin:0 16px 10px;">
-      <button onclick="openReminderFromManifest('${mid}')" class="mc-action-btn" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <button onclick="openReminderFromManifest('${mid}')" class="mc-action-btn" style="width:100%;padding:10px;background:#01274A;border:1px solid #426788;border-radius:var(--radius-sm);font-family:var(--sans);font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D99B2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Set a reminder
       </button>
     </div>`}
 
     <!-- 2 COL: SUPPORT + ON-SITE -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 10px;">
-      <div class="mc-lower-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+      <div class="mc-lower-card" style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">Support</span>
@@ -2039,8 +2045,7 @@ function openManifestCard(mid) {
         ${m.support_status ? `<span class="${m.support_status==='Supporting'?'mc-supporting-pill':''}" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${suppBg};border:1px solid ${suppBorder};color:${suppColor};">${esc(m.support_status)}</span>` : '<span style="font-size:12px;color:var(--muted);">—</span>'}
         ${m.support_amount ? `<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--text);">$${esc(m.support_amount)}<span style="font-size:11px;font-weight:400;color:var(--muted);"> / ${esc(m.support_cadence||'mo')}</span></div>` : ''}
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
-      <div class="mc-lower-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+      <div class="mc-lower-card" style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           <span style="font-size:11px;font-weight:600;color:var(--text);">On-Site</span>
@@ -2052,7 +2057,7 @@ function openManifestCard(mid) {
     </div>
 
     <!-- PERSONAL / CHURCH INFO (collapsible) -->
-    <div class="mc-info-bar" style="margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+    <div class="mc-info-bar" style="margin:0 16px 10px;background:#01274A;border:1px solid #426788;border-radius:var(--radius-sm);overflow:hidden;">
       <button onclick="(function(btn){const d=document.getElementById('mc-info-${mid}');const open=d.style.display==='none'||!d.style.display;if(open){d.style.display='block';d.style.animation='expandDown .25s cubic-bezier(0.4,0,0.2,1)';}else{d.style.animation='collapseUp .2s cubic-bezier(0.4,0,0.2,1)';setTimeout(()=>{if(d.style.animation.includes('collapseUp'))d.style.display='none';},180);}btn.querySelector('.info-chev').style.transform=open?'rotate(180deg)':'rotate(0deg)';})(this)" style="width:100%;padding:12px;background:none;border:none;display:flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--sans);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span style="font-size:12px;font-weight:600;color:var(--text);flex:1;text-align:left;">Personal / Church Info</span>
