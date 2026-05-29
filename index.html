@@ -188,6 +188,35 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 #app[data-wing="tides"] #tides-screen .card-topbar { background: #211708; border-bottom: none; }
 #app[data-wing="tides"] .tide-entry { background: var(--surface); }
 #app[data-wing="tides"] .tides-list { background: var(--bg); }
+
+/* ── MANIFEST WING ── */
+#app[data-wing="manifest"] {
+  --bg: #01162B;
+  --surface: #001122;
+  --surface2: #01162B;
+  --border: rgba(22,35,54,0.35);
+  --accent: #D99B2D;
+  --accent-light: #0a0800;
+  --muted: #4A7099;
+}
+#app[data-wing="manifest"] .bottom-nav { background: #001122; border-top-color: rgba(22,35,54,0.35); }
+#app[data-wing="manifest"] .bottom-nav-btn.active { color: #D99B2D; }
+/* Topbar */
+#app[data-wing="manifest"] .card-topbar { background: #001122; border-bottom: 1px solid rgba(22,35,54,0.35); }
+/* Search row */
+#app[data-wing="manifest"] #manifest-screen > div:nth-child(2) { background: #001122; border-bottom: none; }
+/* List background */
+#app[data-wing="manifest"] .tides-list { background: #01162B; }
+/* Contact rows — inset divider at 50% */
+#app[data-wing="manifest"] .manifest-list-row { border-bottom: none; position: relative; }
+#app[data-wing="manifest"] .manifest-list-row .tide-entry { border-bottom: none; }
+#app[data-wing="manifest"] .manifest-list-row::after { content:''; position:absolute; bottom:0; left:14px; right:14px; height:1px; background:rgba(22,35,54,0.35); }
+#app[data-wing="manifest"] .manifest-list-row:active { background: rgba(217,155,45,0.06); }
+/* Placeholder muted color */
+#app[data-wing="manifest"] #manifest-search::placeholder { color: #4A7099; }
+/* Filter pill text color */
+#app[data-wing="manifest"] #manifest-filter { color: #E8E6E1; -webkit-text-fill-color: #E8E6E1; background: #001122; }
+
 body.wing-tides .bottom-nav { background:#211708; border-top-color:rgba(86,62,12,0.35); }
 body.wing-tides #nav-tides { color:#C8860A; }
 .tide-content{flex:1;min-width:0;}
@@ -334,10 +363,19 @@ body.wing-tides #nav-tides { color:#C8860A; }
     <div id="manifest-card-content" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:80px;"></div>
   </div>
   <div id="manifest-screen" class="tides-screen">
-    <div class="card-topbar">
+    <div class="card-topbar" style="border-bottom:none;">
       <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Manifest</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <select id="manifest-filter" onchange="renderManifest()" style="padding:5px 8px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:11px;background:var(--surface);color:var(--muted);cursor:pointer;">
+        <button onclick="openManifestAddModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Add</button>
+      </div>
+    </div>
+    <div style="padding:8px 14px;background:var(--surface);border-bottom:none;flex-shrink:0;">
+      <div style="position:relative;">
+        <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="manifest-search" placeholder="Search pastor or church…" oninput="renderManifest()" style="width:100%;padding:9px 10px 9px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--surface2);color:var(--text);font-family:var(--sans);box-sizing:border-box;"/>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:7px;align-items:center;">
+        <select id="manifest-filter" onchange="renderManifest()" style="padding:5px 10px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:11px;background:var(--surface);color:var(--muted);cursor:pointer;-webkit-appearance:none;appearance:none;">
           <option value="all">All</option>
           <option value="Supporting">Supporting</option>
           <option value="Non-supporting">Non-supporting</option>
@@ -348,19 +386,8 @@ body.wing-tides #nav-tides { color:#C8860A; }
           <option value="handouts">Handouts</option>
           <option value="sort-scheduled">Sort: Soonest Visit</option>
         </select>
-        <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Copy emails"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
-        <button id="manifest-star-btn" onclick="toggleManifestStarFilter()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--muted);cursor:pointer;display:flex;align-items:center;" title="Starred only"><svg id="manifest-star-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
-        <button onclick="openManifestAddModal()" style="background:#F3B53A;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;color:#000C1F;cursor:pointer;">+ Add</button>
-      </div>
-    </div>
-    <div style="padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
-      <div style="position:relative;">
-        <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="manifest-search" placeholder="Search pastor or church…" oninput="renderManifest()" style="width:100%;padding:9px 10px 9px 30px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;background:var(--surface2);color:var(--text);font-family:var(--sans);box-sizing:border-box;"/>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:7px;padding-left:2px;">
-        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);"><span style="width:7px;height:7px;border-radius:50%;background:#4cd68a;display:inline-block;"></span>Supporting</span>
-        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);"><span style="width:7px;height:7px;border-radius:50%;background:#e05555;display:inline-block;"></span>Non-supporting</span>
+        <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;" title="Copy emails"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
+        <button id="manifest-star-btn" onclick="toggleManifestStarFilter()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;" title="Starred only"><svg id="manifest-star-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
       </div>
     </div>
     <div id="manifest-list" class="tides-list"></div>
@@ -427,9 +454,15 @@ let filteredList=[],callingIdx=0,contactMenuOpen=false,infoExpanded=false;
 
 const SAMPLE=[
   {id:'c1',pastor:'Brandon Dillard',church:'Lamarsh Baptist Church',city:'Mapleton',state:'IL',region:'Central',email:'lamarshbaptist@gmail.com',phone:'(309) 697-4451',address:'9507 W Maple Ridge Rd',notes:[],photo:'',calls:[{id:'l1',date:'Imported',outcome:'imported',meetingBooked:false,meetingDate:'',details:'asked to send packet again'}]},
-  {id:'c2',pastor:'David Coyle',church:'Averyville Baptist Church',city:'East Peoria',state:'IL',region:'Central',email:'coyles55@yahoo.com',phone:'(309) 694-6476, (309) 453-9827',address:'1070 Spring Bay Rd',notes:[],photo:'',calls:[{id:'l2',date:'May 12, 2026',outcome:'pastor',meetingBooked:true,meetingDate:'June 3, 2026',details:'Great conversation'}]},
+  {id:'c2',pastor:'David Coyle',church:'Averyville Baptist Church',city:'East Peoria',state:'IL',region:'Central',email:'coyles55@yahoo.com',phone:'(309) 694-6476',address:'1070 Spring Bay Rd',notes:[],photo:'',calls:[{id:'l2',date:'May 12, 2026',outcome:'pastor',meetingBooked:true,meetingDate:'June 3, 2026',details:'Great conversation'}]},
   {id:'c3',pastor:'Curtis Cochran',church:'Calvary Baptist Church',city:'Chillicothe',state:'IL',region:'Central',email:'calvarychilli@yahoo.com',phone:'(309) 274-4343',address:'1028 Cloverdale Rd',notes:[],photo:'',calls:[]},
-  {id:'c7',pastor:'Sean Hicks',church:'Cornerstone Baptist Church',city:'Salem',state:'IL',region:'South',email:'pastor@cornerstonesalem.com',phone:'(618) 548-1547',address:'3561 Boone St Rd',notes:[],photo:'',calls:[{id:'l5',date:'May 14, 2026',outcome:'reminder',meetingBooked:false,meetingDate:'',details:'Call back May 22',remDate:'2026-05-22',remTime:'',remType:'call'}]}
+  {id:'c4',pastor:'Mark Stevens',church:'Grace Community Church',city:'Nashville',state:'TN',region:'South',email:'mstevens@gracenashville.com',phone:'(615) 882-3310',address:'402 Elm Hill Pike',notes:[],photo:'',calls:[{id:'l6',date:'May 8, 2026',outcome:'voicemail',meetingBooked:false,meetingDate:'',details:'Left message'}]},
+  {id:'c5',pastor:'James Whitfield',church:'Heritage Baptist Church',city:'Columbus',state:'OH',region:'East',email:'jwhitfield@heritagebaptist.org',phone:'(614) 555-0192',address:'1201 Morse Rd',notes:[],photo:'',calls:[{id:'l7',date:'Apr 30, 2026',outcome:'secretary',meetingBooked:false,meetingDate:'',details:'Secretary said call back next week'}]},
+  {id:'c6',pastor:'Robert Nguyen',church:'Faith Bible Church',city:'Dallas',state:'TX',region:'South',email:'rnguyen@faithbibletx.com',phone:'(972) 555-0447',address:'8800 Skillman St',notes:[],photo:'',calls:[]},
+  {id:'c7',pastor:'Sean Hicks',church:'Cornerstone Baptist Church',city:'Salem',state:'IL',region:'South',email:'pastor@cornerstonesalem.com',phone:'(618) 548-1547',address:'3561 Boone St Rd',notes:[],photo:'',calls:[{id:'l5',date:'May 14, 2026',outcome:'reminder',meetingBooked:false,meetingDate:'',details:'Call back May 22',remDate:'2026-05-22',remTime:'',remType:'call'}]},
+  {id:'c8',pastor:'Timothy Barnes',church:'Crossroads Community Church',city:'Springfield',state:'MO',region:'Central',email:'tbarnes@crossroadssmo.com',phone:'(417) 555-0283',address:'2244 S Campbell Ave',notes:[],photo:'',calls:[{id:'l8',date:'May 1, 2026',outcome:'pastor',meetingBooked:false,meetingDate:'',details:'Interested, wants info packet'}]},
+  {id:'c9',pastor:'Aaron Wells',church:'Riverside Baptist Church',city:'Knoxville',state:'TN',region:'South',email:'awells@riversideknox.org',phone:'(865) 555-0374',address:'5501 Kingston Pike',notes:[],photo:'',starred:true,calls:[{id:'l9',date:'May 15, 2026',outcome:'pastor',meetingBooked:true,meetingDate:'June 10, 2026',details:'Very receptive'}]},
+  {id:'c10',pastor:'Daniel Marsh',church:'Pilgrim Baptist Church',city:'Peoria',state:'IL',region:'Central',email:'dmarsh@pilgrimbaptist.com',phone:'(309) 555-0521',address:'3300 N Wisconsin Ave',notes:[],photo:'',calls:[]}
 ];
 
 function ac(n){let h=0;for(let c of(n||'X'))h=(h*31+c.charCodeAt(0))&0xffffffff;return AC[Math.abs(h)%AC.length];}
@@ -558,7 +591,7 @@ function renderFilters(){
   const remPill=`<button class="filter-pill${showingReminders?' active':''}" onclick="toggleRemindersView()" style="display:flex;align-items:center;gap:4px;" title="Reminders">${overdueCount?`<span style="width:7px;height:7px;background:#e05555;border-radius:50%;display:inline-block;margin-right:2px;"></span>`:''}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c9a0f0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>${remCount?' ('+remCount+')':''}</button>`;
   const phonePill=`<button class="filter-pill${filterHasPhone?' active':''}" onclick="togglePhoneFilter()" title="Has Phone" style="display:flex;align-items:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6A8FB9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></button>`;
   const stateOpts2=['All',...Array.from(new Set(contacts.map(c=>(c.state||'').trim()).filter(Boolean))).sort()].map(s=>`<option value="${s}"${fState===s?' selected':''}>${s==='All'?'All States':s+' ('+(STATE_NAMES[s]||s)+')'}</option>`).join('');
-  const stateDropPill=`<select onchange="setSF(this.value)" style="flex:1;margin-right:20px;padding:5px 12px 5px 10px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:var(--surface);appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="%236A8FB9" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');background-repeat:no-repeat;background-position:right 10px center;color:${fState!=='All'?'#D99B2D':'#E8E6E1'};cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
+  const stateDropPill=`<select onchange="setSF(this.value)" style="flex:1;margin-right:20px;padding:5px 12px 5px 10px;border:1px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:12px;background:#0E3253;appearance:none;-webkit-appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="%236A8FB9" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');background-repeat:no-repeat;background-position:right 10px center;color:${fState!=='All'?'#D99B2D':'#E8E6E1'};-webkit-text-fill-color:${fState!=='All'?'#D99B2D':'#E8E6E1'};opacity:1;cursor:pointer;font-weight:${fState!=='All'?'600':'400'};">${stateOpts2}</select>`;
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+phonePill+stateDropPill;
 }
 function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
@@ -1558,13 +1591,45 @@ function showLongPressMenu(cid, x, y) {
 let manifestContacts = [];
 let manifestVisits = [];
 
+const SAMPLE_MANIFEST = [
+  {id:'m1',pastor:'Aaron Harris',church:'Grace Baptist Church',city:'Nashville',state:'TN',support_status:'Supporting',starred:false,prayer_list:'No',lodging:'Yes',rv_hookup:'No',bible_handouts:'Yes',next_visit_date:''},
+  {id:'m2',pastor:'Allen Copeland',church:'Central Baptist Church',city:'Amarillo',state:'TX',support_status:'Supporting',starred:false,prayer_list:'No',lodging:'No',rv_hookup:'No',bible_handouts:'No',next_visit_date:'2026-07-14'},
+  {id:'m3',pastor:'Avery Barney',church:'Abilene Baptist Church',city:'Abilene',state:'TX',support_status:'Supporting',starred:true,prayer_list:'No',lodging:'Yes',rv_hookup:'Yes',bible_handouts:'Yes',next_visit_date:''},
+  {id:'m4',pastor:'Barry Parsons',church:'Landmark Baptist Church',city:'Maryville',state:'TN',support_status:'Non-supporting',starred:false,prayer_list:'Yes',lodging:'No',rv_hookup:'No',bible_handouts:'No',next_visit_date:''},
+  {id:'m5',pastor:'Brian Petrick',church:'Biblical Baptist Church',city:'Springfield',state:'MO',support_status:'Supporting',starred:false,prayer_list:'No',lodging:'No',rv_hookup:'Yes',bible_handouts:'Yes',next_visit_date:'2026-06-22'},
+  {id:'m6',pastor:'Andy Huffman',church:'Faith Community Church',city:'Decatur',state:'IL',support_status:'Non-supporting',starred:false,prayer_list:'Yes',lodging:'No',rv_hookup:'No',bible_handouts:'No',next_visit_date:''},
+  {id:'m7',pastor:'Brian Weiss',church:'Harvest Baptist Church',city:'Indianapolis',state:'IN',support_status:'Non-supporting',starred:false,prayer_list:'No',lodging:'No',rv_hookup:'No',bible_handouts:'Yes',next_visit_date:''},
+  {id:'m8',pastor:'Bryan McDonald',church:'Prairie View Baptist Church',city:'Grain Valley',state:'MO',support_status:'Supporting',starred:true,prayer_list:'No',lodging:'Yes',rv_hookup:'No',bible_handouts:'No',next_visit_date:''},
+  {id:'m9',pastor:'Caleb Kinney',church:'First Baptist Church',city:'Oak Creek',state:'WI',support_status:'Non-supporting',starred:false,prayer_list:'No',lodging:'No',rv_hookup:'No',bible_handouts:'No',next_visit_date:''},
+  {id:'m10',pastor:'Cecil Ballard',church:'Cornerstone Baptist Church',city:'Memphis',state:'TN',support_status:'Supporting',starred:false,prayer_list:'Yes',lodging:'Yes',rv_hookup:'Yes',bible_handouts:'Yes',next_visit_date:'2026-08-03'}
+];
+
+const SAMPLE_VISITS = [
+  {id:'v1',manifestId:'m1',date:'2026-05-15',endDate:'',notes:'Great visit'},
+  {id:'v2',manifestId:'m1',date:'2026-04-30',endDate:'',notes:''},
+  {id:'v3',manifestId:'m2',date:'2026-05-12',endDate:'',notes:''},
+  {id:'v4',manifestId:'m3',date:'2026-04-30',endDate:'',notes:'Scheduled next trip'},
+  {id:'v5',manifestId:'m5',date:'2026-05-08',endDate:'',notes:''},
+  {id:'v6',manifestId:'m8',date:'2026-03-15',endDate:'',notes:''},
+  {id:'v7',manifestId:'m9',date:'2024-12-03',endDate:'',notes:''},
+  {id:'v8',manifestId:'m10',date:'2026-05-10',endDate:'',notes:''}
+];
+
 function loadManifest() {
   return new Promise((resolve) => {
     const cbName = 'relay_mcb_' + Date.now();
+    const timer = setTimeout(() => {
+      if (window[cbName]) {
+        delete window[cbName];
+        manifestContacts = SAMPLE_MANIFEST.map(m => ({...m, support_status: m.support_status || 'Non-supporting'}));
+        if (currentWing === 'manifest') renderManifest();
+        resolve();
+      }
+    }, 5000);
     window[cbName] = (data) => {
+      clearTimeout(timer);
       manifestContacts = (data || []).map(m => ({...m, support_status: m.support_status || 'Non-supporting'}));
       delete window[cbName];
-      // Re-render if manifest wing is currently showing
       if (currentWing === 'manifest') renderManifest();
       resolve();
     };
@@ -1577,7 +1642,16 @@ function loadManifest() {
 function loadVisits() {
   return new Promise((resolve) => {
     const cbName = 'relay_vcb_' + Date.now();
+    const timer = setTimeout(() => {
+      if (window[cbName]) {
+        delete window[cbName];
+        manifestVisits = SAMPLE_VISITS;
+        if (currentWing === 'manifest') renderManifest();
+        resolve();
+      }
+    }, 5000);
     window[cbName] = (data) => {
+      clearTimeout(timer);
       manifestVisits = data || [];
       delete window[cbName];
       if (currentWing === 'manifest') renderManifest();
