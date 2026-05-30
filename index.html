@@ -945,6 +945,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
           <option value="Supporting">Supporting</option>
           <option value="Non-supporting">Non-supporting</option>
           <option value="Scheduled">Scheduled</option>
+          <option value="relay">This Week's Relay</option>
           <option value="prayer">Prayer List</option>
           <option value="lodging">Lodging</option>
           <option value="rv">RV</option>
@@ -2302,6 +2303,10 @@ function renderManifest() {
       return nv || (m.next_visit_date && nvMs(m.next_visit_end_date||m.next_visit_date) >= todayMs2);
     });
   }
+  else if (filter === 'relay') {
+    const relayGroup = getCurrentRelayGroup();
+    items = items.filter(m => m.support_status === 'Supporting' && String(m.relay_group) === String(relayGroup));
+  }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
   else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
@@ -2363,6 +2368,12 @@ function renderManifest() {
     const lastVisitStr = lastVisit ? fmtCallDate(lastVisit.date) : 'No visits yet';
     const scheduledDate = nextVisit?.date || m.next_visit_date;
     const scheduledTag = scheduledDate ? `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:#1a2e22;border:1px solid #4a9e6b44;color:#4cd68a;margin-left:4px;display:inline-flex;align-items:center;gap:3px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${fmtCallDate(scheduledDate)}</span>` : '';
+
+    // RELAY badge
+    const relayWeekData = getRelayWeekData();
+    const isRelayWeek = m.support_status === 'Supporting' && String(m.relay_group) === String(relayWeekData.group);
+    const isRelayDone = relayWeekData.completed.includes(m.id);
+    const relayBadge = isRelayWeek ? `<span onclick="event.stopPropagation();toggleRelayComplete('${m.id}')" style="cursor:pointer;font-size:10px;font-weight:700;padding:2px 8px 2px 6px;border-radius:20px;background:${isRelayDone ? '#1a2e22' : '#1a1500'};border:1px solid ${isRelayDone ? '#4cd68a88' : '#D99B2D88'};color:${isRelayDone ? '#4cd68a' : '#D99B2D'};margin-left:4px;display:inline-flex;align-items:center;gap:4px;letter-spacing:.04em;">${isRelayDone ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>'}RELAY</span>` : '';
 
     return `<div class="tide-entry-wrap manifest-list-row" onclick="openManifestCard('${m.id}')">
       <div class="tide-entry upcoming" style="border-left:none;">
@@ -3319,6 +3330,10 @@ function openManifestEmailCopy() {
       return nv || (m.next_visit_date && nvMs(m.next_visit_end_date||m.next_visit_date) >= todayMs2);
     });
   }
+  else if (filter === 'relay') {
+    const relayGroup = getCurrentRelayGroup();
+    items = items.filter(m => m.support_status === 'Supporting' && String(m.relay_group) === String(relayGroup));
+  }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
   else if (filter === 'rv') items = items.filter(m => m.rv_hookup === 'Yes');
@@ -3542,6 +3557,70 @@ const HELM_VERSES = [
   { text: "Be strong, and work: for I am with you, saith the LORD of hosts.", ref: "Haggai 2:4" },
 ];
 
+
+// ── RELAY WEEK SYSTEM ────────────────────────────────────────────────────────
+
+function getRelayWeekKey() {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
+  return `relay_week_${now.getFullYear()}_${weekNum}`;
+}
+
+function getCurrentRelayGroup() {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
+  return (weekNum % 4) + 1;
+}
+
+function getRelayWeekData() {
+  const key = getRelayWeekKey();
+  const stored = localStorage.getItem(key);
+  if (stored) {
+    try { return JSON.parse(stored); } catch(e) {}
+  }
+  // Initialize fresh week
+  const group = getCurrentRelayGroup();
+  const data = { group, completed: [] };
+  localStorage.setItem(key, JSON.stringify(data));
+  return data;
+}
+
+function toggleRelayComplete(mid) {
+  haptic(8);
+  const key = getRelayWeekKey();
+  const data = getRelayWeekData();
+  const idx = data.completed.indexOf(mid);
+  if (idx >= 0) {
+    data.completed.splice(idx, 1);
+  } else {
+    data.completed.push(mid);
+  }
+  localStorage.setItem(key, JSON.stringify(data));
+  renderManifest();
+  // Re-render HELM tile if on HELM
+  if (currentWing === 'helm') renderHelm();
+}
+
+function getRelayContactsThisWeek() {
+  const data = getRelayWeekData();
+  const group = data.group;
+  return manifestContacts.filter(m =>
+    m.support_status === 'Supporting' &&
+    String(m.relay_group) === String(group)
+  );
+}
+
+function helmRelayProgress() {
+  const data = getRelayWeekData();
+  const contacts = getRelayContactsThisWeek();
+  const completed = contacts.filter(m => data.completed.includes(m.id)).length;
+  return { completed, total: contacts.length };
+}
+
+// ── END RELAY WEEK SYSTEM ─────────────────────────────────────────────────────
+
 function helmDailyVerse() {
   const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   return HELM_VERSES[doy % HELM_VERSES.length];
@@ -3659,35 +3738,54 @@ function helmStats() {
 }
 
 function helmRelayProgress() {
-  // Relay: Monday–Friday cadence for Manifest supporting pastors
-  // relay_group 1-4, current week = group (weekOfYear % 4) + 1
   const now = new Date();
   const weekOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (7 * 86400000));
   const currentGroup = (weekOfYear % 4) + 1;
 
   const supporting = manifestContacts.filter(m => m.support_status === 'Supporting');
-  if (!supporting.length) return { completed: 0, total: 0 };
+  if (!supporting.length) return { completed: 0, total: 0, group: currentGroup };
 
-  // Contacts in this week's group (or all if no groups assigned)
   const hasGroups = supporting.some(m => m.relay_group);
   const thisWeek = hasGroups
     ? supporting.filter(m => String(m.relay_group) === String(currentGroup))
     : supporting;
 
-  if (!thisWeek.length) return { completed: 0, total: supporting.length };
+  if (!thisWeek.length) return { completed: 0, total: supporting.length, group: currentGroup };
 
-  // Check if contacted this week (Mon–today)
+  // Monday of this week
   const monday = new Date(now);
   monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
   monday.setHours(0, 0, 0, 0);
+  const mondayStr = monday.toISOString().slice(0, 10);
 
   let completed = 0;
   thisWeek.forEach(m => {
-    const v = manifestVisits.filter(v => v.manifestId === m.id && v.date >= monday.toISOString().slice(0, 10));
-    if (v.length) completed++;
+    // 1. Visit logged this week
+    const hasVisit = manifestVisits.some(v => v.manifestId === m.id && v.date >= mondayStr);
+    if (hasVisit) { completed++; return; }
+
+    // 2. Conversation logged this week via pseudo-contact call log
+    const pseudo = contacts.find(c => c.id === m.id);
+    if (pseudo) {
+      const hasConvo = (pseudo.calls || []).some(call => {
+        if (call.outcome === 'reminder' || call.outcome === 'imported') return false;
+        // Parse call date and check if this week
+        const d = new Date(call.date);
+        return !isNaN(d.getTime()) && d >= monday;
+      });
+      if (hasConvo) { completed++; return; }
+
+      // 3. Tides reminder completed this week
+      const hasReminder = (pseudo.calls || []).some(call => {
+        if (call.outcome !== 'reminder' || !call.completed) return false;
+        const d = new Date(call.remDate || call.date);
+        return !isNaN(d.getTime()) && d >= monday;
+      });
+      if (hasReminder) { completed++; return; }
+    }
   });
 
-  return { completed, total: thisWeek.length };
+  return { completed, total: thisWeek.length, group: currentGroup };
 }
 
 function helmOpenSundaysWeds() {
@@ -3797,7 +3895,7 @@ function renderHelm() {
   const cmdBar = `
     <div class="helm-section-label">COMMAND BAR</div>
     <div class="helm-command-bar">
-      <div class="helm-tile" onclick="helmNavTo('manifest')">
+      <div class="helm-tile" onclick="helmOpenRelayList()">
         <div class="helm-tile-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D99B2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
         <div class="helm-tile-number">${relayLabel}</div>
         <div class="helm-tile-label">Relayed<br>this week</div>
@@ -4018,6 +4116,31 @@ function renderHelm() {
 
 function helmNavTo(wing) {
   switchWing(wing);
+}
+
+function helmNavToRelay() {
+  switchWing('manifest');
+  setTimeout(() => {
+    const sel = document.getElementById('manifest-filter');
+    if (sel) { sel.value = 'relay'; renderManifest(); }
+  }, 200);
+}
+
+function helmOpenRelayList() {
+  // Switch to manifest and filter to this week's relay group
+  const relay = helmRelayProgress();
+  switchWing('manifest');
+  setTimeout(() => {
+    // Set the filter dropdown to show the relay group
+    const filterEl = document.getElementById('manifest-filter');
+    if (filterEl) {
+      // Add a temporary relay filter option if not present
+      filterEl.value = 'Supporting';
+      renderManifest();
+    }
+    // Show a toast indicating which group is active
+    showStatus(`Group ${relay.group} · ${relay.completed}/${relay.total} relayed this week`, 'info');
+  }, 320);
 }
 
 function helmOpenVoyageContact(cid) {
