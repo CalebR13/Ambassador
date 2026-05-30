@@ -2371,7 +2371,9 @@ function renderManifest() {
 
     // RELAY badge
     const relayWeekData = getRelayWeekData();
-    const isRelayWeek = m.support_status === 'Supporting' && String(m.relay_group) === String(relayWeekData.group);
+    const mGroup = m.relay_group !== undefined && m.relay_group !== null && m.relay_group !== ''
+      ? String(m.relay_group) : null;
+    const isRelayWeek = m.support_status === 'Supporting' && mGroup === String(relayWeekData.group);
     const isRelayDone = relayWeekData.completed.includes(m.id);
     const relayBadge = isRelayWeek ? `<span onclick="event.stopPropagation();toggleRelayComplete('${m.id}')" style="cursor:pointer;font-size:10px;font-weight:700;padding:2px 8px 2px 6px;border-radius:20px;background:${isRelayDone ? '#1a2e22' : '#1a1500'};border:1px solid ${isRelayDone ? '#4cd68a88' : '#D99B2D88'};color:${isRelayDone ? '#4cd68a' : '#D99B2D'};margin-left:4px;display:inline-flex;align-items:center;gap:4px;letter-spacing:.04em;">${isRelayDone ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>'}RELAY</span>` : '';
 
@@ -4119,11 +4121,10 @@ function helmNavTo(wing) {
 }
 
 function helmNavToRelay() {
+  // Set filter first so renderManifest inside switchWing picks it up
+  const sel = document.getElementById('manifest-filter');
+  if (sel) sel.value = 'relay';
   switchWing('manifest');
-  setTimeout(() => {
-    const sel = document.getElementById('manifest-filter');
-    if (sel) { sel.value = 'relay'; renderManifest(); }
-  }, 200);
 }
 
 function helmOpenRelayList() {
@@ -4162,13 +4163,16 @@ load().then(()=>{renderHelm();renderFilters();updateTidesBadge();initPullToRefre
   Promise.all([loadManifest(), loadVisits()]).then(() => {
     // Backfill relay_group for any existing contacts that don't have one
     let groupCounter = 0;
+    let needsSave = false;
     manifestContacts.forEach(m => {
-      if (!m.relay_group) {
+      if (!m.relay_group || m.relay_group === '' || m.relay_group === '0') {
         m.relay_group = String((groupCounter % 4) + 1);
         saveManifestContact(m);
+        needsSave = true;
       }
       groupCounter++;
     });
+    if (needsSave) console.log('[Relay] Backfilled relay groups for existing contacts');
     // Migrate legacy next_visit_date entries that have no matching manifestVisit
     const parseClean = d => { if(!d)return null; const c=d.split(' – ')[0].split(' - ')[0].trim(); const dt=new Date(c); return isNaN(dt.getTime())?null:dt; };
     manifestContacts.forEach(m => {
