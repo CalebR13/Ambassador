@@ -2439,7 +2439,7 @@ function renderManifest() {
     const relayWeekData = getRelayWeekData();
     const mGroup = m.relay_group !== undefined && m.relay_group !== null && m.relay_group !== ''
       ? String(m.relay_group) : null;
-    const isRelayWeek = m.support_status === 'Supporting' && mGroup === String(relayWeekData.group);
+    const isRelayWeek = mGroup !== null && (m.support_status === 'Supporting' || m.support_status === 'Non-supporting') && mGroup === String(relayWeekData.group);
     const isRelayDone = relayWeekData.completed.includes(m.id);
     const relayBadge = isRelayWeek ? `<span onclick="event.stopPropagation();toggleRelayComplete('${m.id}')" style="cursor:pointer;font-size:10px;font-weight:700;padding:2px 8px 2px 6px;border-radius:20px;background:${isRelayDone ? '#1a2e22' : '#1a1500'};border:1px solid ${isRelayDone ? '#4cd68a88' : '#D99B2D88'};color:${isRelayDone ? '#4cd68a' : '#D99B2D'};margin-left:4px;display:inline-flex;align-items:center;gap:4px;letter-spacing:.04em;">${isRelayDone ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>'}RELAY</span>` : '';
 
@@ -3745,57 +3745,6 @@ function helmStats() {
     }).length;
   }, 0);
   return { totalVoyage, neverCalled, totalCalled, statesVisited, statesRemaining, supporting, overdue };
-}
-
-function helmRelayProgress() {
-  const now = new Date();
-  const weekOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (7 * 86400000));
-  const currentGroup = (weekOfYear % 4) + 1;
-
-  const supporting = manifestContacts.filter(m => m.relay_group && (m.support_status === 'Supporting' || m.support_status === 'Non-supporting'));
-  if (!supporting.length) return { completed: 0, total: 0, group: currentGroup };
-
-  const hasGroups = supporting.some(m => m.relay_group);
-  const thisWeek = hasGroups
-    ? supporting.filter(m => String(m.relay_group) === String(currentGroup))
-    : supporting;
-
-  if (!thisWeek.length) return { completed: 0, total: supporting.length, group: currentGroup };
-
-  // Monday of this week
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-  monday.setHours(0, 0, 0, 0);
-  const mondayStr = monday.toISOString().slice(0, 10);
-
-  let completed = 0;
-  thisWeek.forEach(m => {
-    // 1. Visit logged this week
-    const hasVisit = manifestVisits.some(v => v.manifestId === m.id && v.date >= mondayStr);
-    if (hasVisit) { completed++; return; }
-
-    // 2. Conversation logged this week via pseudo-contact call log
-    const pseudo = contacts.find(c => c.id === m.id);
-    if (pseudo) {
-      const hasConvo = (pseudo.calls || []).some(call => {
-        if (call.outcome === 'reminder' || call.outcome === 'imported') return false;
-        // Parse call date and check if this week
-        const d = new Date(call.date);
-        return !isNaN(d.getTime()) && d >= monday;
-      });
-      if (hasConvo) { completed++; return; }
-
-      // 3. Tides reminder completed this week
-      const hasReminder = (pseudo.calls || []).some(call => {
-        if (call.outcome !== 'reminder' || !call.completed) return false;
-        const d = new Date(call.remDate || call.date);
-        return !isNaN(d.getTime()) && d >= monday;
-      });
-      if (hasReminder) { completed++; return; }
-    }
-  });
-
-  return { completed, total: thisWeek.length, group: currentGroup };
 }
 
 function helmOpenSundaysWeds() {
