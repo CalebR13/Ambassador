@@ -765,6 +765,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 .helm-scroll::-webkit-scrollbar { width: 0; }
 .helm-topbar {
@@ -903,6 +904,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
 </svg>
         <span class="helm-topbar-title">HELM</span>
       </div>
+      <button onclick="helmEditGoal()" style="background:none;border:none;cursor:pointer;padding:6px;color:#D99B2D;opacity:0.7;display:flex;align-items:center;justify-content:center;" title="Set support goal"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
     <div class="helm-scroll" id="helm-scroll">
       <!-- Hero injected by renderHelm() -->
@@ -4050,7 +4052,7 @@ function renderHelm() {
       <span style="font-size:10px;color:#5A6A8A;font-weight:400;letter-spacing:0;text-transform:none;margin-left:auto;padding-left:8px;">${missingPhone.length} Contacts</span>
     </div>
     <div class="helm-phone-section">${phoneRows}</div>
-    ${missingPhone.length > 3 ? `<button class="helm-view-all" onclick="helmNavToMissingPhone()" style="margin:0 14px 16px;">VIEW FULL LIST <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>` : ''}`;
+    ${missingPhone.length > 3 ? `<button class="helm-view-all" onclick="helmNavToMissingPhone()" style="margin:0 14px calc(16px + 60px + env(safe-area-inset-bottom));">VIEW FULL LIST <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>` : ''}`;
 
   document.getElementById('helm-body').innerHTML =
     anchorDiv + cmdBar + meetingsSection + statsSection + anchorDiv + supportSection + phoneSection;
@@ -4078,11 +4080,27 @@ function helmOpenContact(source, id) {
 
 function helmEditGoal() {
   const current = getHelmSupportGoal();
-  const val = prompt('Set monthly support goal ($):', current);
-  if (val !== null && !isNaN(parseInt(val, 10))) {
-    setHelmSupportGoal(parseInt(val, 10));
-    renderHelm();
-  }
+  showM(`<div class="modal-backdrop" onclick="if(event.target===this)closeMKeepCard()">
+    <div class="modal-box" onclick="event.stopPropagation()" style="max-width:320px;">
+      <h2 style="margin-bottom:16px;">Support Goal</h2>
+      <div class="fgi" style="margin-bottom:16px;">
+        <label>Monthly support goal ($)</label>
+        <input id="helm-goal-input" type="number" value="${current}" placeholder="65000" style="font-size:18px;text-align:center;" inputmode="numeric"/>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button class="btn-save" onclick="
+          const v=parseInt(document.getElementById('helm-goal-input').value,10);
+          if(!isNaN(v)&&v>0){setHelmSupportGoal(v);renderHelm();}
+          closeMKeepCard();
+        ">Save</button>
+      </div>
+    </div>
+  </div>`);
+  setTimeout(() => {
+    const inp = document.getElementById('helm-goal-input');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 80);
 }
 
 function helmNavToMissingPhone() {
