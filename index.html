@@ -4050,9 +4050,9 @@ function renderHelm() {
     <div class="helm-section-label" style="padding-right:16px;">
       <span>MISSING PHONE LIST</span>
       <span style="font-size:10px;color:#5A6A8A;font-weight:400;letter-spacing:0;text-transform:none;margin-left:auto;padding-left:8px;">${missingPhone.length} Contacts</span>
+      ${missingPhone.length > 3 ? `<button onclick="helmNavToMissingPhone()" style="margin-left:8px;background:none;border:1px solid #1C2640;border-radius:6px;padding:3px 8px;font-family:var(--sans);font-size:10px;font-weight:600;color:#D99B2D;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">View All</button>` : ''}
     </div>
-    <div class="helm-phone-section">${phoneRows}</div>
-    ${missingPhone.length > 3 ? `<button class="helm-view-all" onclick="helmNavToMissingPhone()" style="margin:0 14px calc(16px + 60px + env(safe-area-inset-bottom));">VIEW FULL LIST <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>` : ''}`;
+    <div class="helm-phone-section">${phoneRows}</div>`;
 
   document.getElementById('helm-body').innerHTML =
     anchorDiv + cmdBar + meetingsSection + statsSection + anchorDiv + supportSection + phoneSection;
