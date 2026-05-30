@@ -4122,10 +4122,15 @@ function helmNavTo(wing) {
 }
 
 function helmNavToRelay() {
-  // Set filter first so renderManifest inside switchWing picks it up
-  const sel = document.getElementById('manifest-filter');
-  if (sel) sel.value = 'relay';
   switchWing('manifest');
+  // Use requestAnimationFrame to ensure DOM is ready after switchWing
+  requestAnimationFrame(() => {
+    const sel = document.getElementById('manifest-filter');
+    if (sel) {
+      sel.value = 'relay';
+      renderManifest();
+    }
+  });
 }
 
 function helmOpenRelayList() {
@@ -4174,6 +4179,17 @@ load().then(()=>{renderHelm();renderFilters();updateTidesBadge();initPullToRefre
       groupCounter++;
     });
     if (needsSave) console.log('[Relay] Backfilled relay groups for existing contacts');
+    // Re-render HELM relay tile now that manifest data is loaded
+    if (currentWing === 'helm') {
+      const relay = helmRelayProgress();
+      const relayLabel = relay.total > 0 ? relay.completed + '/' + relay.total : '0/0';
+      const tileNum = document.querySelector('.helm-tile-number');
+      if (tileNum && tileNum.closest('.helm-tile')) {
+        tileNum.textContent = relayLabel;
+      }
+      // Full re-render is cleaner
+      renderHelm();
+    }
     // Migrate legacy next_visit_date entries that have no matching manifestVisit
     const parseClean = d => { if(!d)return null; const c=d.split(' – ')[0].split(' - ')[0].trim(); const dt=new Date(c); return isNaN(dt.getTime())?null:dt; };
     manifestContacts.forEach(m => {
