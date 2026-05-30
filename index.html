@@ -2335,7 +2335,8 @@ function getRelayContactsThisWeek() {
   const data = getRelayWeekData();
   const group = data.group;
   return manifestContacts.filter(m =>
-    m.support_status === 'Supporting' &&
+    m.relay_group &&
+    (m.support_status === 'Supporting' || m.support_status === 'Non-supporting') &&
     String(m.relay_group) === String(group)
   );
 }
@@ -2370,7 +2371,7 @@ function renderManifest() {
   }
   else if (filter === 'relay') {
     const relayGroup = getCurrentRelayGroup();
-    items = items.filter(m => m.support_status === 'Supporting' && String(m.relay_group) === String(relayGroup));
+    items = items.filter(m => m.relay_group && (m.support_status === 'Supporting' || m.support_status === 'Non-supporting') && String(m.relay_group) === String(relayGroup));
   }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
@@ -3399,7 +3400,7 @@ function openManifestEmailCopy() {
   }
   else if (filter === 'relay') {
     const relayGroup = getCurrentRelayGroup();
-    items = items.filter(m => m.support_status === 'Supporting' && String(m.relay_group) === String(relayGroup));
+    items = items.filter(m => m.relay_group && (m.support_status === 'Supporting' || m.support_status === 'Non-supporting') && String(m.relay_group) === String(relayGroup));
   }
   else if (filter === 'prayer') items = items.filter(m => m.prayer_list === 'Yes');
   else if (filter === 'lodging') items = items.filter(m => m.lodging === 'Yes');
@@ -3751,7 +3752,7 @@ function helmRelayProgress() {
   const weekOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (7 * 86400000));
   const currentGroup = (weekOfYear % 4) + 1;
 
-  const supporting = manifestContacts.filter(m => m.support_status === 'Supporting');
+  const supporting = manifestContacts.filter(m => m.relay_group && (m.support_status === 'Supporting' || m.support_status === 'Non-supporting'));
   if (!supporting.length) return { completed: 0, total: 0, group: currentGroup };
 
   const hasGroups = supporting.some(m => m.relay_group);
@@ -4176,7 +4177,7 @@ function helmOpenRelayList() {
     const filterEl = document.getElementById('manifest-filter');
     if (filterEl) {
       // Add a temporary relay filter option if not present
-      filterEl.value = 'Supporting';
+      filterEl.value = 'relay';
       renderManifest();
     }
     // Show a toast indicating which group is active
