@@ -2284,6 +2284,70 @@ function saveVisitEntry(v) {
 }
 
 // ── MANIFEST RENDER ──
+
+// ── RELAY WEEK SYSTEM ────────────────────────────────────────────────────────
+
+function getRelayWeekKey() {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
+  return `relay_week_${now.getFullYear()}_${weekNum}`;
+}
+
+function getCurrentRelayGroup() {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
+  return (weekNum % 4) + 1;
+}
+
+function getRelayWeekData() {
+  const key = getRelayWeekKey();
+  const stored = localStorage.getItem(key);
+  if (stored) {
+    try { return JSON.parse(stored); } catch(e) {}
+  }
+  // Initialize fresh week
+  const group = getCurrentRelayGroup();
+  const data = { group, completed: [] };
+  localStorage.setItem(key, JSON.stringify(data));
+  return data;
+}
+
+function toggleRelayComplete(mid) {
+  haptic(8);
+  const key = getRelayWeekKey();
+  const data = getRelayWeekData();
+  const idx = data.completed.indexOf(mid);
+  if (idx >= 0) {
+    data.completed.splice(idx, 1);
+  } else {
+    data.completed.push(mid);
+  }
+  localStorage.setItem(key, JSON.stringify(data));
+  renderManifest();
+  // Re-render HELM tile if on HELM
+  if (currentWing === 'helm') renderHelm();
+}
+
+function getRelayContactsThisWeek() {
+  const data = getRelayWeekData();
+  const group = data.group;
+  return manifestContacts.filter(m =>
+    m.support_status === 'Supporting' &&
+    String(m.relay_group) === String(group)
+  );
+}
+
+function helmRelayProgress() {
+  const data = getRelayWeekData();
+  const contacts = getRelayContactsThisWeek();
+  const completed = contacts.filter(m => data.completed.includes(m.id)).length;
+  return { completed, total: contacts.length };
+}
+
+// ── END RELAY WEEK SYSTEM ─────────────────────────────────────────────────────
+
 function renderManifest() {
   const list = document.getElementById('manifest-list');
   if (!list) return;
@@ -3559,69 +3623,6 @@ const HELM_VERSES = [
   { text: "Be strong, and work: for I am with you, saith the LORD of hosts.", ref: "Haggai 2:4" },
 ];
 
-
-// ── RELAY WEEK SYSTEM ────────────────────────────────────────────────────────
-
-function getRelayWeekKey() {
-  const now = new Date();
-  const jan1 = new Date(now.getFullYear(), 0, 1);
-  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
-  return `relay_week_${now.getFullYear()}_${weekNum}`;
-}
-
-function getCurrentRelayGroup() {
-  const now = new Date();
-  const jan1 = new Date(now.getFullYear(), 0, 1);
-  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
-  return (weekNum % 4) + 1;
-}
-
-function getRelayWeekData() {
-  const key = getRelayWeekKey();
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    try { return JSON.parse(stored); } catch(e) {}
-  }
-  // Initialize fresh week
-  const group = getCurrentRelayGroup();
-  const data = { group, completed: [] };
-  localStorage.setItem(key, JSON.stringify(data));
-  return data;
-}
-
-function toggleRelayComplete(mid) {
-  haptic(8);
-  const key = getRelayWeekKey();
-  const data = getRelayWeekData();
-  const idx = data.completed.indexOf(mid);
-  if (idx >= 0) {
-    data.completed.splice(idx, 1);
-  } else {
-    data.completed.push(mid);
-  }
-  localStorage.setItem(key, JSON.stringify(data));
-  renderManifest();
-  // Re-render HELM tile if on HELM
-  if (currentWing === 'helm') renderHelm();
-}
-
-function getRelayContactsThisWeek() {
-  const data = getRelayWeekData();
-  const group = data.group;
-  return manifestContacts.filter(m =>
-    m.support_status === 'Supporting' &&
-    String(m.relay_group) === String(group)
-  );
-}
-
-function helmRelayProgress() {
-  const data = getRelayWeekData();
-  const contacts = getRelayContactsThisWeek();
-  const completed = contacts.filter(m => data.completed.includes(m.id)).length;
-  return { completed, total: contacts.length };
-}
-
-// ── END RELAY WEEK SYSTEM ─────────────────────────────────────────────────────
 
 function helmDailyVerse() {
   const doy = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
