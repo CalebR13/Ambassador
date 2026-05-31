@@ -4212,13 +4212,13 @@ function helmOpenCalendar() {
         const noted = slot.status === 'noted';
         html += `
           <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1e1e1e;">
-            <div style="width:42px;height:42px;border-radius:8px;background:${noted ? '#1a1a00' : '#0d1a2e'};border:1px solid ${noted ? '#D99B2D44' : '#1e3050'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-              <div style="font-size:8px;color:${noted ? '#D99B2D' : '#5A7A9A'};text-transform:uppercase;letter-spacing:.05em;">${slot.dow}</div>
-              <div style="font-size:16px;font-weight:600;color:${noted ? '#D99B2D' : '#e8e6e1'};line-height:1;">${dayOfMonth}</div>
+            <div style="width:42px;height:42px;border-radius:8px;background:${slot.status==='holiday' ? '#1a0d2e' : '#0d1a2e'};border:1px solid ${slot.status==='holiday' ? '#3a2060' : '#1e3050'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+              <div style="font-size:8px;color:${slot.status==='holiday' ? '#9a70cc' : '#5A7A9A'};text-transform:uppercase;letter-spacing:.05em;">${slot.dow}</div>
+              <div style="font-size:16px;font-weight:600;color:${slot.status==='holiday' ? '#c8a8f0' : '#e8e6e1'};line-height:1;">${dayOfMonth}</div>
             </div>
             <div style="flex:1;">
               <div style="font-size:14px;color:#e8e6e1;">${dayNames[slot.dow]}, ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${dayOfMonth}</div>
-              ${noted ? `<div style="font-size:11px;color:#D99B2D;margin-top:2px;">⚑ ${slot.note}</div>` : `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">Open</div>`}
+              ${slot.status==='holiday' ? `<div style="font-size:11px;color:#9a70cc;margin-top:2px;">${slot.note}</div>` : slot.status==='noted' ? `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">${slot.note}</div>` : `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">Open</div>`}
             </div>
           </div>`;
       });
