@@ -3746,18 +3746,28 @@ function helmStats() {
   return { totalVoyage, neverCalled, totalCalled, statesVisited, statesRemaining, supporting, overdue };
 }
 
+// Calendar slots — fetched live from Apps Script / Google Calendar
+let helmCalendarData = null;
+
 function helmOpenSundaysWeds() {
-  // Calculate remaining Sundays + Wednesdays in the year
-  const now = new Date();
-  const end = new Date(now.getFullYear(), 11, 31);
-  let count = 0;
-  const d = new Date(now);
-  d.setDate(d.getDate() + 1); // start from tomorrow
-  while (d <= end) {
-    if (d.getDay() === 0 || d.getDay() === 3) count++;
-    d.setDate(d.getDate() + 1);
-  }
-  return count;
+  if (helmCalendarData) return helmCalendarData.total;
+  return '…';
+}
+
+async function helmFetchCalendarSlots() {
+  try {
+    const data = await api({ action: 'getCalendarSlots' });
+    if (data && !data.error) {
+      helmCalendarData = data;
+      // Update tile number live once data arrives
+      document.querySelectorAll('.helm-tile').forEach(tile => {
+        const label = tile.querySelector('.helm-tile-label');
+        if (label && label.innerHTML.includes('Open Sundays')) {
+          tile.querySelector('.helm-tile-number').textContent = data.total;
+        }
+      });
+    }
+  } catch(e) { /* silently fail */ }
 }
 
 function helmSupportStats() {
@@ -4159,12 +4169,69 @@ function helmOpenVoyageContact(cid) {
 }
 
 function helmOpenCalendar() {
-  window.open('https://calendar.google.com', '_blank');
+  const data = helmCalendarData;
+  if (!data) {
+    // Still loading — try fetching
+    helmFetchCalendarSlots();
+    return;
+  }
+
+  // Group dates by month
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const grouped = {};
+  data.dates.forEach(slot => {
+    const [y, m, dy] = slot.date.split('-').map(Number);
+    const key = `${y}-${String(m).padStart(2,'0')}`;
+    if (!grouped[key]) grouped[key] = { label: `${months[m-1]} ${y}`, slots: [] };
+    grouped[key].slots.push(slot);
+  });
+
+  const dayNames = { SUN: 'Sunday', WED: 'Wednesday' };
+  let html = `
+    <div id="cal-slots-backdrop" style="position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;" onclick="if(event.target===this)this.remove()">
+      <div style="width:100%;max-height:82vh;background:#0f1623;border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:16px 16px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <div>
+            <div style="font-size:18px;font-weight:600;color:#e8e6e1;">Open Preaching Dates</div>
+            <div style="font-size:12px;color:#6b6860;margin-top:2px;">${data.sundays} Sundays · ${data.wednesdays} Wednesdays · ${data.total} total</div>
+          </div>
+          <button onclick="document.getElementById('cal-slots-backdrop').remove()" style="background:none;border:none;color:#6b6860;font-size:22px;cursor:pointer;padding:4px;">×</button>
+        </div>
+        <div style="overflow-y:auto;padding:12px 16px 32px;flex:1;">`;
+
+  if (data.dates.length === 0) {
+    html += `<div style="text-align:center;color:#6b6860;padding:40px 0;">All dates are filled through Dec 2026</div>`;
+  } else {
+    Object.keys(grouped).sort().forEach(key => {
+      const g = grouped[key];
+      html += `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#D99B2D;margin:16px 0 8px;">${g.label}</div>`;
+      g.slots.forEach(slot => {
+        const [y, m, dy] = slot.date.split('-').map(Number);
+        const dateObj = new Date(y, m-1, dy);
+        const dayOfMonth = dateObj.getDate();
+        const noted = slot.status === 'noted';
+        html += `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1e1e1e;">
+            <div style="width:42px;height:42px;border-radius:8px;background:${noted ? '#1a1a00' : '#0d1a2e'};border:1px solid ${noted ? '#D99B2D44' : '#1e3050'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+              <div style="font-size:8px;color:${noted ? '#D99B2D' : '#5A7A9A'};text-transform:uppercase;letter-spacing:.05em;">${slot.dow}</div>
+              <div style="font-size:16px;font-weight:600;color:${noted ? '#D99B2D' : '#e8e6e1'};line-height:1;">${dayOfMonth}</div>
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:14px;color:#e8e6e1;">${dayNames[slot.dow]}, ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${dayOfMonth}</div>
+              ${noted ? `<div style="font-size:11px;color:#D99B2D;margin-top:2px;">⚑ ${slot.note}</div>` : `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">Open</div>`}
+            </div>
+          </div>`;
+      });
+    });
+  }
+
+  html += `</div></div></div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
 }
 
 // ── END HELM JS ───────────────────────────────────────────────────────────────
 
-load().then(()=>{renderHelm();renderFilters();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);
+load().then(()=>{renderHelm();renderFilters();updateTidesBadge();initPullToRefresh();initLongPress();setTimeout(initScrollHaptics,500);helmFetchCalendarSlots();
   Promise.all([loadManifest(), loadVisits()]).then(() => {
     // Backfill relay_group for any existing contacts that don't have one
     let groupCounter = 0;
