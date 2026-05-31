@@ -4210,17 +4210,32 @@ function helmOpenCalendar() {
         const dateObj = new Date(y, m-1, dy);
         const dayOfMonth = dateObj.getDate();
         const noted = slot.status === 'noted';
-        html += `
+        if (slot.status === 'holiday' && !slot.dow) {
+          // Full-width holiday row — not a Sun/Wed slot
+          const dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          const dateObj2 = new Date(y, m-1, dy);
+          const dowLabel = dowNames[dateObj2.getDay()];
+          html += `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin:4px 0;border-radius:6px;background:#1a0d2e;border:1px solid #3a2060;">
+              <div style="font-size:13px;color:#9a70cc;">⚑</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;color:#c8a8f0;font-weight:500;">${slot.note}</div>
+                <div style="font-size:10px;color:#7a50a0;margin-top:1px;">${dowLabel}, ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${dayOfMonth}</div>
+              </div>
+            </div>`;
+        } else {
+          html += `
           <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1e1e1e;">
-            <div style="width:42px;height:42px;border-radius:8px;background:${slot.status==='holiday' ? '#1a0d2e' : '#0d1a2e'};border:1px solid ${slot.status==='holiday' ? '#3a2060' : '#1e3050'};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-              <div style="font-size:8px;color:${slot.status==='holiday' ? '#9a70cc' : '#5A7A9A'};text-transform:uppercase;letter-spacing:.05em;">${slot.dow}</div>
-              <div style="font-size:16px;font-weight:600;color:${slot.status==='holiday' ? '#c8a8f0' : '#e8e6e1'};line-height:1;">${dayOfMonth}</div>
+            <div style="width:42px;height:42px;border-radius:8px;background:#0d1a2e;border:1px solid #1e3050;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+              <div style="font-size:8px;color:#5A7A9A;text-transform:uppercase;letter-spacing:.05em;">${slot.dow}</div>
+              <div style="font-size:16px;font-weight:600;color:#e8e6e1;line-height:1;">${dayOfMonth}</div>
             </div>
             <div style="flex:1;">
               <div style="font-size:14px;color:#e8e6e1;">${dayNames[slot.dow]}, ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${dayOfMonth}</div>
-              ${slot.status==='holiday' ? `<div style="font-size:11px;color:#9a70cc;margin-top:2px;">${slot.note}</div>` : slot.status==='noted' ? `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">${slot.note}</div>` : `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">Open</div>`}
+              ${slot.status==='noted' ? `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">${slot.note}</div>` : `<div style="font-size:11px;color:#4a7a4a;margin-top:2px;">Open</div>`}
             </div>
           </div>`;
+        };
       });
     });
   }
