@@ -3739,12 +3739,15 @@ function helmStats() {
   const statesRemaining = 50 - statesVisited;
   const supporting = manifestContacts.filter(m => m.support_status === 'Supporting').length;
   const now = new Date();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const overdue = contacts.reduce((acc, c) => {
     return acc + (c.calls || []).filter(x => {
       if (x.outcome !== 'reminder') return false;
+      if (x.completed) return false;
       if (!x.remDate) return false;
-      const d = new Date(x.remDate + 'T' + (x.remTime || '12:00') + ':00');
-      return d < now && !x.completed;
+      const parts = x.remDate.split('-').map(Number);
+      const d = new Date(parts[0], parts[1]-1, parts[2], 23, 59, 59);
+      return d < todayEnd;
     }).length;
   }, 0);
   return { totalVoyage, neverCalled, totalCalled, statesVisited, statesRemaining, supporting, overdue };
