@@ -957,7 +957,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
           <option value="lodging">Lodging</option>
           <option value="rv">RV</option>
           <option value="handouts">Handouts</option>
-          <option value="sort-scheduled">Sort: Soonest Visit</option>
+          
         </select>
         <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;" title="Copy emails"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
         <button id="manifest-star-btn" onclick="toggleManifestStarFilter()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;" title="Starred only"><svg id="manifest-star-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
@@ -1824,10 +1824,10 @@ function openTideDetail(cid, xid) {
     </div>
 
     <!-- BODY -->
-    <div style="flex:1;overflow-y:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+    <div style="flex:1;overflow-y:auto;padding:12px 16px 24px;display:flex;flex-direction:column;gap:10px;">
 
       <!-- 2-COL: REMINDER DETAILS + CONTACT INFO -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;display:flex;flex-direction:column;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:10px;">Reminder Details</div>
           <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Due</div>
@@ -1852,7 +1852,7 @@ function openTideDetail(cid, xid) {
       </button>
 
       <!-- 2-COL: NOTES + DETAILS -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:120px;max-height:180px;">
         <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;overflow-y:auto;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:8px;">Notes</div>
           <div style="font-size:12px;color:#E8E6E1;line-height:1.5;white-space:pre-wrap;">${note ? esc(note) : '<span style="color:#4a3a10;">—</span>'}</div>
