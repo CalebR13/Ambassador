@@ -1054,7 +1054,7 @@ const ICONS={
   checkCircle:`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>`,
 };
 
-let contacts=[],fState='All',logOut=null,logMtg=false,proxResults=null,proxLabel='',filterHasPhone=false;
+let contacts=[],fState='All',logOut=null,logMtg=false,proxResults=null,proxLabel='',filterHasPhone=false,filterNoPhone=false;
 let filteredList=[],callingIdx=0,contactMenuOpen=false,infoExpanded=false;
 
 const SAMPLE=[
@@ -1202,7 +1202,8 @@ function renderFilters(){
   document.getElementById('state-filter-row').innerHTML=nearbyPill+clearPill+starredPill+phonePill+stateDropPill;
 }
 function setSF(s){fState=(fState===s&&s!=='All')?'All':s;proxResults=null;proxLabel='';showingReminders=false;renderFilters();renderList();}
-function togglePhoneFilter(){filterHasPhone=!filterHasPhone;renderFilters();renderList();}
+function togglePhoneFilter(){filterHasPhone=!filterHasPhone;filterNoPhone=false;renderFilters();renderList();}
+function toggleNoPhoneFilter(){filterNoPhone=!filterNoPhone;filterHasPhone=false;renderFilters();renderList();}
 function clearProximity(){proxResults=null;proxLabel='';renderFilters();renderList();}
 
 function fuzzyMatch(str, q) {
@@ -1230,7 +1231,7 @@ function buildFilteredList(){
   const q=document.getElementById('search').value.trim().toLowerCase();
   if(proxResults){let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);if(q)f=f.filter(c=>contactMatchesQuery(c,q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
   if(showingReminders){let f=getReminders().map(r=>r.contact);if(q)f=f.filter(c=>contactMatchesQuery(c,q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
-  let f=contacts.filter(c=>{const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);const mq=!q||contactMatchesQuery(c,q);const mp=!filterHasPhone||splitField(c.phone).length>0;return ms&&mq&&mp;});
+  let f=contacts.filter(c=>{const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);const mq=!q||contactMatchesQuery(c,q);const mp=!filterHasPhone||splitField(c.phone).length>0;const mnp=!filterNoPhone||splitField(c.phone).length===0;return ms&&mq&&mp&&mnp;});
   f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));return f;
 }
 
@@ -3791,7 +3792,7 @@ function helmSupportStats() {
 }
 
 function helmMissingPhone() {
-  return contacts.filter(c => !c.phone || !c.phone.trim()).slice(0, 20);
+  return contacts.filter(c => !c.phone || !c.phone.trim());
 }
 
 function helmNotContacted() {
@@ -4042,31 +4043,21 @@ function renderHelm() {
 
 
 
-  // Missing Phone
-  let phoneRows = '';
-  if (missingPhone.length === 0) {
-    phoneRows = `<div style="text-align:center;padding:16px 0;font-family:var(--sans);font-size:13px;color:#5A6A8A;">All contacts have phone numbers 🎉</div>`;
-  } else {
-    phoneRows = missingPhone.map(c => {
-      const initials = ini(c.pastor || c.church || '?');
-      const loc = [c.city, c.state].filter(Boolean).join(', ');
-      return `<div class="helm-phone-item" onclick="helmOpenVoyageContact('${c.id}')">
-        <div class="helm-phone-avatar">${initials}</div>
-        <div>
-          <div class="helm-phone-name">${esc(c.pastor || c.church || '—')}</div>
-          <div class="helm-phone-loc">${esc(loc) || 'No location'}</div>
-        </div>
-        <div class="helm-phone-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-      </div>`;
-    }).join('');
-  }
-  const phoneSection = `
-    <div class="helm-section-label" style="padding-right:16px;">
-      <span>MISSING PHONE LIST</span>
-      <span style="font-size:10px;color:#5A6A8A;font-weight:400;letter-spacing:0;text-transform:none;margin-left:auto;padding-left:8px;">${missingPhone.length} Contacts</span>
-      ${missingPhone.length > 3 ? `<button onclick="helmNavToMissingPhone()" style="margin-left:8px;background:none;border:1px solid #1C2640;border-radius:6px;padding:3px 8px;font-family:var(--sans);font-size:10px;font-weight:600;color:#D99B2D;cursor:pointer;letter-spacing:.04em;white-space:nowrap;">View All</button>` : ''}
+  // Missing Phone — tile only
+  const phoneSection = missingPhone.length === 0 ? '' : `
+    <div class="helm-section-label">
+      <span>MISSING PHONE</span>
     </div>
-    <div class="helm-phone-section">${phoneRows}</div>`;
+    <div style="padding:0 16px 16px;">
+      <div class="helm-tile" onclick="helmNavToMissingPhone()" style="display:flex;align-items:center;gap:16px;padding:16px;">
+        <div style="font-size:32px;font-weight:700;color:#e05555;line-height:1;">${missingPhone.length}</div>
+        <div>
+          <div style="font-size:13px;color:#e8e6e1;font-weight:500;">Contacts missing phone</div>
+          <div style="font-size:11px;color:#5A6A8A;margin-top:2px;">Tap to view in Voyage</div>
+        </div>
+        <div style="margin-left:auto;color:#5A6A8A;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </div>
+    </div>`;
 
   document.getElementById('helm-body').innerHTML =
     anchorDiv + cmdBar + meetingsSection + statsSection + anchorDiv + supportSection + phoneSection;
@@ -4118,14 +4109,12 @@ function helmEditGoal() {
 }
 
 function helmNavToMissingPhone() {
-  switchWing('manifest');
+  switchWing('voyage');
   setTimeout(() => {
-    const sel = document.getElementById('manifest-filter');
-    const sq = document.getElementById('manifest-search');
-    // Filter to show contacts without phone
-    if (sel) sel.value = 'all';
-    if (sq) sq.value = '';
-    renderManifest();
+    filterNoPhone = true;
+    filterHasPhone = false;
+    renderFilters();
+    renderList();
   }, 300);
 }
 
