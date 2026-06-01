@@ -83,7 +83,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow:hid
 .card-hero-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;flex-shrink:0;}
 .card-hero-name{font-family:var(--serif);font-size:26px;line-height:1.1;margin-bottom:3px;}
 .card-hero-church{font-size:13px;color:var(--muted);margin-bottom:5px;}
-.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;}
+.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;padding:16px;}
 .card-action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);font-family:var(--sans);cursor:pointer;color:var(--text);min-height:72px;}
 .card-action-btn:active{transform:scale(.97);}
 .btn-icon{line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;}
@@ -872,7 +872,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
   <div class="main-list" id="main-list" style="display:none;"></div>
   <div id="fullscreen-card" class="fullscreen-card"></div>
   <div id="proximity-screen" class="proximity-screen"></div>
-  <div id="modal-layer" style="position:fixed;top:0;left:0;right:0;bottom:max(60px,calc(60px + env(safe-area-inset-bottom)));z-index:200;pointer-events:none;"></div>
+  <div id="modal-layer" style="position:fixed;top:0;left:0;right:0;bottom:max(70px,calc(70px + env(safe-area-inset-bottom)));z-index:200;pointer-events:none;"></div>
   <div id="wing-fade" class="wing-fade"></div>
   <div id="helm-screen" class="helm-screen visible">
     <div class="helm-topbar">
@@ -951,13 +951,12 @@ body.wing-tides #nav-tides { color:#C8860A; }
           <option value="all">All</option>
           <option value="Supporting">Supporting</option>
           <option value="Non-supporting">Non-supporting</option>
-          <option value="Scheduled">Scheduled</option>
           <option value="relay">This Week's Relay</option>
           <option value="prayer">Prayer List</option>
           <option value="lodging">Lodging</option>
           <option value="rv">RV</option>
           <option value="handouts">Handouts</option>
-          
+          <option value="sort-scheduled">Sort: Soonest Visit</option>
         </select>
         <button onclick="openManifestEmailCopy()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;" title="Copy emails"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
         <button id="manifest-star-btn" onclick="toggleManifestStarFilter()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-family:var(--sans);font-size:11px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;" title="Starred only"><svg id="manifest-star-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
@@ -1795,7 +1794,7 @@ function openTideDetail(cid, xid) {
   const textIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
   const emailIcon2 = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
 
-  showM(`<div style="position:fixed;top:0;left:0;right:0;bottom:max(60px,calc(60px + env(safe-area-inset-bottom)));background:#291B04;z-index:55;display:flex;flex-direction:column;overflow:hidden;animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);">
+  showM(`<div style="position:absolute;inset:0;background:#291B04;display:flex;flex-direction:column;overflow:hidden;animation:slideInRight .22s cubic-bezier(0.25,0.46,0.45,0.94);">
 
     <!-- HEADER -->
     <div style="background:#382800;padding:12px 16px 14px;flex-shrink:0;border-bottom:1px solid rgba(138,106,24,0.25);">  
@@ -1827,7 +1826,7 @@ function openTideDetail(cid, xid) {
     <div style="flex:1;overflow-y:auto;padding:12px 16px 24px;display:flex;flex-direction:column;gap:10px;">
 
       <!-- 2-COL: REMINDER DETAILS + CONTACT INFO -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
         <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;display:flex;flex-direction:column;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:10px;">Reminder Details</div>
           <div style="font-size:10px;color:#9A7A45;margin-bottom:2px;">Due</div>
@@ -1852,7 +1851,7 @@ function openTideDetail(cid, xid) {
       </button>
 
       <!-- 2-COL: NOTES + DETAILS -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:120px;max-height:180px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;flex:1;min-height:0;">
         <div style="background:#3A2700;border:1px solid #8A6A18;border-radius:12px;padding:14px;overflow-y:auto;">
           <div style="font-size:12px;font-weight:700;color:#F2B632;margin-bottom:8px;">Notes</div>
           <div style="font-size:12px;color:#E8E6E1;line-height:1.5;white-space:pre-wrap;">${note ? esc(note) : '<span style="color:#4a3a10;">—</span>'}</div>
@@ -2665,7 +2664,7 @@ function openManifestCard(mid) {
     })()}
 
     <!-- 2 COL: LAST COMM + VISIT HISTORY -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;padding:12px 16px;">
       <div style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;" class="mc-upper-card" onclick="document.getElementById('mc-log-${mid}').style.display=document.getElementById('mc-log-${mid}').style.display==='none'?'block':'none'">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -2721,7 +2720,7 @@ function openManifestCard(mid) {
     </div>`}
 
     <!-- 2 COL: SUPPORT + ON-SITE -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 10px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;padding:0 16px 10px;">
       <div class="mc-lower-card" style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
