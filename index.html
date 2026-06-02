@@ -2766,6 +2766,8 @@ function openManifestCard(mid) {
         </div>
         ${m.support_status ? `<span class="${m.support_status==='Supporting'?'mc-supporting-pill':''}" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${suppBg};border:1px solid ${suppBorder};color:${suppColor};">${esc(m.support_status)}</span>` : '<span style="font-size:12px;color:var(--muted);">—</span>'}
         ${m.support_amount ? `<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--text);">$${esc(m.support_amount)}<span style="font-size:11px;font-weight:400;color:var(--muted);"> / ${esc(m.support_cadence||'mo')}</span></div>` : ''}
+        ${m.support_cadence && !m.support_amount ? `<div style="margin-top:6px;font-size:11px;color:var(--muted);">${esc(m.support_cadence)}</div>` : ''}
+        ${m.giving_notes ? `<div style="margin-top:8px;font-size:10px;color:var(--muted);line-height:1.4;border-top:1px solid #42678844;padding-top:7px;">${esc(m.giving_notes)}</div>` : ''}
       </div>
       <div class="mc-lower-card" style="background:#093A65;border:1px solid #426788;border-radius:var(--radius-sm);padding:12px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
