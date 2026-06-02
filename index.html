@@ -3665,10 +3665,6 @@ const GIVING_PATTERN_DATA = [
 
 function runGivingPatternBulkUpdate() {
   if (!sheetsReady) return;
-  const key = 'relay_giving_bulk_done_v4';
-  if (localStorage.getItem(key)) return; // already ran
-  // Log all manifest contacts so we can verify exact names/cities
-  console.log('Relay manifest contacts:', manifestContacts.map(c => c.church + ' | ' + c.city + ' | ' + c.state));
   let updated = 0;
   GIVING_PATTERN_DATA.forEach(entry => {
     const m = manifestContacts.find(c =>
@@ -3680,12 +3676,9 @@ function runGivingPatternBulkUpdate() {
       if (!m.support_cadence) { m.support_cadence = entry.cadence; changed = true; }
       if (!m.giving_notes) { m.giving_notes = entry.notes; changed = true; }
       if (changed) { saveManifestContact(m); updated++; }
-    } else {
-      console.log('Relay: no match for', entry.church, '|', entry.city);
     }
   });
-  localStorage.setItem(key, '1');
-  console.log('Relay: bulk giving pattern update applied to', updated, 'contacts.');
+  if (updated > 0) console.log('Relay: giving pattern update wrote', updated, 'contacts to Sheets.');
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
