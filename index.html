@@ -3644,23 +3644,23 @@ function openReminderFromManifest(mid) {
 // Runs once after manifest loads. Only sets fields if not already populated.
 // Safe to leave in — it checks before writing.
 const GIVING_PATTERN_DATA = [
-  {church:'Abilene Baptist Church',   city:'Abilene',    cadence:'Monthly',   notes:'Consistent $100/mo across both years. Watch 2026 for bi-monthly confirmation.'},
-  {church:'Anchor Baptist Church',    city:'Mesquite',   cadence:'Quarterly', notes:'2025: Mar, Jul, Oct, Dec ($200 each). 2026: Jan, Mar. Roughly quarterly cadence.'},
-  {church:'Bella Vista Baptist',      city:'Albuquerque',cadence:'Monthly',   notes:'2025: nearly every month $100–$200. 2026: Jan–Apr every month. Strong monthly.'},
-  {church:'Blessed Hope Baptist',     city:'Batavia',    cadence:'Quarterly', notes:'2025: Aug, Oct, Dec. 2026: Mar only. Sporadic but roughly quarterly spacing.'},
-  {church:'Central Baptist Church',   city:'Amarillo',   cadence:'Monthly',   notes:'2025: most months $100–$200. 2026: Jan–Apr every month at $100. Solid monthly.'},
-  {church:'Central Baptist Church',   city:'Center',     cadence:'Quarterly', notes:'2025: Mar, Apr, Jul, Oct ($225 each). 2026: Mar only. Clear quarterly pattern.'},
-  {church:'Landmark Baptist Church',  city:'Haines City',cadence:'Monthly',   notes:'2025: most months at $50. 2026: Jan–Apr every month at $50. Very consistent.'},
-  {church:'Friendship Baptist',       city:'Hurst',      cadence:'Monthly',   notes:'2025: Mar, May, Jun, Sep, Nov ($350–$375). Large consistent gifts suggest monthly.'},
-  {church:'Midwest Baptist Church',   city:'Rochester',  cadence:'Quarterly', notes:'2025: Jan, May, Aug, Nov ($150 each). 2026: Jan, Apr ($150 each). Steady quarterly.'},
-  {church:'Northwest Baptist',        city:'Elgin',      cadence:'Irregular', notes:'2025: Oct ($750), Nov ($500), Dec ($750). 2026: Mar ($750). Joined late 2025 — pattern still unclear.'},
-  {church:'Fundamental Emanuel',      city:'Mesquite',   cadence:'Irregular', notes:'2025: Dec ($600). 2026: Feb ($150). Not enough data to confirm pattern yet.'},
-  {church:'Landmark Baptist Church',  city:'Petoskey',   cadence:'Monthly',   notes:'2025: Dec ($100). 2026: Jan–Apr every month at $100. Strong monthly pattern in 2026.'},
-  {church:'Gardens Baptist',          city:'Port St. Lucie', cadence:'Irregular', notes:'2026 only: Feb, Mar, Apr ($50 each). New supporter — monthly so far but too early to confirm.'},
-  {church:'Grace Baptist Church',     city:'Quincy',     cadence:'Irregular', notes:'2026 only: Feb ($300). Single gift so far — pattern unknown.'},
-  {church:'Solid Rock Baptist',       city:'Bellefontaine', cadence:'Irregular', notes:'2026 only: Feb ($75). Single gift so far — pattern unknown.'},
-  {church:'Valley Baptist Church',    city:'Oswego',     cadence:'Monthly',   notes:'2026 only: Jan–Apr every month at $100. New in 2026 but clearly monthly.'},
-  {church:'East Valley Baptist',      city:'Tempe',      cadence:'Irregular', notes:'2026 only: Mar ($150). Single gift so far — pattern unknown.'},
+  {church:'Abilene Baptist Church',   city:'Abilene',    cadence:'Monthly',   amount:'100',  notes:'Consistent $100/mo across both years. Watch 2026 for bi-monthly confirmation.'},
+  {church:'Anchor Baptist Church',    city:'Mesquite',   cadence:'Quarterly', amount:'200',  notes:'2025: Mar, Jul, Oct, Dec ($200 each). 2026: Jan, Mar. Roughly quarterly cadence.'},
+  {church:'Bella Vista Baptist',      city:'Albuquerque',cadence:'Monthly',   amount:'150',  notes:'2025: nearly every month $100–$200. 2026: Jan–Apr every month. Strong monthly.'},
+  {church:'Blessed Hope Baptist',     city:'Batavia',    cadence:'Quarterly', amount:'',     notes:'2025: Aug, Oct, Dec. 2026: Mar only. Sporadic but roughly quarterly spacing.'},
+  {church:'Central Baptist Church',   city:'Amarillo',   cadence:'Monthly',   amount:'100',  notes:'2025: most months $100–$200. 2026: Jan–Apr every month at $100. Solid monthly.'},
+  {church:'Central Baptist Church',   city:'Center',     cadence:'Quarterly', amount:'225',  notes:'2025: Mar, Apr, Jul, Oct ($225 each). 2026: Mar only. Clear quarterly pattern.'},
+  {church:'Landmark Baptist Church',  city:'Haines City',cadence:'Monthly',   amount:'50',   notes:'2025: most months at $50. 2026: Jan–Apr every month at $50. Very consistent.'},
+  {church:'Friendship Baptist',       city:'Hurst',      cadence:'Monthly',   amount:'363',  notes:'2025: Mar, May, Jun, Sep, Nov ($350–$375). Large consistent gifts suggest monthly.'},
+  {church:'Midwest Baptist Church',   city:'Rochester',  cadence:'Quarterly', amount:'150',  notes:'2025: Jan, May, Aug, Nov ($150 each). 2026: Jan, Apr ($150 each). Steady quarterly.'},
+  {church:'Northwest Baptist',        city:'Elgin',      cadence:'Irregular', amount:'750',  notes:'2025: Oct ($750), Nov ($500), Dec ($750). 2026: Mar ($750). Joined late 2025 — pattern still unclear.'},
+  {church:'Fundamental Emanuel',      city:'Mesquite',   cadence:'Irregular', amount:'375',  notes:'2025: Dec ($600). 2026: Feb ($150). Not enough data to confirm pattern yet.'},
+  {church:'Landmark Baptist Church',  city:'Petoskey',   cadence:'Monthly',   amount:'100',  notes:'2025: Dec ($100). 2026: Jan–Apr every month at $100. Strong monthly pattern in 2026.'},
+  {church:'Gardens Baptist',          city:'Port St. Lucie', cadence:'Irregular', amount:'50', notes:'2026 only: Feb, Mar, Apr ($50 each). New supporter — monthly so far but too early to confirm.'},
+  {church:'Grace Baptist Church',     city:'Quincy',     cadence:'Irregular', amount:'300',  notes:'2026 only: Feb ($300). Single gift so far — pattern unknown.'},
+  {church:'Solid Rock Baptist',       city:'Bellefontaine', cadence:'Irregular', amount:'75', notes:'2026 only: Feb ($75). Single gift so far — pattern unknown.'},
+  {church:'Valley Baptist Church',    city:'Oswego',     cadence:'Monthly',   amount:'100',  notes:'2026 only: Jan–Apr every month at $100. New in 2026 but clearly monthly.'},
+  {church:'East Valley Baptist',      city:'Tempe',      cadence:'Irregular', amount:'150',  notes:'2026 only: Mar ($150). Single gift so far — pattern unknown.'},
 ];
 
 function runGivingPatternBulkUpdate() {
@@ -3674,6 +3674,7 @@ function runGivingPatternBulkUpdate() {
     if (m) {
       let changed = false;
       if (!m.support_cadence) { m.support_cadence = entry.cadence; changed = true; }
+      if (!m.support_amount && entry.amount) { m.support_amount = entry.amount; changed = true; }
       if (!m.giving_notes) { m.giving_notes = entry.notes; changed = true; }
       if (changed) { saveManifestContact(m); updated++; }
     }
