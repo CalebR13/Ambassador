@@ -1141,7 +1141,7 @@ async function load(){
   }catch(err){hideLoadingOverlay();console.error('Sheets load error:',err);contacts=JSON.parse(localStorage.getItem('relay_v7')||'null')||SAMPLE.map(c=>({...c}));showStatus('Local backup','err');updateTidesBadge();}
 }
 async function save(){localStorage.setItem('relay_v7',JSON.stringify(contacts));}
-async function saveContact(c){save();if(!sheetsReady)return;try{await api({action:'saveContact',data:JSON.stringify({id:c.id,pastor:c.pastor,church:c.church,city:c.city,state:c.state,region:c.region,phone:c.phone,email:c.email,address:c.address,starred:c.starred?'true':'false',lat:c.lat||'',lng:c.lng||''})});}catch(err){console.error('saveContact error:',err);}}
+async function saveContact(c){save();if(!sheetsReady)return;try{await api({action:'saveContact',data:JSON.stringify({id:c.id,pastor:c.pastor,church:c.church,city:c.city,state:c.state,region:c.region,phone:c.phone,email:c.email,address:c.address,starred:c.starred?'true':'false',lat:c.lat||'',lng:c.lng||'',not_interested:c.not_interested?'true':'false'})});}catch(err){console.error('saveContact error:',err);}}
 async function saveCallEntry(contactId,call){save();if(!sheetsReady)return;try{await api({action:'saveCall',data:JSON.stringify({id:call.id,contactId:contactId,date:call.date,outcome:call.outcome,meetingBooked:call.meetingBooked?'true':'false',meetingDate:call.meetingDate||'',details:call.details||'',remDate:(call.remDate||'').toString().includes('T')?(call.remDate||'').toString().split('T')[0]:(call.remDate||''),remTime:call.remTime||'',remType:call.remType||'',completed:call.completed?'true':'false'})});}catch(err){console.error('saveCall error:',err);}}
 async function deleteCallEntry(callId){save();if(!sheetsReady)return;try{await api({action:'deleteCall',id:callId});}catch(err){console.error('deleteCall error:',err);}}
 async function deleteContactEntry(contactId){save();if(!sheetsReady)return;try{await api({action:'deleteContact',id:contactId});}catch(err){console.error('deleteContact error:',err);}}
@@ -1231,7 +1231,9 @@ function buildFilteredList(){
   if(proxResults){let f=proxResults.map(r=>contacts.find(c=>c.id===r.id)).filter(Boolean);if(q)f=f.filter(c=>contactMatchesQuery(c,q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
   if(showingReminders){let f=getReminders().map(r=>r.contact);if(q)f=f.filter(c=>contactMatchesQuery(c,q));if(filterHasPhone)f=f.filter(c=>splitField(c.phone).length>0);return f;}
   let f=contacts.filter(c=>{const ms=fState==='All'||(fState==='Starred'?c.starred:(c.state||'').toUpperCase()===fState);const mq=!q||contactMatchesQuery(c,q);const mp=!filterHasPhone||splitField(c.phone).length>0;const mnp=!filterNoPhone||splitField(c.phone).length===0;return ms&&mq&&mp&&mnp;});
-  f.sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));return f;
+  const active=f.filter(c=>!c.not_interested).sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));
+  const notInt=f.filter(c=>c.not_interested).sort((a,b)=>(a.pastor||a.church||'').localeCompare(b.pastor||b.church||''));
+  return [...active,...notInt];
 }
 
 function renderList(){
@@ -1250,8 +1252,10 @@ function renderList(){
     const remItem=showingReminders?getReminders().find(r=>r.contact.id===c.id):null;
     const remBadge=remItem?`<span style="font-size:9px;font-weight:500;color:${remItem.overdue?'#e05555':'#f0b429'};margin-left:4px;">${remItem.reminder.remDate?fmtRemDate(remItem.reminder.remDate,''):'Reminder'}</span>`:'';
     const distBadge=proxItem?`<span style="font-size:10px;font-weight:600;color:var(--accent);margin-left:4px;">${proxItem.dist<10?proxItem.dist.toFixed(1):Math.round(proxItem.dist)} mi</span>`:'';
-    if(isDesktop){return `<div class="contact-row" data-cid="${c.id}" onclick="openCallingCard(${i})"><div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div><div class="row-cell"><div class="row-name">${esc(c.pastor||'\u2014')}${distBadge}</div><div class="row-sub">${esc(c.church||'')}</div></div><div class="row-cell"><div class="row-loc">${esc(loc)||'\u2014'}</div></div><div class="row-pill-cell">${pill}</div></div>`;}
-    return `<div class="contact-row" data-cid="${c.id}" onclick="openCallingCard(${i})"><div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div><div class="row-cell"><div class="row-name">${esc(c.pastor||'\u2014')}${distBadge}</div><div class="row-sub">${esc(c.church||'')}</div><div class="row-loc">${esc(loc)||''}</div></div><div class="row-pill-cell">${pill}</div></div>`;
+    const niStyle=c.not_interested?'opacity:0.38;':'';
+    const niTag=c.not_interested?`<span style="font-size:9px;font-weight:600;color:#e05555;margin-left:4px;">NOT INTERESTED</span>`:'';
+    if(isDesktop){return `<div class="contact-row" data-cid="${c.id}" onclick="openCallingCard(${i})" style="${niStyle}"><div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div><div class="row-cell"><div class="row-name">${esc(c.pastor||'\u2014')}${distBadge}${niTag}</div><div class="row-sub">${esc(c.church||'')}</div></div><div class="row-cell"><div class="row-loc">${esc(loc)||'\u2014'}</div></div><div class="row-pill-cell">${pill}</div></div>`;}
+    return `<div class="contact-row" data-cid="${c.id}" onclick="openCallingCard(${i})" style="${niStyle}"><div style="padding:0 4px"><div class="row-avatar" style="background:${rcList.bg};color:${rcList.text};border:1.5px solid ${rcList.border}">${ini(c.pastor||c.church||'?')}</div></div><div class="row-cell"><div class="row-name">${esc(c.pastor||'\u2014')}${distBadge}${niTag}</div><div class="row-sub">${esc(c.church||'')}</div><div class="row-loc">${esc(loc)||''}</div></div><div class="row-pill-cell">${pill}</div></div>`;
   }).join('');
 }
 
@@ -1296,6 +1300,7 @@ function renderCallingCard(noAnimation){
         <button class="card-action-btn blue" onclick="openLogModal('${c.id}')"><span class="btn-icon">${ICONS.phone}</span><span class="btn-label">Log</span></button>
         <button class="card-action-btn yellow" onclick="openReminderModal('${c.id}')"><span class="btn-icon">${ICONS.bell}</span><span class="btn-label">Remind</span></button>
         <button class="card-action-btn teal" onclick="openCalendarModal('${c.id}')"><span class="btn-icon">${ICONS.calendar}</span><span class="btn-label">Schedule</span></button>
+        <button class="card-action-btn" onclick="markNotInterested('${c.id}')" style="border-color:${c.not_interested?'#5a1a1a':'#5a1a1a44'};background:${c.not_interested?'#3a0a0a':'#2a0a0a22'};grid-column:span 2;min-height:44px;"><span style="font-size:12px;color:#e05555;font-weight:600;">${c.not_interested?'↩ Undo Not Interested':'✕ Not Interested'}</span></button>
       </div>
       ${(c.calls||[]).some(x=>x.meetingBooked) ? `<div style="padding:0 16px 4px;"><button onclick="openSetSailModal('${c.id}')" style="width:100%;padding:11px;background:linear-gradient(135deg,#1a2e22,#1e2244);border:1px solid #4a9e6b44;border-radius:var(--radius);font-family:var(--serif);font-size:15px;color:#4cd68a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">${ICONS.pin} Set Sail → Manifest</button></div>` : ''}
       <div class="contact-submenu${contactMenuOpen?' open':''}">${(()=>{const phones=splitField(c.phone);const emails=splitField(c.email);const msgSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/></svg>`;const emailSvg=`<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/><polyline points='22,6 12,13 2,6'/></svg>`;let out='';if(phones.length){phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="tel:${n}" class="contact-sub-btn call-sub" style="text-decoration:none;">${ICONS.cellPhone} ${phones.length>1?p:'Call'}</a>`;});phones.forEach(p=>{const n=p.replace(/[^+0-9]/g,'');out+=`<a href="sms:${n}" class="contact-sub-btn text-sub" style="text-decoration:none;">${msgSvg} ${phones.length>1?'Text '+p:'Text'}</a>`;});}else{out+=`<span class="contact-sub-btn" style="opacity:.3;">${ICONS.phone} No phone</span>`;}if(emails.length){emails.forEach(e=>{out+=`<a href="mailto:${e}" class="contact-sub-btn email-sub" style="text-decoration:none;">${emailSvg} ${emails.length>1?e:'Email'}</a>`;});}else{out+=`<span class="contact-sub-btn" style="opacity:.3;">${emailSvg} No email</span>`;}return out;})()}</div>
@@ -1343,6 +1348,37 @@ function closeCard(){
   }, 190);
 }
 function navCard(dir){const next=callingIdx+dir;if(next<0||next>=filteredList.length)return;callingIdx=next;contactMenuOpen=false;infoExpanded=false;renderCallingCard();}
+
+function markNotInterested(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  if(c.not_interested){
+    // toggle off
+    c.not_interested=false;
+    saveContact(c);
+    haptic(8);
+    closeCard();
+    return;
+  }
+  showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)" style="cursor:default;">
+    <div class="modal-box" onclick="event.stopPropagation()" style="padding:20px 16px 24px;">
+      <h2 style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">Mark as Not Interested?</h2>
+      <p style="font-size:14px;color:var(--muted);margin:0 0 20px;">This church will be greyed out and moved to the bottom of your list. You can undo this anytime from their card.</p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button>
+        <button onclick="confirmNotInterested('${cid}')" style="flex:2;padding:13px;background:#3a0a0a;border:1px solid #5a1a1a;border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;font-weight:700;color:#e05555;cursor:pointer;">Mark Not Interested</button>
+      </div>
+    </div>
+  </div>`);
+}
+
+function confirmNotInterested(cid){
+  const c=contacts.find(x=>x.id===cid);if(!c)return;
+  c.not_interested=true;
+  saveContact(c);
+  haptic(10);
+  closeMKeepCard();
+  closeCard();
+}
 
 function openLogModal(cid){const c=contacts.find(x=>x.id===cid);if(!c)return;logOut=null;logMtg=false;const suggested=suggestedNext(c);if(suggested){setTimeout(()=>selOut(suggested),50);}const suggestionHTML=suggested?`<div style="background:#1a150044;border:1px solid #F3B53A33;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#F3B53A;">\ud83d\udca1 Suggested: <strong>${OM[suggested]?.label||suggested}</strong></div>`:'';showM(`<div class="modal-backdrop" onclick="closeMKeepCard(event)"><div class="modal-box" onclick="event.stopPropagation()"><h2>Log a call</h2><div class="modal-sub">${esc(c.pastor||c.church||'')} \u00b7 ${esc([c.city,c.state].filter(Boolean).join(', '))}</div><div id="log-suggestion">${suggestionHTML}</div><div class="fg"><label>Outcome *</label><div class="outcome-opts"><button class="outcome-opt" id="op-pastor" onclick="selOut('pastor')" style="border-color:#4a9e6b44;"><span class="opt-icon" style="display:flex;align-items:center;color:#4cd68a;">${ICONS.personCheck}</span><span style="color:#4cd68a;">Spoke to Pastor</span></button><button class="outcome-opt" id="op-noanswer1" onclick="selOut('noanswer1')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#e8e6e1;">\u2460</span>No Answer (1st)</button><button class="outcome-opt" id="op-noanswer2" onclick="selOut('noanswer2')"><span class="opt-icon" style="font-size:14px;font-weight:700;color:#b0aea9;">\u2461</span>No Answer (2nd)</button><button class="outcome-opt" id="op-voicemail" onclick="selOut('voicemail')" style="border-color:#8899ee44;"><span class="opt-icon" style="display:flex;align-items:center;color:#8899ee;">${ICONS.phoneOff}</span><span style="color:#8899ee;">Left Voicemail</span></button><button class="outcome-opt" id="op-secretary" onclick="selOut('secretary')" style="border-color:#c9a0f044;"><span class="opt-icon" style="display:flex;align-items:center;color:#c9a0f0;">${ICONS.chair}</span><span style="color:#c9a0f0;">Spoke to Secretary</span></button><button class="outcome-opt" id="op-note" onclick="selOut('note')"><span class="opt-icon" style="display:flex;align-items:center;color:var(--muted);">${ICONS.noteSm}</span><span>Add Note</span></button></div></div><div id="mtg-sec" style="display:none"><div class="meeting-row"><label>Meeting booked?</label><div class="toggle-wrap"><button class="toggle-btn off" id="mtg-yes" onclick="setMtg(true)">Yes</button><button class="toggle-btn on" id="mtg-no" onclick="setMtg(false)">No</button></div></div><div id="mtg-date" style="display:none"><div class="fg"><label>Meeting date</label><input type="date" id="mtg-d"/></div></div></div><div class="fg"><label>Details <span style="color:var(--muted);font-style:italic;text-transform:none;letter-spacing:0">(optional)</span></label><textarea id="call-det" placeholder="Who you spoke with, what was discussed\u2026"></textarea></div><div class="modal-actions"><button class="btn-cancel" onclick="closeMKeepCard()">Cancel</button><button class="btn-save" onclick="saveLog('${cid}')">Save call</button></div></div></div>`);}
 function selOut(o){logOut=o;['pastor','noanswer1','noanswer2','voicemail','secretary','note'].forEach(k=>{const el=document.getElementById('op-'+k);if(el)el.classList.toggle('selected',k===o);});const ms=document.getElementById('mtg-sec');if(ms)ms.style.display=(o==='pastor'||o==='secretary')?'block':'none';if(o!=='pastor'&&o!=='secretary')logMtg=false;}
@@ -2253,6 +2289,7 @@ function loadManifest() {
       manifestContacts = (data || []).map(m => ({...m, support_status: m.support_status || 'Non-supporting'}));
       delete window[cbName];
       if (currentWing === 'manifest') renderManifest();
+      runGivingPatternBulkUpdate();
       resolve();
     };
     const s = document.createElement('script');
@@ -2921,6 +2958,7 @@ function _openManifestCard_old(mid) {
     m.address ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Address</span><span style="font-size:13px;color:var(--text);">${esc(m.address)}</span></div>` : '',
     m.website ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Website</span><a href="${m.website}" target="_blank" style="font-size:13px;color:var(--accent);">${esc(m.website)}</a></div>` : '',
     `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Support</span><span style="font-size:13px;color:var(--text);">${esc(m.support_status||'—')}${m.support_amount?' · $'+m.support_amount:''}${m.support_cadence?' ('+m.support_cadence+')':''}</span></div>`,
+    m.giving_notes ? `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Giving Notes</span><span style="font-size:13px;color:var(--text);">${esc(m.giving_notes)}</span></div>` : null,
     `<div style="display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);"><span style="font-size:11px;color:var(--muted);min-width:60px;">Facilities</span><span style="font-size:13px;color:var(--text);">${m.lodging==='Yes'?'Lodging':''} ${m.rv_hookup==='Yes'?'· RV Hookup':''} ${m.bible_handouts==='Yes'?'· Handouts':''}</span></div>`,
     m.notes ? `<div style="padding:10px 16px;border-bottom:1px solid var(--border);"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Notes</div><div style="font-size:13px;color:var(--text);line-height:1.5;white-space:pre-wrap;">${esc(m.notes)}</div></div>` : '',
   ].filter(Boolean).join('');
@@ -3491,11 +3529,23 @@ function openManifestEditModal(mid) {
           <option value="Non-supporting" ${m.support_status!=='Supporting'?'selected':''}>Non-supporting</option>
         </select>
       </div>
-      ${['support_amount','support_cadence'].map(f=>`
-        <div style="margin-bottom:10px;">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">${f.replace('_',' ')}</div>
-          <input type="text" id="me-${f}" value="${esc(m[f]||'')}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
-        </div>`).join('')}
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Support Amount</div>
+        <input type="text" id="me-support_amount" value="${esc(m.support_amount||'')}" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Giving Pattern</div>
+        <select id="me-support_cadence" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);">
+          <option value="" ${!m.support_cadence?'selected':''}>— Unknown —</option>
+          <option value="Monthly" ${m.support_cadence==='Monthly'?'selected':''}>Monthly</option>
+          <option value="Quarterly" ${m.support_cadence==='Quarterly'?'selected':''}>Quarterly</option>
+          <option value="Irregular" ${m.support_cadence==='Irregular'?'selected':''}>Irregular</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px;">Giving Notes</div>
+        <textarea id="me-giving_notes" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);min-height:60px;resize:vertical;box-sizing:border-box;">${esc(m.giving_notes||'')}</textarea>
+      </div>
       ${["lodging","rv_hookup","bible_handouts"].map(f=>`
         <div style="margin-bottom:10px;">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">${f.replace(/_/g,' ')}</div>
@@ -3539,7 +3589,7 @@ function setManifestToggle(field, val) {
 
 function saveManifestEdit(mid) {
   const m = manifestContacts.find(x => x.id === mid); if (!m) return;
-  ['pastor','church','city','state','phone','cell','email','church_email','address','website','support_amount','support_cadence'].forEach(f => {
+  ['pastor','church','city','state','phone','cell','email','church_email','address','website','support_amount','support_cadence','giving_notes'].forEach(f => {
     const el = document.getElementById('me-' + f);
     if (el) m[f] = el.value;
   });
@@ -3588,7 +3638,52 @@ function openReminderFromManifest(mid) {
   openReminderModal(mid);
 }
 
-// ── HELM WING JS ──────────────────────────────────────────────────────────────
+// ── ONE-TIME GIVING PATTERN BULK UPDATE ──────────────────────────────────────
+// Runs once after manifest loads. Only sets fields if not already populated.
+// Safe to leave in — it checks before writing.
+const GIVING_PATTERN_DATA = [
+  {church:'Abilene Baptist Church',   city:'Abilene',    cadence:'Monthly',   notes:'Consistent $100/mo across both years. Watch 2026 for bi-monthly confirmation.'},
+  {church:'Anchor Baptist Church',    city:'Mesquite',   cadence:'Quarterly', notes:'2025: Mar, Jul, Oct, Dec ($200 each). 2026: Jan, Mar. Roughly quarterly cadence.'},
+  {church:'Bella Vista Baptist',      city:'Albuquerque',cadence:'Monthly',   notes:'2025: nearly every month $100–$200. 2026: Jan–Apr every month. Strong monthly.'},
+  {church:'Blessed Hope Baptist',     city:'Batavia',    cadence:'Quarterly', notes:'2025: Aug, Oct, Dec. 2026: Mar only. Sporadic but roughly quarterly spacing.'},
+  {church:'Central Baptist Church',   city:'Amarillo',   cadence:'Monthly',   notes:'2025: most months $100–$200. 2026: Jan–Apr every month at $100. Solid monthly.'},
+  {church:'Central Baptist Church',   city:'Center',     cadence:'Quarterly', notes:'2025: Mar, Apr, Jul, Oct ($225 each). 2026: Mar only. Clear quarterly pattern.'},
+  {church:'Landmark Baptist Church',  city:'Haines City',cadence:'Monthly',   notes:'2025: most months at $50. 2026: Jan–Apr every month at $50. Very consistent.'},
+  {church:'Friendship Baptist',       city:'Hurst',      cadence:'Monthly',   notes:'2025: Mar, May, Jun, Sep, Nov ($350–$375). Large consistent gifts suggest monthly.'},
+  {church:'Midwest Baptist Church',   city:'Rochester',  cadence:'Quarterly', notes:'2025: Jan, May, Aug, Nov ($150 each). 2026: Jan, Apr ($150 each). Steady quarterly.'},
+  {church:'Northwest Baptist',        city:'Elgin',      cadence:'Irregular', notes:'2025: Oct ($750), Nov ($500), Dec ($750). 2026: Mar ($750). Joined late 2025 — pattern still unclear.'},
+  {church:'Fundamental Emanuel',      city:'Mesquite',   cadence:'Irregular', notes:'2025: Dec ($600). 2026: Feb ($150). Not enough data to confirm pattern yet.'},
+  {church:'Landmark Baptist Church',  city:'Petoskey',   cadence:'Monthly',   notes:'2025: Dec ($100). 2026: Jan–Apr every month at $100. Strong monthly pattern in 2026.'},
+  {church:'Gardens Baptist',          city:'Port St. Lucie', cadence:'Irregular', notes:'2026 only: Feb, Mar, Apr ($50 each). New supporter — monthly so far but too early to confirm.'},
+  {church:'Grace Baptist Church',     city:'Quincy',     cadence:'Irregular', notes:'2026 only: Feb ($300). Single gift so far — pattern unknown.'},
+  {church:'Solid Rock Baptist',       city:'Bellefontaine', cadence:'Irregular', notes:'2026 only: Feb ($75). Single gift so far — pattern unknown.'},
+  {church:'Valley Baptist Church',    city:'Oswego',     cadence:'Monthly',   notes:'2026 only: Jan–Apr every month at $100. New in 2026 but clearly monthly.'},
+  {church:'East Valley Baptist',      city:'Tempe',      cadence:'Irregular', notes:'2026 only: Mar ($150). Single gift so far — pattern unknown.'},
+];
+
+function runGivingPatternBulkUpdate() {
+  if (!sheetsReady) return;
+  const key = 'relay_giving_bulk_done_v1';
+  if (localStorage.getItem(key)) return; // already ran
+  let updated = 0;
+  GIVING_PATTERN_DATA.forEach(entry => {
+    const m = manifestContacts.find(c =>
+      (c.church||'').toLowerCase().includes(entry.church.toLowerCase().split(' ')[0]) &&
+      (c.city||'').toLowerCase() === entry.city.toLowerCase()
+    );
+    if (m && !m.support_cadence && !m.giving_notes) {
+      m.support_cadence = entry.cadence;
+      m.giving_notes = entry.notes;
+      saveManifestContact(m);
+      updated++;
+    }
+  });
+  if (updated > 0) {
+    localStorage.setItem(key, '1');
+    console.log(`Relay: bulk giving pattern update applied to ${updated} contacts.`);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Verse array — placeholder until Andrew provides his own list.
 // Each entry: { text, ref }
