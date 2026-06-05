@@ -917,6 +917,19 @@ body.wing-tides #nav-tides { color:#C8860A; }
       <div id="helm-body"></div>
     </div>
   </div>
+  <!-- GIVING HISTORY SCREEN -->
+  <div id="giving-history-screen" style="position:fixed;inset:0;z-index:200;background:#060A12;display:none;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #1C2640;flex-shrink:0;">
+      <button onclick="closeGivingHistory()" style="background:none;border:none;cursor:pointer;padding:6px;color:#D99B2D;margin-right:8px;display:flex;align-items:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span style="font-family:var(--sans);font-size:15px;font-weight:700;color:#e8e6e1;letter-spacing:.06em;">SUPPORT LEDGER</span>
+    </div>
+    <div id="giving-history-body" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;">
+      <div style="text-align:center;padding:40px 0;color:#5A6A8A;font-family:var(--sans);font-size:13px;">Loading...</div>
+    </div>
+  </div>
+
   <div id="tides-screen" class="tides-screen">
     <div class="card-topbar">
       <div style="flex:1;font-family:var(--serif);font-size:20px;color:var(--accent)">Tides</div>
@@ -3994,7 +4007,7 @@ function renderHelm() {
         <div class="helm-tile-label">Tides<br>${tidesCount === 1 ? 'due/late' : 'due/late'}</div>
         <div class="helm-tile-cta">View Tides <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
       </div>
-      <div class="helm-tile" onclick="document.getElementById('helm-support-anchor').scrollIntoView({behavior:'smooth'})">
+      <div class="helm-tile" onclick="openGivingHistory()">
         <div class="helm-donut-wrap">
           ${supportDonut}
           <div class="helm-donut-pct">${donutPct}%</div>
@@ -4201,7 +4214,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">pelican</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">anchor</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
@@ -4221,6 +4234,145 @@ function helmEditGoal() {
     const inp = document.getElementById('helm-goal-input');
     if (inp) { inp.focus(); inp.select(); }
   }, 80);
+}
+
+// ── GIVING HISTORY SCREEN ────────────────────────────────────────────────────
+
+let givingHistoryData = null;
+
+function openGivingHistory() {
+  const screen = document.getElementById('giving-history-screen');
+  screen.style.display = 'flex';
+  if (!givingHistoryData) {
+    fetchGivingHistory();
+  } else {
+    renderGivingHistory();
+  }
+}
+
+function closeGivingHistory() {
+  document.getElementById('giving-history-screen').style.display = 'none';
+}
+
+function fetchGivingHistory() {
+  document.getElementById('giving-history-body').innerHTML =
+    '<div style="text-align:center;padding:40px 0;color:#5A6A8A;font-family:var(--sans);font-size:13px;">Loading...</div>';
+  const url = SCRIPT_URL + '?action=getGivingHistory&secret=' + SECRET + '&callback=onGivingHistory';
+  const s = document.createElement('script');
+  s.src = url;
+  document.body.appendChild(s);
+}
+
+function onGivingHistory(data) {
+  givingHistoryData = data;
+  renderGivingHistory();
+}
+
+function renderGivingHistory() {
+  const data = givingHistoryData || [];
+  const support = helmSupportStats();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Group by month
+  const byMonth = {};
+  data.forEach(r => {
+    if (!r.gift_date) return;
+    const d = new Date(r.gift_date);
+    if (isNaN(d)) return;
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if (!byMonth[key]) byMonth[key] = { label: months[d.getMonth()] + ' ' + d.getFullYear(), support: 0, love: 0, gifts: [] };
+    if (r.type === 'support') byMonth[key].support += parseFloat(r.amount) || 0;
+    else byMonth[key].love += parseFloat(r.amount) || 0;
+    byMonth[key].gifts.push(r);
+  });
+
+  const sortedMonths = Object.keys(byMonth).sort().reverse();
+
+  // Out of cadence: supporting churches with no gift in last 60 days
+  const now = new Date();
+  const sixtyDaysAgo = new Date(now - 60 * 86400000);
+  const supportingChurches = manifestContacts.filter(m => m.support_status === 'Supporting' && m.support_cadence && m.support_cadence !== 'Irregular');
+  const lastGiftByChurch = {};
+  data.forEach(r => {
+    if (r.type !== 'support') return;
+    const name = r.church_name;
+    const d = new Date(r.gift_date);
+    if (!lastGiftByChurch[name] || d > lastGiftByChurch[name]) lastGiftByChurch[name] = d;
+  });
+
+  const outOfCadence = supportingChurches.filter(m => {
+    // Match by church name contained in giving history church_name
+    const matchKey = Object.keys(lastGiftByChurch).find(k =>
+      k.toLowerCase().includes((m.church||'').toLowerCase().substring(0,8)) &&
+      k.toLowerCase().includes((m.city||'').toLowerCase().substring(0,4))
+    );
+    if (!matchKey) return true; // never given = flag
+    return lastGiftByChurch[matchKey] < sixtyDaysAgo;
+  });
+
+  let html = '';
+
+  // Summary header
+  html += `<div style="background:#0D1525;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #1C2640;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:11px;color:#5A6A8A;font-family:var(--sans);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Monthly Goal</div>
+        <div style="font-size:20px;font-weight:700;color:#D99B2D;font-family:var(--sans);">${helmFmtCurrency(support.goal)}</div>
+      </div>
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:11px;color:#5A6A8A;font-family:var(--sans);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Coming In</div>
+        <div style="font-size:20px;font-weight:700;color:#4CAF82;font-family:var(--sans);">${helmFmtCurrency(support.monthlyIn)}</div>
+      </div>
+      <div style="text-align:center;flex:1;">
+        <div style="font-size:11px;color:#5A6A8A;font-family:var(--sans);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Remaining</div>
+        <div style="font-size:20px;font-weight:700;color:#e05555;font-family:var(--sans);">${helmFmtCurrency(support.remaining)}</div>
+      </div>
+    </div>
+    <div style="background:#1C2640;border-radius:6px;height:6px;overflow:hidden;">
+      <div style="height:100%;width:${Math.min(support.pct,100)}%;background:#D99B2D;border-radius:6px;"></div>
+    </div>
+    <div style="text-align:center;margin-top:6px;font-size:11px;color:#5A6A8A;font-family:var(--sans);">${support.pct}% of goal</div>
+  </div>`;
+
+  // Out of cadence alert
+  if (outOfCadence.length > 0) {
+    html += `<div style="background:#2A0D0D;border-radius:12px;padding:14px 16px;margin-bottom:16px;border:1px solid #5A1A1A;">
+      <div style="font-size:11px;font-weight:700;color:#e05555;font-family:var(--sans);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">⚠ Out of Cadence</div>
+      ${outOfCadence.map(m => `<div style="font-size:13px;color:#e8e6e1;font-family:var(--sans);padding:4px 0;border-bottom:1px solid #3A1A1A;">${esc(m.church)} <span style="color:#5A6A8A;font-size:11px;">· ${esc(m.city)}, ${esc(m.state)}</span></div>`).join('')}
+    </div>`;
+  }
+
+  // Month by month
+  if (sortedMonths.length === 0) {
+    html += '<div style="text-align:center;padding:40px 0;color:#5A6A8A;font-family:var(--sans);font-size:13px;">No giving history yet</div>';
+  } else {
+    sortedMonths.forEach(key => {
+      const mo = byMonth[key];
+      const sortedGifts = mo.gifts.slice().sort((a,b) => a.church_name.localeCompare(b.church_name));
+      html += `<div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:700;color:#D99B2D;font-family:var(--sans);text-transform:uppercase;letter-spacing:.08em;">${mo.label}</div>
+          <div style="font-size:12px;color:#4CAF82;font-family:var(--sans);font-weight:600;">${helmFmtCurrency(mo.support)} support${mo.love > 0 ? ' · <span style="color:#5B9FD4;">'+helmFmtCurrency(mo.love)+' love</span>' : ''}</div>
+        </div>
+        <div style="background:#0D1525;border-radius:10px;border:1px solid #1C2640;overflow:hidden;">
+          ${sortedGifts.map(g => {
+            const isSupport = g.type === 'support';
+            const d = new Date(g.gift_date);
+            const dateStr = months[d.getMonth()] + ' ' + d.getDate();
+            return `<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid #1C2640;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;color:#e8e6e1;font-family:var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(g.church_name)}</div>
+                <div style="font-size:10px;color:#5A6A8A;font-family:var(--sans);margin-top:1px;">${dateStr} · ${isSupport ? 'Support' : 'Love Gift'}</div>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:${isSupport ? '#4CAF82' : '#5B9FD4'};font-family:var(--sans);margin-left:12px;">$${parseFloat(g.amount).toFixed(0)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('giving-history-body').innerHTML = html;
 }
 
 function helmNavToMissingPhone() {
