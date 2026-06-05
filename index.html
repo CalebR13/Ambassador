@@ -2371,6 +2371,21 @@ function toggleRelayComplete(mid) {
     data.completed.splice(idx, 1);
   } else {
     data.completed.push(mid);
+    // Auto-log #RELAYED in contact log
+    const now = new Date();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateStr = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    const m = manifestContacts.find(x => x.id === mid);
+    let pseudo = contacts.find(c => c.id === mid);
+    if (!pseudo) {
+      pseudo = { id: mid, pastor: m?.pastor||'', church: m?.church||'', city: m?.city||'', state: m?.state||'', calls: [] };
+      contacts.push(pseudo);
+    }
+    if (!pseudo.calls) pseudo.calls = [];
+    const entry = { id: uid(), contactId: mid, date: dateStr, outcome: 'note', meetingBooked: false, meetingDate: '', details: '#RELAYED', remDate: '', remTime: '', remType: '', completed: false };
+    pseudo.calls.push(entry);
+    save();
+    saveCallEntry(mid, entry);
   }
   localStorage.setItem(key, JSON.stringify(data));
   renderManifest();
@@ -3306,9 +3321,6 @@ function saveNextMeeting(mid, existingId) {
     manifestVisits.push(visit);
     saveVisitEntry(visit);
   }
-  m.next_visit_date = d;
-  m.next_visit_end_date = dEnd;
-  saveManifestContact(m);
   haptic(10);
   closeMKeepCard();
   renderManifest();
@@ -4187,6 +4199,10 @@ function helmEditGoal() {
   showM(`<div class="modal-backdrop" onclick="if(event.target===this)closeMKeepCard()">
     <div class="modal-box" onclick="event.stopPropagation()" style="max-width:320px;">
       <h2 style="margin-bottom:16px;">Support Goal</h2>
+      <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">pelican</span>
+      </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
         <input id="helm-goal-input" type="number" value="${current}" placeholder="65000" style="font-size:18px;text-align:center;" inputmode="numeric"/>
