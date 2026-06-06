@@ -4220,7 +4220,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">mainsail</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">sextant</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
@@ -4296,24 +4296,41 @@ function renderGivingHistory() {
 
   // Out of cadence: supporting churches with no gift in last 60 days
   const now = new Date();
-  const sixtyDaysAgo = new Date(now - 60 * 86400000);
   const supportingChurches = manifestContacts.filter(m => m.support_status === 'Supporting' && m.support_cadence && m.support_cadence !== 'Irregular');
+
+  // Build last gift date lookup keyed by normalized church_name from GivingHistory
   const lastGiftByChurch = {};
   data.forEach(r => {
     if (r.type !== 'support') return;
-    const name = r.church_name;
+    const key = (r.church_name || '').toLowerCase().trim();
     const d = new Date(r.gift_date);
-    if (!lastGiftByChurch[name] || d > lastGiftByChurch[name]) lastGiftByChurch[name] = d;
+    if (!lastGiftByChurch[key] || d > lastGiftByChurch[key]) lastGiftByChurch[key] = d;
   });
 
+  // Cadence-aware expected window in days
+  function cadenceWindowDays(cadence) {
+    const c = (cadence || '').toLowerCase();
+    if (c === 'monthly')    return 60;   // allow 2x gap before flagging
+    if (c === 'bi-monthly') return 100;  // ~3 months grace
+    if (c === 'quarterly')  return 120;  // ~4 months grace
+    if (c === 'bi-annual')  return 240;  // ~8 months grace
+    return 90;
+  }
+
   const outOfCadence = supportingChurches.filter(m => {
-    // Match by church name contained in giving history church_name
-    const matchKey = Object.keys(lastGiftByChurch).find(k =>
-      k.toLowerCase().includes((m.church||'').toLowerCase().substring(0,8)) &&
-      k.toLowerCase().includes((m.city||'').toLowerCase().substring(0,4))
-    );
-    if (!matchKey) return true; // never given = flag
-    return lastGiftByChurch[matchKey] < sixtyDaysAgo;
+    const mChurch = (m.church || '').toLowerCase().trim();
+    const mCity   = (m.city   || '').toLowerCase().trim();
+    // Try exact match first, then partial
+    let matchKey = Object.keys(lastGiftByChurch).find(k => k === mChurch);
+    if (!matchKey) {
+      matchKey = Object.keys(lastGiftByChurch).find(k =>
+        k.includes(mChurch.substring(0, Math.min(10, mChurch.length))) &&
+        (mCity.length < 3 || k.includes(mCity.substring(0, Math.min(6, mCity.length))))
+      );
+    }
+    if (!matchKey) return true; // no gifts found — flag
+    const daysSince = (now - lastGiftByChurch[matchKey]) / 86400000;
+    return daysSince > cadenceWindowDays(m.support_cadence);
   });
 
   let html = '';
