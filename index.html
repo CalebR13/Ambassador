@@ -918,7 +918,7 @@ body.wing-tides #nav-tides { color:#C8860A; }
     </div>
   </div>
   <!-- GIVING HISTORY SCREEN -->
-  <div id="giving-history-screen" style="position:fixed;inset:0;z-index:200;background:#060A12;display:none;flex-direction:column;overflow:hidden;">
+  <div id="giving-history-screen" style="position:fixed;inset:0;z-index:200;background:#060A12;display:none;flex-direction:column;overflow:hidden;opacity:0;transition:opacity 0.35s ease;">
     <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #1C2640;flex-shrink:0;">
       <button onclick="closeGivingHistory()" style="background:none;border:none;cursor:pointer;padding:6px;color:#D99B2D;margin-right:8px;display:flex;align-items:center;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -4013,7 +4013,7 @@ function renderHelm() {
         <div class="helm-tile-label">Tides<br>${tidesCount === 1 ? 'due/late' : 'due/late'}</div>
         <div class="helm-tile-cta">View Tides <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
       </div>
-      <div class="helm-tile" onclick="openGivingHistory()">
+      <div class="helm-tile" onclick="helmScrollToSupport()">
         <div class="helm-donut-wrap">
           ${supportDonut}
           <div class="helm-donut-pct">${donutPct}%</div>
@@ -4154,7 +4154,7 @@ function renderHelm() {
   const supportSection = `
     <div id="helm-support-anchor"></div>
     <div class="helm-section-label">SUPPORT DEEP DIVE</div>
-    <div class="helm-support-section">
+    <div class="helm-support-section" onclick="openGivingHistorySmooth()" style="cursor:pointer;">
       <div class="helm-support-card">
         <div class="helm-support-row">
           <div class="helm-support-col">
@@ -4220,7 +4220,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">sextant</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">tideline</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
@@ -4246,9 +4246,24 @@ function helmEditGoal() {
 
 let givingHistoryData = null;
 
+function helmScrollToSupport() {
+  const anchor = document.getElementById('helm-support-anchor');
+  if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function openGivingHistory() {
+  openGivingHistorySmooth();
+}
+
+function openGivingHistorySmooth() {
   const screen = document.getElementById('giving-history-screen');
   screen.style.display = 'flex';
+  screen.style.opacity = '0';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      screen.style.opacity = '1';
+    });
+  });
   if (!givingHistoryData) {
     fetchGivingHistory();
   } else {
@@ -4257,7 +4272,9 @@ function openGivingHistory() {
 }
 
 function closeGivingHistory() {
-  document.getElementById('giving-history-screen').style.display = 'none';
+  const screen = document.getElementById('giving-history-screen');
+  screen.style.opacity = '0';
+  setTimeout(() => { screen.style.display = 'none'; }, 350);
 }
 
 function fetchGivingHistory() {
@@ -4459,12 +4476,46 @@ function renderGivingHistory() {
   }
 
   window._ghRenderChurch = function(churchName) {
-    renderLedger(churchName);
-    document.getElementById('giving-history-body').scrollTop = 0;
+    const body = document.getElementById('giving-history-body');
+    const ledger = document.getElementById('gh-ledger');
+    if (ledger) {
+      ledger.style.transition = 'opacity 0.2s ease';
+      ledger.style.opacity = '0';
+      setTimeout(() => {
+        renderLedger(churchName);
+        body.scrollTop = 0;
+        const newLedger = document.getElementById('gh-ledger');
+        if (newLedger) {
+          newLedger.style.opacity = '0';
+          newLedger.style.transition = 'opacity 0.25s ease';
+          requestAnimationFrame(() => requestAnimationFrame(() => { newLedger.style.opacity = '1'; }));
+        }
+      }, 180);
+    } else {
+      renderLedger(churchName);
+      body.scrollTop = 0;
+    }
   };
   window._ghRenderFull = function() {
-    renderLedger(null);
-    document.getElementById('giving-history-body').scrollTop = 0;
+    const body = document.getElementById('giving-history-body');
+    const ledger = document.getElementById('gh-ledger');
+    if (ledger) {
+      ledger.style.transition = 'opacity 0.2s ease';
+      ledger.style.opacity = '0';
+      setTimeout(() => {
+        renderLedger(null);
+        body.scrollTop = 0;
+        const newLedger = document.getElementById('gh-ledger');
+        if (newLedger) {
+          newLedger.style.opacity = '0';
+          newLedger.style.transition = 'opacity 0.25s ease';
+          requestAnimationFrame(() => requestAnimationFrame(() => { newLedger.style.opacity = '1'; }));
+        }
+      }, 180);
+    } else {
+      renderLedger(null);
+      body.scrollTop = 0;
+    }
   };
 
   html += '<div id="gh-ledger"></div>';
