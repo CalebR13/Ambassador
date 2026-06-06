@@ -4214,7 +4214,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">lighthouse</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">compass</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
@@ -4360,7 +4360,7 @@ function renderGivingHistory() {
     </div>`;
   }
 
-  // Build church totals lookup for expand view
+  // Build church totals lookup
   const byChurch = {};
   data.forEach(r => {
     const k = r.church_name;
@@ -4368,63 +4368,86 @@ function renderGivingHistory() {
     byChurch[k].push(r);
   });
 
-  // Month by month
-  if (sortedMonths.length === 0) {
-    html += '<div style="text-align:center;padding:40px 0;color:#5A6A8A;font-family:var(--sans);font-size:13px;">No giving history yet</div>';
-  } else {
-    sortedMonths.forEach(key => {
-      const mo = byMonth[key];
-      const sortedGifts = mo.gifts.slice().sort((a,b) => a.church_name.localeCompare(b.church_name));
-      html += `<div style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-size:12px;font-weight:700;color:#D99B2D;font-family:var(--sans);text-transform:uppercase;letter-spacing:.08em;">${mo.label}</div>
-          <div style="font-size:12px;color:#4CAF82;font-family:var(--sans);font-weight:600;">${helmFmtCurrency(mo.support)} support${mo.love > 0 ? ' <span style="color:#5B9FD4;">+ '+helmFmtCurrency(mo.love)+' love</span>' : ''}</div>
-        </div>
-        <div style="background:#0D1525;border-radius:10px;border:1px solid #1C2640;overflow:hidden;">
-          ${sortedGifts.map(g => {
-            const isSupport = g.type === 'support';
-            const d = new Date(g.gift_date);
-            const dateStr = months[d.getMonth()] + ' ' + d.getDate();
-            const churchGifts = byChurch[g.church_name] || [];
-            const churchTotal = churchGifts.reduce((a,r) => a + (parseFloat(r.amount)||0), 0);
-            const churchSupport = churchGifts.filter(r=>r.type==='support').reduce((a,r)=>a+(parseFloat(r.amount)||0),0);
-            const churchLove = churchGifts.filter(r=>r.type==='love_gift').reduce((a,r)=>a+(parseFloat(r.amount)||0),0);
-            const expandId = 'gh-expand-' + key + '-' + g.church_name.replace(/[^a-z0-9]/gi,'');
-            return `<div style="border-bottom:1px solid #1C2640;">
-              <div style="display:flex;align-items:center;padding:10px 14px;" onclick="
-                const el=document.getElementById('${expandId}');
-                if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
-              ">
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:13px;color:#e8e6e1;font-family:var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(g.church_name)}</div>
-                  <div style="font-size:10px;color:#5A6A8A;font-family:var(--sans);margin-top:1px;">${dateStr} · ${isSupport ? 'Support' : 'Love Gift'}</div>
-                </div>
-                <div style="font-size:14px;font-weight:700;color:${isSupport ? '#4CAF82' : '#5B9FD4'};font-family:var(--sans);margin-left:12px;">$${parseFloat(g.amount).toFixed(0)}</div>
-                <div style="margin-left:8px;color:#5A6A8A;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
-              </div>
-              <div id="${expandId}" style="display:none;background:#0A1020;padding:10px 14px;border-top:1px solid #1C2640;">
-                <div style="font-size:11px;color:#5A6A8A;font-family:var(--sans);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">All Gifts from ${esc(g.church_name)}</div>
-                ${churchGifts.slice().sort((a,b)=>a.gift_date.localeCompare(b.gift_date)).map(cg => {
-                  const cd = new Date(cg.gift_date);
-                  const cdStr = months[cd.getMonth()] + ' ' + cd.getDate() + ', ' + cd.getFullYear();
-                  return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1C2640;">
-                    <div style="font-size:12px;color:#a0aec0;font-family:var(--sans);">${cdStr} · ${cg.type==='support'?'Support':'Love Gift'}</div>
-                    <div style="font-size:12px;font-weight:600;color:${cg.type==='support'?'#4CAF82':'#5B9FD4'};font-family:var(--sans);">$${parseFloat(cg.amount).toFixed(0)}</div>
-                  </div>`;
-                }).join('')}
-                <div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:4px;">
-                  <div style="font-size:12px;color:#e8e6e1;font-family:var(--sans);font-weight:600;">Total</div>
-                  <div style="font-size:13px;font-weight:700;color:#D99B2D;font-family:var(--sans);">${helmFmtCurrency(churchTotal)}${churchLove>0?' <span style="font-size:10px;color:#5A6A8A;">('+helmFmtCurrency(churchSupport)+' support + '+helmFmtCurrency(churchLove)+' love)</span>':''}</div>
-                </div>
-              </div>
-            </div>`;
-          }).join('')}
+  // Store state for re-render
+  window._ghData = { byMonth, byChurch, sortedMonths, months, support, avgMonthlyLove, combinedPct };
+
+  function renderLedger(filterChurch) {
+    const container = document.getElementById('gh-ledger');
+    if (!container) return;
+    let inner = '';
+
+    if (filterChurch) {
+      const churchGifts = (byChurch[filterChurch] || []).slice().sort((a,b) => a.gift_date.localeCompare(b.gift_date));
+      const churchTotal = churchGifts.reduce((a,r) => a+(parseFloat(r.amount)||0), 0);
+      const churchSupport = churchGifts.filter(r=>r.type==='support').reduce((a,r)=>a+(parseFloat(r.amount)||0), 0);
+      const churchLove = churchGifts.filter(r=>r.type==='love_gift').reduce((a,r)=>a+(parseFloat(r.amount)||0), 0);
+      inner += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:#e8e6e1;font-family:var(--sans);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(filterChurch)}</div>
+        <button onclick="window._ghRenderFull()" style="flex-shrink:0;background:#1C2640;border:none;border-radius:20px;color:#D99B2D;font-family:var(--sans);font-size:11px;padding:5px 12px;cursor:pointer;margin-left:8px;">✕ All</button>
+      </div>
+      <div style="background:#0D1525;border-radius:10px;border:1px solid #1C2640;overflow:hidden;margin-bottom:12px;">
+        ${churchGifts.map(cg => {
+          const cd = new Date(cg.gift_date);
+          const cdStr = months[cd.getMonth()] + ' ' + cd.getDate() + ', ' + cd.getFullYear();
+          const isS = cg.type === 'support';
+          return `<div style="display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #1C2640;">
+            <div style="flex:1;font-size:13px;color:#a0aec0;font-family:var(--sans);">${cdStr} · ${isS?'Support':'Love Gift'}</div>
+            <div style="font-size:14px;font-weight:700;color:${isS?'#4CAF82':'#5B9FD4'};font-family:var(--sans);">$${parseFloat(cg.amount).toFixed(0)}</div>
+          </div>`;
+        }).join('')}
+        <div style="display:flex;justify-content:space-between;padding:11px 14px;">
+          <div style="font-size:13px;font-weight:700;color:#e8e6e1;font-family:var(--sans);">Total</div>
+          <div style="font-size:14px;font-weight:700;color:#D99B2D;font-family:var(--sans);">${helmFmtCurrency(churchTotal)}${churchLove>0?` <span style="font-size:10px;color:#5A6A8A;font-weight:400;">(${helmFmtCurrency(churchSupport)} sup + ${helmFmtCurrency(churchLove)} love)</span>`:''}</div>
         </div>
       </div>`;
-    });
+    } else {
+      if (sortedMonths.length === 0) {
+        inner += '<div style="text-align:center;padding:40px 0;color:#5A6A8A;font-family:var(--sans);font-size:13px;">No giving history yet</div>';
+      } else {
+        sortedMonths.forEach(key => {
+          const mo = byMonth[key];
+          const sortedGifts = mo.gifts.slice().sort((a,b) => a.church_name.localeCompare(b.church_name));
+          inner += `<div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-size:12px;font-weight:700;color:#D99B2D;font-family:var(--sans);text-transform:uppercase;letter-spacing:.08em;">${mo.label}</div>
+              <div style="font-size:12px;color:#4CAF82;font-family:var(--sans);font-weight:600;">${helmFmtCurrency(mo.support)} support${mo.love > 0 ? ` <span style="color:#5B9FD4;">+ ${helmFmtCurrency(mo.love)} love</span>` : ''}</div>
+            </div>
+            <div style="background:#0D1525;border-radius:10px;border:1px solid #1C2640;overflow:hidden;">
+              ${sortedGifts.map(g => {
+                const isSupport = g.type === 'support';
+                const d = new Date(g.gift_date);
+                const dateStr = months[d.getMonth()] + ' ' + d.getDate();
+                const safeChurch = g.church_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                return `<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid #1C2640;cursor:pointer;-webkit-tap-highlight-color:rgba(217,155,45,0.15);" onclick="window._ghRenderChurch('${safeChurch}')">
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;color:#e8e6e1;font-family:var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(g.church_name)}</div>
+                    <div style="font-size:10px;color:#5A6A8A;font-family:var(--sans);margin-top:1px;">${dateStr} · ${isSupport ? 'Support' : 'Love Gift'}</div>
+                  </div>
+                  <div style="font-size:14px;font-weight:700;color:${isSupport ? '#4CAF82' : '#5B9FD4'};font-family:var(--sans);margin-left:12px;">$${parseFloat(g.amount).toFixed(0)}</div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        });
+      }
+    }
+
+    container.innerHTML = inner;
   }
 
+  window._ghRenderChurch = function(churchName) {
+    renderLedger(churchName);
+    document.getElementById('giving-history-body').scrollTop = 0;
+  };
+  window._ghRenderFull = function() {
+    renderLedger(null);
+    document.getElementById('giving-history-body').scrollTop = 0;
+  };
+
+  html += '<div id="gh-ledger"></div>';
+
   document.getElementById('giving-history-body').innerHTML = html;
+  renderLedger(null);
 }
 
 function helmNavToMissingPhone() {
