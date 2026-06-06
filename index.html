@@ -3907,7 +3907,11 @@ function helmSupportStats() {
     .filter(m => m.support_status === 'Supporting' && m.support_amount)
     .reduce((acc, m) => {
       const amt = parseFloat(String(m.support_amount).replace(/[^0-9.]/g, '')) || 0;
-      return acc + amt;
+      const cadence = (m.support_cadence || '').toLowerCase();
+      if (cadence === 'monthly') return acc + amt;
+      if (cadence === 'quarterly') return acc + (amt / 3);
+      if (cadence === 'irregular') return acc + (amt / 3); // estimated as quarterly
+      return acc; // unknown — don't count
     }, 0);
   const goal = getHelmSupportGoal();
   const pct = goal > 0 ? Math.round((monthlyIn / goal) * 100) : 0;
@@ -4214,7 +4218,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">compass</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">starboard</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
