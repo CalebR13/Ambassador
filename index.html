@@ -3565,8 +3565,9 @@ function openManifestEditModal(mid) {
         <select id="me-support_cadence" style="width:100%;padding:9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);">
           <option value="" ${!m.support_cadence?'selected':''}>— Unknown —</option>
           <option value="Monthly" ${m.support_cadence==='Monthly'?'selected':''}>Monthly</option>
+          <option value="Bi-monthly" ${m.support_cadence==='Bi-monthly'?'selected':''}>Bi-monthly</option>
           <option value="Quarterly" ${m.support_cadence==='Quarterly'?'selected':''}>Quarterly</option>
-          <option value="Irregular" ${m.support_cadence==='Irregular'?'selected':''}>Irregular</option>
+          <option value="Bi-annual" ${m.support_cadence==='Bi-annual'||m.support_cadence==='Irregular'?'selected':''}>Bi-annual</option>
         </select>
       </div>
       <div style="margin-bottom:10px;">
@@ -3908,9 +3909,10 @@ function helmSupportStats() {
     .reduce((acc, m) => {
       const amt = parseFloat(String(m.support_amount).replace(/[^0-9.]/g, '')) || 0;
       const cadence = (m.support_cadence || '').toLowerCase();
-      if (cadence === 'monthly') return acc + amt;
-      if (cadence === 'quarterly') return acc + (amt / 3);
-      if (cadence === 'irregular') return acc + (amt / 3); // estimated as quarterly
+      if (cadence === 'monthly')    return acc + amt;
+      if (cadence === 'bi-monthly') return acc + (amt / 2);
+      if (cadence === 'quarterly')  return acc + (amt / 3);
+      if (cadence === 'bi-annual' || cadence === 'irregular') return acc + (amt / 6);
       return acc; // unknown — don't count
     }, 0);
   const goal = getHelmSupportGoal();
@@ -4218,7 +4220,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">starboard</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">mainsail</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
