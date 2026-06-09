@@ -2348,18 +2348,22 @@ function saveVisitEntry(v) {
 
 // ── RELAY WEEK SYSTEM ────────────────────────────────────────────────────────
 
-function getRelayWeekKey() {
+function getRelayWeekIndex() {
   const now = new Date();
-  const jan1 = new Date(now.getFullYear(), 0, 1);
-  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
-  return `relay_week_${now.getFullYear()}_${weekNum}`;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dow = (today.getDay() + 6) % 7; // Mon=0 ... Sun=6
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - dow);
+  const epoch = new Date(2025, 11, 29); // Monday, Dec 29, 2025
+  return Math.round((monday - epoch) / (7 * 86400000));
+}
+
+function getRelayWeekKey() {
+  return `relay_week_${getRelayWeekIndex()}`;
 }
 
 function getCurrentRelayGroup() {
-  const now = new Date();
-  const jan1 = new Date(now.getFullYear(), 0, 1);
-  const weekNum = Math.floor((now - jan1) / (7 * 86400000));
-  return (weekNum % 4) + 1;
+  return (getRelayWeekIndex() % 4) + 1;
 }
 
 function getRelayWeekData() {
@@ -4220,7 +4224,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">tideline</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">driftwood</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
