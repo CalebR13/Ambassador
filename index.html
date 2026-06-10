@@ -1127,7 +1127,7 @@ async function runProximitySearch(){
   const city=(document.getElementById('prox-city').value||'').trim();const state=(document.getElementById('prox-state').value||'').trim();
   if(!city){alert('Please enter a city.');return;}
   const resultsEl=document.getElementById('prox-results');resultsEl.innerHTML='<div class="empty-state">Searching…</div>';
-  try{const q=encodeURIComponent(city+(state?', '+state:'')+', USA');const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);const data=await res.json();if(!data.length){resultsEl.innerHTML='<div class="empty-state">Location not found.</div>';return;}renderProximityResults(parseFloat(data[0].lat),parseFloat(data[0].lon));}
+  try{const fullState=state?(STATE_NAMES[state]||state):'';const q=encodeURIComponent(city+(fullState?', '+fullState:'')+', USA');const res=await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=5&addressdetails=1`);const data=await res.json();if(!data.length){resultsEl.innerHTML='<div class="empty-state">Location not found.</div>';return;}const placeTypes=['city','town','village','hamlet','municipality','suburb'];const best=data.find(r=>placeTypes.includes(r.addresstype)||(r.class==='place'&&placeTypes.includes(r.type)))||data[0];renderProximityResults(parseFloat(best.lat),parseFloat(best.lon));}
   catch(e){resultsEl.innerHTML='<div class="empty-state">Could not geocode location.</div>';}
 }
 function renderProximityResults(lat,lng){
@@ -4224,7 +4224,7 @@ function helmEditGoal() {
       <h2 style="margin-bottom:16px;">Support Goal</h2>
       <div style="margin-bottom:16px;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Build</span>
-        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">driftwood</span>
+        <span style="font-size:13px;font-weight:600;color:#D99B2D;letter-spacing:.06em;">gangway</span>
       </div>
       <div class="fgi" style="margin-bottom:16px;">
         <label>Monthly support goal ($)</label>
